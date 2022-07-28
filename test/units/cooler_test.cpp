@@ -4,9 +4,11 @@
 
 #include <fmt/format.h>
 
+#include <algorithm>
 #include <catch2/catch_test_macros.hpp>
 #include <catch2/matchers/catch_matchers_string.hpp>
 #include <filesystem>
+#include <random>
 
 #include "coolerpp/coolerpp.hpp"
 #include "coolerpp/test/self_deleting_folder.hpp"
@@ -311,6 +313,77 @@ TEST_CASE("Coolerpp: read/write bin table", "[cooler][short]") {
 
   CHECK(start_it == f.dataset("bins/start").end<std::uint32_t>());
   CHECK(end_it == f.dataset("bins/end").end<std::uint32_t>());
+}
+
+// NOLINTNEXTLINE(readability-function-cognitive-complexity)
+TEST_CASE("Coolerpp: read/write pixels", "[cooler][long]") {
+  auto path1 = datadir / "cooler_test_file.cool";
+  auto path2 = testdir() / "cooler_test_read_write_pixels.cool";
+
+  auto f1 = File::open_read_only(path1.string());
+  {
+    auto f2 = File::create_new_cooler<std::uint32_t>(path2.string(), f1.chromosomes(),
+                                                     f1.bin_size(), true);
+
+    const std::vector<Pixel<std::uint32_t>> expected(f1.begin<std::uint32_t>(),
+                                                     f1.end<std::uint32_t>());
+    REQUIRE(expected.size() == 107041);
+
+    std::random_device rd;
+    std::mt19937_64 rand_eng{rd()};
+
+    auto pixel_it = expected.begin();
+    do {
+      const auto diff = std::distance(pixel_it, expected.end());
+      const auto offset =
+          std::min(diff, std::uniform_int_distribution<std::ptrdiff_t>{500, 5000}(rand_eng));
+      // fmt::print(stderr, FMT_STRING("Processing {}-{} out of {}\n"),
+      //            std::distance(expected.begin(), pixel_it),
+      //            std::distance(expected.begin(), pixel_it + offset), expected.size());
+
+      f2.append_pixels(pixel_it, pixel_it + offset, true);
+      pixel_it += offset;
+    } while (pixel_it != expected.end());
+  }
+
+  auto f2 = File::open_read_only(path2.string());
+
+  SECTION("compare chromosomes") { CHECK(f1.chromosomes() == f2.chromosomes()); }
+
+  SECTION("compare bins") { CHECK(f1.bins() == f2.bins()); }
+
+  SECTION("compare indexes") {
+    {
+      const auto expected_chrom_offset =
+          f1.dataset("indexes/chrom_offset").read_all<std::vector<std::uint64_t>>();
+      const auto chrom_offset =
+          f2.dataset("indexes/chrom_offset").read_all<std::vector<std::uint64_t>>();
+      REQUIRE(chrom_offset.size() == expected_chrom_offset.size());
+      for (std::size_t i = 0; i < chrom_offset.size(); ++i) {
+        CHECK(chrom_offset[i] == expected_chrom_offset[i]);
+      }
+    }
+    const auto expected_bin1_offset =
+        f1.dataset("indexes/bin1_offset").read_all<std::vector<std::uint64_t>>();
+    const auto bin1_offset =
+        f2.dataset("indexes/bin1_offset").read_all<std::vector<std::uint64_t>>();
+    REQUIRE(bin1_offset.size() == expected_bin1_offset.size());
+    for (std::size_t i = 0; i < bin1_offset.size(); ++i) {
+      CHECK(bin1_offset[i] == expected_bin1_offset[i]);
+    }
+  }
+
+  SECTION("compare pixels") {
+    const std::vector<Pixel<std::uint32_t>> expected_pixels(f1.begin<std::uint32_t>(),
+                                                            f1.end<std::uint32_t>());
+    const std::vector<Pixel<std::uint32_t>> pixels(f2.begin<std::uint32_t>(),
+                                                   f2.end<std::uint32_t>());
+
+    REQUIRE(expected_pixels.size() == pixels.size());
+    for (std::size_t i = 0; i < pixels.size(); ++i) {
+      CHECK(pixels[i] == expected_pixels[i]);
+    }
+  }
 }
 
 }  // namespace coolerpp::test::coolerpp

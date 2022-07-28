@@ -117,7 +117,7 @@ std::size_t Dataset::write(const std::vector<std::string> &buff, std::size_t off
       this->throw_out_of_range_excp(offset, buff.size());
     }
   }
-  // TODO construct string, then write
+
   const auto str_length = this->get_h5type().getSize();
   std::string strbuff(str_length * buff.size(), '\0');
   for (std::size_t i = 0; i < buff.size(); ++i) {

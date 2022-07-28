@@ -509,6 +509,9 @@ auto File::group(std::string_view group_name) const -> const Group & {
 
 auto File::dataset(std::string_view dataset_name) -> Dataset & {
   try {
+    if (dataset_name.front() == '/') {
+      dataset_name = dataset_name.substr(1);
+    }
     return this->_datasets.at(std::string{dataset_name});
   } catch (const std::exception &e) {
     throw std::runtime_error(
@@ -518,6 +521,9 @@ auto File::dataset(std::string_view dataset_name) -> Dataset & {
 
 auto File::dataset(std::string_view dataset_name) const -> const Dataset & {
   try {
+    if (dataset_name.front() == '/') {
+      dataset_name = dataset_name.substr(1);
+    }
     return this->_datasets.at(std::string{dataset_name});
   } catch (const std::exception &e) {
     throw std::runtime_error(
@@ -600,26 +606,4 @@ void File::finalize() {
   }
 }
 
-namespace internal {
-
-void create_standard_cooler_attributes(HighFive::Group &root_grp, std::uint32_t bin_size,
-                                       const StandardAttributes &attributes) {
-  [[maybe_unused]] HighFive::SilenceHDF5 silencer{};
-  Attribute::write(root_grp, "bin-size", bin_size);
-  Attribute::write(root_grp, "bin-size", bin_size);
-  Attribute::write(root_grp, "bin-type", *attributes.bin_type);
-  Attribute::write(root_grp, "creation-date", *attributes.creation_date);
-  Attribute::write(root_grp, "format", std::string{COOL_MAGIC});
-  Attribute::write(root_grp, "format-url", *attributes.format_url);
-  Attribute::write(root_grp, "format-version", attributes.format_version);
-  Attribute::write(root_grp, "generated-by", *attributes.generated_by);
-  Attribute::write(root_grp, "metadata", *attributes.metadata);
-  Attribute::write(root_grp, "nbins", *attributes.nbins);
-  Attribute::write(root_grp, "nchroms", *attributes.nchroms);
-  Attribute::write(root_grp, "nnz", *attributes.nnz);
-  Attribute::write(root_grp, "storage-mode", *attributes.storage_mode);
-  std::visit([&](const auto sum) { Attribute::write(root_grp, "sum", sum); }, attributes.sum);
-}
-
-}  // namespace internal
 }  // namespace coolerpp
