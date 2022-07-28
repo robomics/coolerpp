@@ -18,7 +18,7 @@ inline const std::filesystem::path datadir{"test/data"};  // NOLINT(cert-err58-c
 namespace coolerpp::test::index {
 
 // NOLINTNEXTLINE(readability-function-cognitive-complexity)
-TEST_CASE("Index: Ctor", "[index][short]") {
+TEST_CASE("Index: ctor", "[index][short]") {
   constexpr std::uint32_t bin_size = 100;
   const BinTableLazy bins{{Chromosome{"chr1", 10001}, Chromosome{"chr2", 5000}}, bin_size};
 
@@ -39,7 +39,7 @@ TEST_CASE("Index: Ctor", "[index][short]") {
 }
 
 // NOLINTNEXTLINE(readability-function-cognitive-complexity)
-TEST_CASE("Index: Offset setters and getters", "[index][short]") {
+TEST_CASE("Index: offset setters and getters", "[index][short]") {
   constexpr std::uint32_t bin_size = 10;
   const BinTableLazy bins{{Chromosome{"chr1", 100}}, bin_size};
 
@@ -93,7 +93,7 @@ TEST_CASE("Index: Offset setters and getters", "[index][short]") {
 }
 
 // NOLINTNEXTLINE(readability-function-cognitive-complexity)
-TEST_CASE("Index: iterators", "[index][short]") {
+TEST_CASE("Index: iterator", "[index][short]") {
   constexpr std::uint32_t bin_size = 1000;
   const BinTableLazy bins{{Chromosome{"chr1", 10001}, Chromosome{"chr2", 5000}}, bin_size};
 
@@ -163,7 +163,7 @@ TEST_CASE("Index: validation", "[index][short]") {
 }
 
 // NOLINTNEXTLINE(readability-function-cognitive-complexity)
-TEST_CASE("Index: Compute chrom offsets", "[index][short]") {
+TEST_CASE("Index: compute chromosome offsets", "[index][short]") {
   constexpr std::uint32_t bin_size = 1000;
   const BinTableLazy bins{{Chromosome{"chr1", 10001}, Chromosome{"chr2", 5000}}, bin_size};
 

@@ -19,7 +19,7 @@ inline const std::filesystem::path datadir{"test/data"};  // NOLINT(cert-err58-c
 namespace coolerpp::test::coolerpp {
 
 // NOLINTNEXTLINE(readability-function-cognitive-complexity)
-TEST_CASE("Cooler format checking", "[cooler][short]") {
+TEST_CASE("Coolerpp: format checking", "[cooler][short]") {
   SECTION("test .cool") {
     const auto path = datadir / "cooler_test_file.cool";
     CHECK(utils::is_cooler(path.string()));
@@ -118,7 +118,7 @@ TEST_CASE("Cooler format checking", "[cooler][short]") {
 }
 
 // NOLINTNEXTLINE(readability-function-cognitive-complexity)
-TEST_CASE("File ctor", "[cooler][short]") {
+TEST_CASE("Coolerpp: file ctors", "[cooler][short]") {
   SECTION("open .cool") {
     const auto path = datadir / "cooler_test_file.cool";
     const auto f = File::open_read_only(path.string());
@@ -200,7 +200,7 @@ TEST_CASE("File ctor", "[cooler][short]") {
 }
 
 // NOLINTNEXTLINE(readability-function-cognitive-complexity)
-TEST_CASE("Init files", "[cooler][short]") {
+TEST_CASE("Coolerpp: init files", "[cooler][short]") {
   const ChromosomeSet chroms{Chromosome{"chr1", 10000}, Chromosome{"chr2", 5000}};
 
   SECTION(".cool") {
@@ -242,7 +242,7 @@ TEST_CASE("Init files", "[cooler][short]") {
 }
 
 // NOLINTNEXTLINE(readability-function-cognitive-complexity)
-TEST_CASE("Read cooler attributes", "[cooler][short]") {
+TEST_CASE("Coolerpp: read attributes", "[cooler][short]") {
   auto path = datadir / "cooler_test_file.cool";
   auto f = File::open_read_only(path.string());
 
@@ -268,7 +268,7 @@ TEST_CASE("Read cooler attributes", "[cooler][short]") {
 }
 
 // NOLINTNEXTLINE(readability-function-cognitive-complexity)
-TEST_CASE("Write chromosomes cooler", "[cooler][short]") {
+TEST_CASE("Coolerpp: read/write chromosomes", "[cooler][short]") {
   const auto path = (testdir() / "test_write_chroms.cool").string();
 
   constexpr std::uint32_t bin_size = 5000;
@@ -285,7 +285,7 @@ TEST_CASE("Write chromosomes cooler", "[cooler][short]") {
 }
 
 // NOLINTNEXTLINE(readability-function-cognitive-complexity)
-TEST_CASE("Write bin table cooler", "[cooler][short]") {
+TEST_CASE("Coolerpp: read/write bin table", "[cooler][short]") {
   const auto path = (testdir() / "test_write_bin_table.cool").string();
 
   const ChromosomeSet chroms{Chromosome{"chr1", 50001}, Chromosome{"chr2", 25017},
@@ -311,26 +311,6 @@ TEST_CASE("Write bin table cooler", "[cooler][short]") {
 
   CHECK(start_it == f.dataset("bins/start").end<std::uint32_t>());
   CHECK(end_it == f.dataset("bins/end").end<std::uint32_t>());
-}
-
-// NOLINTNEXTLINE(readability-function-cognitive-complexity)
-TEST_CASE("Dataset iterator", "[cooler][short]") {
-  const auto path = datadir / "cooler_test_file.cool";
-  const auto f = File::open_read_only(path.string());
-
-  std::vector<std::uint32_t> pixel_buff;
-  f.dataset("pixels/count").read_all(pixel_buff);
-  REQUIRE(pixel_buff.size() == 107'041);
-
-  auto it = f.dataset("pixels/count").begin<std::uint32_t>();
-  auto last_pixel = f.dataset("pixels/count").end<std::uint32_t>();
-
-  for (const auto& expected : pixel_buff) {
-    REQUIRE(it != last_pixel);
-    CHECK(*it++ == expected);
-  }
-
-  CHECK(it == last_pixel);
 }
 
 }  // namespace coolerpp::test::coolerpp

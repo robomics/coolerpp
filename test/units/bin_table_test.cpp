@@ -15,7 +15,7 @@
 namespace coolerpp::test::bin_table {
 
 // NOLINTNEXTLINE(readability-function-cognitive-complexity)
-TEST_CASE("BinTableLazy tests", "[bin-table][short]") {
+TEST_CASE("BinTableLazy", "[bin-table][short]") {
   constexpr std::uint32_t bin_size = 5000;
   // clang-format off
   const BinTableLazy table({

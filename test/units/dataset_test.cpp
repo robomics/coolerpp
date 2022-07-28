@@ -20,7 +20,7 @@ inline const std::filesystem::path datadir{"test/data"};  // NOLINT(cert-err58-c
 
 namespace coolerpp::test::dataset {
 // NOLINTNEXTLINE(readability-function-cognitive-complexity)
-TEST_CASE("Dataset - read", "[dataset][short]") {
+TEST_CASE("Dataset: read", "[dataset][short]") {
   const auto path = datadir / "cooler_test_file.cool";
   RootGroup grp{HighFive::File(path.string()).getGroup("/")};
 
@@ -98,7 +98,7 @@ TEST_CASE("Dataset - read", "[dataset][short]") {
 }
 
 // NOLINTNEXTLINE(readability-function-cognitive-complexity)
-TEST_CASE("Dataset - write", "[dataset][short]") {
+TEST_CASE("Dataset: write", "[dataset][short]") {
   const auto path = testdir() / "test_dataset_write.cool";
   RootGroup grp{HighFive::File(path.string(), HighFive::File::Truncate).getGroup("/")};
 
@@ -195,7 +195,7 @@ TEST_CASE("Dataset - write", "[dataset][short]") {
 }
 
 // NOLINTNEXTLINE(readability-function-cognitive-complexity)
-TEST_CASE("Dataset - accessors", "[dataset][short]") {
+TEST_CASE("Dataset: accessors", "[dataset][short]") {
   const auto path = datadir / "cooler_test_file.cool";
   RootGroup grp{HighFive::File(path.string()).getGroup("/")};
 
@@ -210,7 +210,29 @@ TEST_CASE("Dataset - accessors", "[dataset][short]") {
   CHECK(dset.hdf5_path() == "/chroms/name");
 }
 
-TEST_CASE("Dataset - large read/write", "[dataset][long]") {
+// NOLINTNEXTLINE(readability-function-cognitive-complexity)
+TEST_CASE("Dataset: iterator", "[cooler][short]") {
+  const auto path = datadir / "cooler_test_file.cool";
+
+  RootGroup grp{HighFive::File(path.string()).getGroup("/")};
+  Dataset dset(grp, "/pixels/count");
+
+  std::vector<std::uint32_t> pixel_buff;
+  dset.read_all(pixel_buff);
+  REQUIRE(pixel_buff.size() == 107'041);
+
+  auto it = dset.begin<std::uint32_t>();
+  auto last_pixel = dset.end<std::uint32_t>();
+
+  for (const auto& expected : pixel_buff) {
+    REQUIRE(it != last_pixel);
+    CHECK(*it++ == expected);
+  }
+
+  CHECK(it == last_pixel);
+}
+
+TEST_CASE("Dataset: large read/write", "[dataset][long]") {
   const auto path = testdir() / "test_dataset_large_rw.h5";
 
   constexpr std::uint64_t seed{4195331987557451569};

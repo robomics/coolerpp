@@ -12,7 +12,7 @@ namespace coolerpp::test::variantbuff {
 using namespace coolerpp::internal;
 
 // NOLINTNEXTLINE(readability-function-cognitive-complexity)
-TEST_CASE("VariantBuff Ctor", "[numeric_buff][short]") {
+TEST_CASE("VariantBuffer: ctor", "[numeric_buff][short]") {
   const std::vector<double> buff0(10, 1.0);
 
   SECTION("default ctor") {
@@ -71,7 +71,7 @@ TEST_CASE("VariantBuff Ctor", "[numeric_buff][short]") {
 }
 
 // NOLINTNEXTLINE(readability-function-cognitive-complexity)
-TEST_CASE("VariantBuff Accessors", "[numeric_buff][short]") {
+TEST_CASE("VariantBuffer: accessors", "[numeric_buff][short]") {
   using T = std::uint64_t;
   std::vector<T> buff0(10);
   std::iota(buff0.begin(), buff0.end(), 0);

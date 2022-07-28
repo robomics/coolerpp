@@ -14,7 +14,7 @@
 namespace coolerpp::test::chromosome {
 
 // NOLINTNEXTLINE(readability-function-cognitive-complexity)
-TEST_CASE("ChromosomeSet ctors", "[chromosome][short]") {
+TEST_CASE("ChromosomeSet: ctors", "[chromosome][short]") {
   // clang-format off
   const std::array<Chromosome, 3> expected{
       Chromosome{"chr1", 50001},
@@ -61,7 +61,7 @@ TEST_CASE("ChromosomeSet ctors", "[chromosome][short]") {
 }
 
 // NOLINTNEXTLINE(readability-function-cognitive-complexity)
-TEST_CASE("ChromosomeSet lookups", "[chromosome][short]") {
+TEST_CASE("ChromosomeSet: lookups", "[chromosome][short]") {
   // clang-format off
   const ChromosomeSet chroms{{
       Chromosome{"chr1", 50001},
