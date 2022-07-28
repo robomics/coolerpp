@@ -18,13 +18,17 @@ target_sources(
           ${CMAKE_CURRENT_SOURCE_DIR}/bin_table.cpp
           ${CMAKE_CURRENT_SOURCE_DIR}/bin_table_impl.hpp
           ${CMAKE_CURRENT_SOURCE_DIR}/chromosome.cpp
+          ${CMAKE_CURRENT_SOURCE_DIR}/chromosome_impl.hpp
           ${CMAKE_CURRENT_SOURCE_DIR}/coolerpp.cpp
           ${CMAKE_CURRENT_SOURCE_DIR}/coolerpp_impl.hpp
           ${CMAKE_CURRENT_SOURCE_DIR}/dataset.cpp
           ${CMAKE_CURRENT_SOURCE_DIR}/dataset_impl.hpp
           ${CMAKE_CURRENT_SOURCE_DIR}/index.cpp
+          ${CMAKE_CURRENT_SOURCE_DIR}/pixel.cpp
+          ${CMAKE_CURRENT_SOURCE_DIR}/uri.cpp
           ${CMAKE_CURRENT_SOURCE_DIR}/utils.cpp
-          ${CMAKE_CURRENT_SOURCE_DIR}/uri.cpp)
+          ${CMAKE_CURRENT_SOURCE_DIR}/utils_impl.hpp
+          ${CMAKE_CURRENT_SOURCE_DIR}/variant_buff_impl.hpp)
 
 target_include_directories(coolerpp PUBLIC include/)
 
