@@ -1,0 +1,18 @@
+# Copyright (C) 2022 Roberto Rossini <roberros@uio.no>
+#
+# SPDX-License-Identifier: MIT
+
+# Ignored directories
+.cache/
+.idea/
+.run/
+.vscode/
+build/
+cmake-build*/
+scratch/
+test/Testing
+test/reference_impl
+
+# Ignored files
+gmon.out
+perf.*
