@@ -6,8 +6,6 @@
 
 #include <fmt/chrono.h>
 
-#include <array>
-#include <chrono>
 #include <cstdint>
 #include <highfive/H5DataSet.hpp>
 #include <highfive/H5DataSpace.hpp>
@@ -240,10 +238,10 @@ class File {
     friend File;
 
     const BinTableLazy *_bins{};
-    Dataset::iterator<std::uint32_t, DEFAULT_HDF5_CHUNK_SIZE> _bin1_id_it{};
-    Dataset::iterator<std::uint32_t, DEFAULT_HDF5_CHUNK_SIZE> _bin2_id_it{};
-    Dataset::iterator<N, DEFAULT_HDF5_CHUNK_SIZE> _count_it{};
-    Dataset::iterator<N, DEFAULT_HDF5_CHUNK_SIZE> _count_last{};
+    Dataset::iterator<std::uint32_t> _bin1_id_it{};
+    Dataset::iterator<std::uint32_t> _bin2_id_it{};
+    Dataset::iterator<N> _count_it{};
+    Dataset::iterator<N> _count_last{};
 
     explicit iterator(const File &f) noexcept;
 

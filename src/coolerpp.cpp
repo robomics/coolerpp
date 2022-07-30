@@ -337,9 +337,9 @@ auto File::import_chroms(const Dataset &chrom_names, const Dataset &chrom_sizes,
   }
 }
 
-[[nodiscard]] static std::vector<std::size_t> import_chrom_offsets(const Dataset &dset,
-                                                                   std::size_t expected_size) {
-  auto offsets = dset.read_all<std::vector<std::size_t>>();
+[[nodiscard]] static std::vector<std::uint64_t> import_chrom_offsets(const Dataset &dset,
+                                                                     std::size_t expected_size) {
+  auto offsets = dset.read_all<std::vector<std::uint64_t>>();
   try {
     if (offsets.size() != expected_size) {
       throw std::runtime_error(

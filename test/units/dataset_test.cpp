@@ -124,8 +124,8 @@ TEST_CASE("Dataset: write", "[dataset][short]") {
 
       REQUIRE(buff.size() == 3);
 
-      for (std::size_t i = 0; i < buff.size(); ++i) {
-        CHECK(expected.count(buff[i]) == 1);
+      for (const auto& i : buff) {
+        CHECK(expected.count(i) == 1);
       }
     }
 
@@ -211,25 +211,104 @@ TEST_CASE("Dataset: accessors", "[dataset][short]") {
 }
 
 // NOLINTNEXTLINE(readability-function-cognitive-complexity)
-TEST_CASE("Dataset: iterator", "[cooler][short]") {
-  const auto path = datadir / "cooler_test_file.cool";
+TEST_CASE("Dataset: linear iteration", "[dataset][short]") {
+  const auto path1 = datadir / "cooler_test_file.cool";
 
-  RootGroup grp{HighFive::File(path.string()).getGroup("/")};
-  Dataset dset(grp, "/pixels/count");
+  RootGroup grp1{HighFive::File(path1.string()).getGroup("/")};
+  Dataset dset1(grp1, "/pixels/count");
 
   std::vector<std::uint32_t> pixel_buff;
-  dset.read_all(pixel_buff);
+  dset1.read_all(pixel_buff);
   REQUIRE(pixel_buff.size() == 107'041);
 
-  auto it = dset.begin<std::uint32_t>();
-  auto last_pixel = dset.end<std::uint32_t>();
+  SECTION("forward") {
+    auto it = dset1.begin<std::uint32_t>();
+    auto last_pixel = dset1.end<std::uint32_t>();
+    REQUIRE(std::distance(it, last_pixel) == 107'041);
 
-  for (const auto& expected : pixel_buff) {
-    REQUIRE(it != last_pixel);
-    CHECK(*it++ == expected);
+    for (const auto& expected : pixel_buff) {
+      REQUIRE(it != last_pixel);
+      CHECK(*it++ == expected);
+    }
+    CHECK(it == last_pixel);
   }
 
-  CHECK(it == last_pixel);
+  SECTION("backward") {
+    auto it = dset1.end<std::uint32_t>();
+    auto first_pixel = dset1.begin<std::uint32_t>();
+
+    REQUIRE(std::distance(first_pixel, it) == 107'041);
+
+    for (std::size_t i = pixel_buff.size(); i != 0; --i) {
+      REQUIRE(it != first_pixel);
+      CHECK(*(--it) == pixel_buff[i - 1]);
+    }
+
+    CHECK(it == first_pixel);
+  }
+}
+
+// NOLINTNEXTLINE(readability-function-cognitive-complexity)
+TEST_CASE("Dataset: random iteration", "[dataset][long]") {
+  const auto path = testdir() / "dataset_iterator_random.h5";
+
+  RootGroup grp{HighFive::File(path.string(), HighFive::File::Truncate).getGroup("/")};
+  Dataset dset(grp, "int", std::uint64_t{});
+
+  std::random_device rd;
+  std::mt19937_64 rand_eng{rd()};
+
+  constexpr std::size_t N = 5'000'000;
+  std::vector<std::uint64_t> buff(N);
+  std::generate(buff.begin(), buff.end(), [&]() { return rand_eng(); });
+  dset.append(buff);
+  REQUIRE(dset.size() == N);
+
+  SECTION("operator -/+") {
+    auto first = dset.begin<std::uint64_t>();
+    auto last = dset.end<std::uint64_t>();
+    for (std::size_t i = 0; i < 100; ++i) {
+      const auto j = std::uniform_int_distribution<std::uint64_t>{0, N - 1}(rand_eng);
+
+      CHECK(*(first + j) == buff[j]);
+      CHECK(*(last - j) == buff[N - j]);
+    }
+  }
+
+  SECTION("subsequent calls to operator+=") {
+    for (std::size_t i = 0; i < 10; ++i) {
+      auto first = dset.begin<std::uint64_t>();
+      auto last = dset.end<std::uint64_t>();
+      std::size_t j = 0;
+
+      while (first < last) {
+        CHECK(*first == buff[j]);
+
+        const auto step = std::uniform_int_distribution<std::uint64_t>{
+            0, std::min(std::uint64_t(500), buff.size() - j)}(rand_eng);
+        first += step;
+        j += step;
+      }
+    }
+  }
+
+  SECTION("subsequent calls to operator-=") {
+    for (std::size_t i = 0; i < 10; ++i) {
+      auto first = dset.end<std::uint64_t>() - 1;
+      auto last = dset.begin<std::uint64_t>();
+      std::size_t j = buff.size() - 1;
+
+      while (first > last) {
+        CHECK(*first == buff[j]);
+
+        const auto step = std::uniform_int_distribution<std::uint64_t>{
+            0, std::min(std::uint64_t(500), j)}(rand_eng);
+
+        first -= step;
+        j -= step;
+      }
+    }
+  }
 }
 
 TEST_CASE("Dataset: large read/write", "[dataset][long]") {

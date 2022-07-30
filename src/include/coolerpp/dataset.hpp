@@ -42,6 +42,11 @@ class Dataset {
   mutable internal::VariantBuffer _buff{};
 
  public:
+  template <class T>
+  class iterator;
+  template <class T>
+  using const_iterator = iterator<T>;
+
   [[nodiscard]] static HighFive::DataSetCreateProps generate_default_dset_create_props(
       std::uint_fast8_t compression_lvl = DEFAULT_COMPRESSION_LEVEL,
       std::size_t chunk_size = DEFAULT_HDF5_CHUNK_SIZE);
@@ -73,9 +78,6 @@ class Dataset {
   Dataset &operator=(Dataset &&other) noexcept = default;
 
   ~Dataset() noexcept = default;
-
-  template <class T, std::size_t chunk_size>
-  class iterator;
 
   [[nodiscard]] std::string file_name() const;
   [[nodiscard]] std::string hdf5_path() const;
@@ -155,15 +157,24 @@ class Dataset {
   [[nodiscard]] BuffT read_last() const;
   [[nodiscard]] internal::GenericVariant read_last() const;
 
-  template <class T, std::size_t chunk_size = 64 * 1024>
-  [[nodiscard]] auto begin() const -> iterator<T, chunk_size>;
-  template <class T, std::size_t chunk_size = 64 * 1024>
-  [[nodiscard]] auto end() const -> iterator<T, chunk_size>;
+  template <class T>
+  [[nodiscard]] auto begin() const -> iterator<T>;
+  template <class T>
+  [[nodiscard]] auto end() const -> iterator<T>;
 
-  template <class T, std::size_t chunk_size = 64 * 1024>
-  [[nodiscard]] auto cbegin() const -> iterator<T, chunk_size>;
-  template <class T, std::size_t chunk_size = 64 * 1024>
-  [[nodiscard]] auto cend() const -> iterator<T, chunk_size>;
+  template <class T>
+  [[nodiscard]] auto cbegin() const -> iterator<T>;
+  template <class T>
+  [[nodiscard]] auto cend() const -> iterator<T>;
+
+  template <class T>
+  [[nodiscard]] auto make_iterator_at_offset(std::size_t offset,
+                                             std::size_t chunk_size = 64 * 1024) const
+      -> iterator<T>;
+  template <class T>
+  [[nodiscard]] auto make_end_iterator_at_offset(std::size_t offset,
+                                                 std::size_t chunk_size = 64 * 1024) const
+      -> iterator<T>;
 
   [[nodiscard]] static std::pair<std::string, std::string> parse_uri(std::string_view uri);
 
@@ -184,37 +195,57 @@ class Dataset {
   [[nodiscard]] HighFive::DataType get_h5type() const;
 
  public:
-  template <class T, std::size_t chunk_size>
+  template <class T>
   class iterator {
-    static_assert(chunk_size != 0);
     friend Dataset;
 
     std::shared_ptr<std::vector<T>> _buff{};
     const Dataset *_dset{};
-    std::size_t _h5_offset{npos};
-    std::size_t _offset{0};
+    std::size_t _buff_capacity{};
+    std::size_t _h5_chunk_start{};
+    std::size_t _h5_offset{};
 
-    static constexpr auto npos = std::numeric_limits<std::size_t>::max();
-
-    explicit iterator(const Dataset *dset);
+    explicit iterator(const Dataset &dset, std::size_t h5_offset = 0,
+                      std::size_t chunk_size = 64 * 1024);
 
    public:
-    iterator() = default;
+    using difference_type = std::ptrdiff_t;
     using value_type = T;
+    using pointer = value_type *;
+    using reference = value_type &;
+    using iterator_category = std::random_access_iterator_tag;
+
+    iterator() = default;
 
     [[nodiscard]] constexpr bool operator==(const iterator &other) const noexcept;
     [[nodiscard]] constexpr bool operator!=(const iterator &other) const noexcept;
 
+    [[nodiscard]] constexpr bool operator<(const iterator &other) const noexcept;
+    [[nodiscard]] constexpr bool operator<=(const iterator &other) const noexcept;
+
+    [[nodiscard]] constexpr bool operator>(const iterator &other) const noexcept;
+    [[nodiscard]] constexpr bool operator>=(const iterator &other) const noexcept;
+
     [[nodiscard]] auto operator*() const -> value_type;
+    [[nodiscard]] auto operator[](std::size_t i) const -> value_type;
 
     auto operator++() -> iterator &;
-
     auto operator++(int) -> iterator;
+    auto operator+=(std::size_t i) -> iterator &;
+    [[nodiscard]] auto operator+(std::size_t i) const -> iterator;
+
+    auto operator--() -> iterator &;
+    auto operator--(int) -> iterator;
+    auto operator-=(std::size_t i) -> iterator &;
+    [[nodiscard]] auto operator-(std::size_t i) const -> iterator;
+    [[nodiscard]] auto operator-(const iterator &other) const -> difference_type;
 
    private:
-    void next_chunk();
+    void read_chunk_at_offset(std::size_t new_offset);
 
-    [[nodiscard]] static constexpr auto make_end_iterator(const Dataset *dset) -> iterator;
+    [[nodiscard]] static constexpr auto make_end_iterator(const Dataset &dset,
+                                                          std::size_t chunk_size = 64 * 1024)
+        -> iterator;
   };
 };
 DISABLE_WARNING_POP

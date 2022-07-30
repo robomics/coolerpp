@@ -245,111 +245,233 @@ inline BuffT Dataset::read_last() const {
   return buff;
 }
 
-template <class T, std::size_t chunk_size>
-inline auto Dataset::begin() const -> iterator<T, chunk_size> {
-  return iterator<T, chunk_size>{this};
+template <class T>
+inline auto Dataset::begin() const -> iterator<T> {
+  return iterator<T>(*this);
 }
 
-template <class T, std::size_t chunk_size>
-inline auto Dataset::end() const -> iterator<T, chunk_size> {
-  return iterator<T, chunk_size>::make_end_iterator(this);
+template <class T>
+inline auto Dataset::end() const -> iterator<T> {
+  return iterator<T>::make_end_iterator(*this);
 }
 
-template <class T, std::size_t chunk_size>
-inline auto Dataset::cbegin() const -> iterator<T, chunk_size> {
-  return this->begin<T, chunk_size>();
+template <class T>
+inline auto Dataset::cbegin() const -> iterator<T> {
+  return this->begin<T>();
 }
 
-template <class T, std::size_t chunk_size>
-inline auto Dataset::cend() const -> iterator<T, chunk_size> {
-  return this->end<T, chunk_size>();
+template <class T>
+inline auto Dataset::cend() const -> iterator<T> {
+  return this->end<T>();
 }
 
-template <class T, std::size_t chunk_size>
-inline Dataset::iterator<T, chunk_size>::iterator(const Dataset *dset)
-    : _dset(dset), _h5_offset(0) {
-  try {
-    next_chunk();
-  } catch (const HighFive::Exception &e) {
-    *this = make_end_iterator(this->_dset);
-  }
+template <class T>
+inline auto Dataset::make_iterator_at_offset(std::size_t offset, std::size_t chunk_size) const
+    -> iterator<T> {
+  return iterator<T>(*this, offset, chunk_size);
 }
 
-template <class T, std::size_t chunk_size>
-constexpr bool Dataset::iterator<T, chunk_size>::operator==(const iterator &other) const noexcept {
-  return this->_dset == other._dset && this->_h5_offset == other._h5_offset &&
-         this->_offset == other._offset;
+template <class T>
+inline auto Dataset::make_end_iterator_at_offset(std::size_t offset, std::size_t chunk_size) const
+    -> iterator<T> {
+  assert(offset <= this->size());
+  auto it = iterator<T>::make_end_iterator(*this);
+
+  it._buff_capacity = chunk_size;
+  it._h5_chunk_start = offset;
+  it._h5_chunk_end = offset;
+
+  return it;
 }
-template <class T, std::size_t chunk_size>
-constexpr bool Dataset::iterator<T, chunk_size>::operator!=(const iterator &other) const noexcept {
+
+template <class T>
+inline Dataset::iterator<T>::iterator(const Dataset &dset, std::size_t h5_offset,
+                                      std::size_t chunk_size)
+    : _buff(std::make_shared<std::vector<T>>(std::min(chunk_size, dset.size()))),
+      _dset(&dset),
+      _buff_capacity(_buff->size()),
+      _h5_chunk_start(h5_offset),
+      _h5_offset(h5_offset) {
+  this->read_chunk_at_offset(this->_h5_offset);
+}
+
+template <class T>
+constexpr bool Dataset::iterator<T>::operator==(const iterator &other) const noexcept {
+  // clang-format off
+  return this->_dset == other._dset &&
+         this->_h5_offset == other._h5_offset;
+  // clang-format on
+}
+template <class T>
+constexpr bool Dataset::iterator<T>::operator!=(const iterator &other) const noexcept {
   return !(*this == other);
 }
 
-template <class T, std::size_t chunk_size>
-inline T Dataset::iterator<T, chunk_size>::operator*() const {
+template <class T>
+constexpr bool Dataset::iterator<T>::operator<(const iterator &other) const noexcept {
+  // clang-format off
+  return this->_dset <= other._dset &&
+         this->_h5_offset < other._h5_offset;
+  // clang-format on
+}
+template <class T>
+constexpr bool Dataset::iterator<T>::operator<=(const iterator &other) const noexcept {
+  // clang-format off
+  return this->_dset <= other._dset &&
+         this->_h5_offset <= other._h5_offset;
+  // clang-format on
+}
+
+template <class T>
+constexpr bool Dataset::iterator<T>::operator>(const iterator &other) const noexcept {
+  // clang-format off
+  return this->_dset >= other._dset &&
+         this->_h5_offset > other._h5_offset;
+  // clang-format on
+}
+template <class T>
+constexpr bool Dataset::iterator<T>::operator>=(const iterator &other) const noexcept {
+  // clang-format off
+  return this->_dset >= other._dset &&
+         this->_h5_offset >= other._h5_offset;
+  // clang-format on
+}
+
+template <class T>
+inline auto Dataset::iterator<T>::operator*() const -> value_type {
   if constexpr (ndebug_not_defined()) {
     if (!this->_buff) {
-      assert(this->_offset == 0);
-      assert(this->_h5_offset == npos);
-      [[maybe_unused]] HighFive::SilenceHDF5 silencer{};
-      throw std::out_of_range(fmt::format(
-          FMT_STRING(
-              "Caught an attempt to access an element past the end of dataset at URI \"{}\""),
-          this->_dset->uri()));
+      throw std::out_of_range(fmt::format(FMT_STRING("Caught an attempt to access an element past "
+                                                     "the end of dataset at URI \"{}\" ({} >= {})"),
+                                          this->_dset->uri(), this->_h5_offset,
+                                          this->_dset->size()));
     }
   }
 
-  return (*this->_buff)[this->_offset];
+  assert(this->_buff);
+  assert(this->_dset);
+  assert(this->_h5_offset < this->_dset->size());
+  assert(this->_h5_chunk_start <= this->_h5_offset);
+  assert(this->_h5_offset - this->_h5_chunk_start < this->_buff->size());
+  return (*this->_buff)[this->_h5_offset - this->_h5_chunk_start];
 }
 
-template <class T, std::size_t chunk_size>
-inline auto Dataset::iterator<T, chunk_size>::operator++() -> iterator & {
-  if (this->_h5_offset != npos && ++this->_offset == this->_buff->size()) {
-    this->next_chunk();
+template <class T>
+inline auto Dataset::iterator<T>::operator[](std::size_t i) const -> value_type {
+  return *(*this + i);
+}
+
+template <class T>
+inline auto Dataset::iterator<T>::operator++() -> iterator & {
+  return (*this) += 1;
+}
+
+template <class T>
+inline auto Dataset::iterator<T>::operator++(int) -> iterator {
+  auto it = *this;
+  std::ignore = ++(*this);
+  return it;
+}
+
+template <class T>
+inline auto Dataset::iterator<T>::operator+=(std::size_t i) -> iterator & {
+  assert(this->_dset);
+  assert(this->_buff);
+  assert(this->_h5_offset + i <= this->_dset->size());
+  this->_h5_offset += i;
+  if (this->_h5_offset - this->_h5_chunk_start >= this->_buff->size()) {
+    this->read_chunk_at_offset(this->_h5_offset);
   }
   return *this;
 }
 
-template <class T, std::size_t chunk_size>
-inline auto Dataset::iterator<T, chunk_size>::operator++(int) -> iterator {
-  auto it = *this;
-  ++(*this);
-  return it;
-}
+template <class T>
+inline auto Dataset::iterator<T>::operator+(std::size_t i) const -> iterator {
+  assert(this->_buff);
+  const auto new_offset = this->_h5_offset + i;
+  assert(new_offset <= this->_dset->size());
 
-template <class T, std::size_t chunk_size>
-inline void Dataset::iterator<T, chunk_size>::next_chunk() {
-  if (this->_h5_offset == npos) {
-    assert(!this->_buff);
-    return;
-  }
-  if (this->_h5_offset == this->_dset->size()) {
-    *this = iterator::make_end_iterator(this->_dset);
-    return;
+  if (new_offset - this->_h5_chunk_start < this->_buff->size()) {
+    auto it = *this;
+    return it += i;
   }
 
   assert(this->_dset);
-  assert(this->_offset == 0 || this->_offset == this->_buff->size());
-  const auto num = std::min(chunk_size, this->_dset->size() - this->_h5_offset);
-
-  if (this->_buff && this->_buff.unique()) {
-    // This should be fine, as copying Dataset::iterator is not thread-safe
-    this->_buff->resize(num);
-  } else {
-    this->_buff = std::make_shared<std::vector<T>>(num);
-  }
-  this->_h5_offset = this->_dset->read(*this->_buff, num, this->_h5_offset);
-  this->_offset = 0;
+  return iterator(*this->_dset, new_offset);
 }
 
-template <class T, std::size_t chunk_size>
-constexpr auto Dataset::iterator<T, chunk_size>::make_end_iterator(const Dataset *dset)
+template <class T>
+inline auto Dataset::iterator<T>::operator--() -> iterator & {
+  assert(this->_h5_offset != 0);
+  return (*this) -= 1;
+}
+
+template <class T>
+inline auto Dataset::iterator<T>::operator--(int) -> iterator {
+  auto it = *this;
+  std::ignore = --(*this);
+  return it;
+}
+
+template <class T>
+inline auto Dataset::iterator<T>::operator-=(std::size_t i) -> iterator & {
+  assert(this->_h5_offset >= i);
+  this->_h5_offset -= i;
+  if (this->_h5_offset < this->_h5_chunk_start) {
+    this->_h5_chunk_start = this->_h5_offset - std::min(this->_buff_capacity - 1, this->_h5_offset);
+    this->read_chunk_at_offset(this->_h5_chunk_start);
+  }
+  return *this;
+}
+
+template <class T>
+inline auto Dataset::iterator<T>::operator-(std::size_t i) const -> iterator {
+  assert(this->_h5_offset >= i);
+  const auto new_offset = this->_h5_offset - i;
+  if (new_offset >= this->_h5_chunk_start) {
+    auto it = *this;
+    return it -= i;
+  }
+
+  assert(this->_dset);
+  return iterator(*this->_dset, new_offset);
+}
+
+template <class T>
+inline auto Dataset::iterator<T>::operator-(const iterator &other) const -> difference_type {
+  return static_cast<difference_type>(this->_h5_offset) -
+         static_cast<difference_type>(other._h5_offset);
+}
+
+template <class T>
+inline void Dataset::iterator<T>::read_chunk_at_offset(std::size_t new_offset) {
+  assert(this->_dset);
+
+  if (new_offset == this->_dset->size()) {
+    *this = iterator::make_end_iterator(*this->_dset);
+    return;
+  }
+
+  if (!this->_buff || !this->_buff.unique()) {
+    // This should be fine, as copying Dataset::iterator is not thread-safe anyway
+    this->_buff = std::make_shared<std::vector<T>>(this->_buff_capacity);
+  }
+
+  const auto buff_size = std::min(this->_buff_capacity, this->_dset->size() - new_offset);
+  this->_buff->resize(buff_size);
+  this->_dset->read(*this->_buff, buff_size, new_offset);
+  this->_h5_chunk_start = new_offset;
+}
+
+template <class T>
+constexpr auto Dataset::iterator<T>::make_end_iterator(const Dataset &dset, std::size_t chunk_size)
     -> iterator {
   iterator it{};
   it._buff = nullptr;
-  it._dset = dset;
-  it._h5_offset = npos;
-  it._offset = 0;
+  it._buff_capacity = chunk_size;
+  it._dset = &dset;
+  it._h5_offset = dset.size();
+  it._h5_chunk_start = it._h5_offset;
 
   return it;
 }

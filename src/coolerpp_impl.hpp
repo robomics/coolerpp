@@ -404,10 +404,10 @@ inline auto File::cend() const -> iterator<N> {
 template <class N>
 inline File::iterator<N>::iterator(const File &f) noexcept
     : _bins(&f._bins),
-      _bin1_id_it(f.dataset("pixels/bin1_id").begin<std::uint32_t, DEFAULT_HDF5_CHUNK_SIZE>()),
-      _bin2_id_it(f.dataset("pixels/bin2_id").begin<std::uint32_t, DEFAULT_HDF5_CHUNK_SIZE>()),
-      _count_it(f.dataset("pixels/count").begin<N, DEFAULT_HDF5_CHUNK_SIZE>()),
-      _count_last(f.dataset("pixels/count").end<N, DEFAULT_HDF5_CHUNK_SIZE>()) {
+      _bin1_id_it(f.dataset("pixels/bin1_id").begin<std::uint32_t>()),
+      _bin2_id_it(f.dataset("pixels/bin2_id").begin<std::uint32_t>()),
+      _count_it(f.dataset("pixels/count").begin<N>()),
+      _count_last(f.dataset("pixels/count").end<N>()) {
   assert(f.dataset("pixels/bin1_id").size() == f.dataset("pixels/bin2_id").size());
   assert(f.dataset("pixels/bin1_id").size() == f.dataset("pixels/count").size());
 }
@@ -417,7 +417,7 @@ inline auto File::iterator<N>::make_end_iterator(const File &f) -> iterator<N> {
   iterator<N> it{};
 
   it._bins = &f.bins();
-  it._count_last = f.dataset("pixels/count").end<N, DEFAULT_HDF5_CHUNK_SIZE>();
+  it._count_last = f.dataset("pixels/count").end<N>();
   it._count_it = it._count_last;
 
   return it;
