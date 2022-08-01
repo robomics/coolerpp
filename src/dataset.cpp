@@ -205,9 +205,9 @@ HighFive::DataSetAccessProps Dataset::generate_default_dset_access_props(
   // https://docs.hdfgroup.org/hdf5/v1_12/group___d_a_p_l.html#ga104d00442c31714ee073dee518f661f
   constexpr double w0 = 0.75;  // default as of HDF5 v12.1
   const auto num_chunks = std::max(std::size_t(1), cache_size / chunk_size);
-  constexpr auto &prime_number_table = internal::prime_number_table;
+  constexpr auto &prime_number_table = internal::prime_number_table;  // NOLINT
 
-  auto it =
+  const auto *it =
       std::lower_bound(prime_number_table.begin(), prime_number_table.end(), 100 * num_chunks);
   const auto num_slots = it != prime_number_table.end() ? *it : prime_number_table.back();
 

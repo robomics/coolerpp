@@ -55,9 +55,8 @@ Chromosome find_chromosome_with_longest_name(const ChromosomeSet &chroms) {
                            });
 }
 
-// NOLINTNEXTLINE(modernize-use-default-member-init)
 File::File(std::string_view uri, bool validate)
-    : _mode(IO_MODE::ReadOnly),
+    : _mode(IO_MODE::ReadOnly),  // NOLINT(modernize-use-default-member-init)
       _fp(open_file(uri, _mode, validate)),
       _root_group(open_root_group(_fp, uri)),
       _groups(open_groups(_root_group)),

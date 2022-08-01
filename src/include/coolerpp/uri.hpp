@@ -15,10 +15,11 @@ struct CoolerURI {
   std::string group_path;
 
   CoolerURI() = default;
-  CoolerURI(std::string_view p2, std::string_view p1);
+  CoolerURI(std::string_view p1, std::string_view p2);
   CoolerURI(std::string p1, std::string p2);
-  CoolerURI(std::pair<std::string_view, std::string_view> paths);
-  CoolerURI(std::pair<std::string, std::string> paths);
+  explicit CoolerURI(std::pair<std::string_view, std::string_view> paths);
+  explicit CoolerURI(std::pair<std::string, std::string> paths);
+  // clang-format on
 };
 
 [[nodiscard]] CoolerURI parse_cooler_uri(std::string_view uri);

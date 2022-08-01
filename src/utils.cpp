@@ -54,6 +54,7 @@ ValidationStatusCooler is_cooler(const HighFive::Group &root_group) {
   status.uri = root_group.getFile().getName();
   const auto root_path = root_group.getPath();
   if (!root_path.empty() && root_path != "/") {
+    // NOLINTNEXTLINE(readability-implicit-bool-conversion)
     status.uri += fmt::format(FMT_STRING("::/{}"), root_path.substr(root_path.front() == '/'));
   }
 

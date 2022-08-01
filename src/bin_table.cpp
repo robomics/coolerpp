@@ -157,23 +157,23 @@ Bin BinTableLazy::bin_id_to_coords(std::uint64_t bin_id) const {
   return {chrom, bin_start, bin_end};
 }
 
-std::uint64_t BinTableLazy::coord_to_bin_id(const Bin &coord) const {
-  const auto match = this->_chroms.find(coord.chrom);
+std::uint64_t BinTableLazy::coord_to_bin_id(const Bin &bin) const {
+  const auto match = this->_chroms.find(bin.chrom);
   if (match == this->_chroms.end()) {
-    throw std::out_of_range(fmt::format(FMT_STRING("chromosome \"{}\" not found"), coord.chrom));
+    throw std::out_of_range(fmt::format(FMT_STRING("chromosome \"{}\" not found"), bin.chrom));
   }
 
-  if (coord.bin_end < coord.bin_start) {
+  if (bin.bin_end < bin.bin_start) {
     throw std::logic_error(
-        fmt::format(FMT_STRING("invalid coordinate: bin_start > bin_end: {} > {}"), coord.bin_start,
-                    coord.bin_end));
+        fmt::format(FMT_STRING("invalid coordinate: bin_start > bin_end: {} > {}"), bin.bin_start,
+                    bin.bin_end));
   }
 
   const auto chrom_id =
       conditional_static_cast<std::size_t>(std::distance(this->_chroms.begin(), match));
   const auto bin_offset = this->_num_bins_prefix_sum[chrom_id] - this->_num_bins_prefix_sum.front();
 
-  return bin_offset + static_cast<std::uint64_t>(coord.bin_start / this->bin_size());
+  return bin_offset + static_cast<std::uint64_t>(bin.bin_start / this->bin_size());
 }
 
 std::uint64_t BinTableLazy::coord_to_bin_id(const Chromosome &chrom, std::uint32_t pos) const {
