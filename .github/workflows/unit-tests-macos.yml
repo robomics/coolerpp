@@ -9,6 +9,7 @@ on:
     paths:
       - ".github/workflows/unit-tests-macos.yml"
       - "cmake/**"
+      - "examples/**"
       - "src/**"
       - "test/**"
       - "CMakeLists.txt"
@@ -20,6 +21,7 @@ on:
     paths:
       - ".github/workflows/unit-tests-macos.yml"
       - "cmake/**"
+      - "examples/**"
       - "src/**"
       - "test/**"
       - "CMakeLists.txt"
@@ -107,6 +109,7 @@ jobs:
           cmake -DCMAKE_BUILD_TYPE=${{ matrix.build_type }}          \
                 -DENABLE_DEVELOPER_MODE=${{ matrix.developer_mode }} \
                 -DENABLE_TESTING=ON                                  \
+                -DBUILD_EXAMPLES=ON                                  \
                 -DOPT_ENABLE_CLANG_TIDY=OFF                          \
                 -DOPT_ENABLE_CPPCHECK=OFF                            \
                 -S "${{ github.workspace }}"                         \
