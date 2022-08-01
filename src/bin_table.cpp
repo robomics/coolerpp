@@ -10,7 +10,6 @@
 #include <cassert>
 #include <cstdint>
 #include <limits>
-#include <numeric>
 #include <stdexcept>
 #include <string>
 #include <string_view>
@@ -217,12 +216,12 @@ std::vector<std::uint64_t> BinTableLazy::compute_num_bins_prefix_sum(const Chrom
   assert(bin_size != 0);
 
   std::vector<std::uint64_t> prefix_sum(chroms.size() + 1, 0);
-  std::inclusive_scan(
-      chroms.begin(), chroms.end(), prefix_sum.begin() + 1,
-      [&](std::uint64_t sum, const Chromosome &chrom) {
-        return sum + static_cast<std::uint64_t>((chrom.size + bin_size - 1) / bin_size);
-      },
-      0);
+
+  // I am using transform instead of inclusive_scan because the latter is not always available
+  std::transform(chroms.begin(), chroms.end(), prefix_sum.begin() + 1,
+                 [&, sum = std::uint64_t(0)](const Chromosome &chrom) mutable {
+                   return sum += static_cast<std::uint64_t>((chrom.size + bin_size - 1) / bin_size);
+                 });
 
   return prefix_sum;
 }
