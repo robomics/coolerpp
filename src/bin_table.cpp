@@ -98,7 +98,7 @@ BinTable BinTableLazy::concretize() const {
   std::vector<std::uint32_t> bin_ends(this->size());
 
   std::size_t i = 0;
-  for (const auto &[chrom, bin_start, bin_end] : *this) {
+  for (const auto [chrom, bin_start, bin_end] : *this) {
     chroms[i] = &chrom;
     bin_starts[i] = bin_start;
     bin_ends[i++] = bin_end;
