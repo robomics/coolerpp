@@ -5,7 +5,7 @@
 from conans import ConanFile, tools
 
 
-class MoDLE(ConanFile):
+class Coolerpp(ConanFile):
     name = "coolerpp"
     homepage = "https://github.com/robomics/coolerpp"
     license = "MIT"
