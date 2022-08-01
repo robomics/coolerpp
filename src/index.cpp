@@ -150,8 +150,8 @@ void Index::validate() const {
 
 std::uint64_t &Index::nnz() noexcept { return this->_nnz; }
 
-std::vector<std::size_t> Index::compute_chrom_offsets() const {
-  std::vector<std::size_t> buff(this->num_chromosomes());
+std::vector<std::uint64_t> Index::compute_chrom_offsets() const {
+  std::vector<std::uint64_t> buff(this->num_chromosomes());
   this->compute_chrom_offsets(buff);
   return buff;
 }
@@ -181,12 +181,14 @@ void Index::finalize(std::uint64_t nnz) {
   this->_idx[0][0] = 0;
 }
 
-void Index::compute_chrom_offsets(std::vector<std::size_t> &buff) const noexcept {
+void Index::compute_chrom_offsets(std::vector<std::uint64_t> &buff) const noexcept {
   buff.resize(this->num_chromosomes() + 1);
   buff[0] = 0;
 
   std::transform(this->_idx.begin(), this->_idx.end(), buff.begin() + 1,
-                 [offset = std::size_t(0)](const auto &it) mutable { return offset += it.size(); });
+                 [offset = std::uint64_t(0)](const auto &it) mutable {
+                   return offset += conditional_static_cast<std::uint64_t>(it.size());
+                 });
 }
 
 void Index::validate_chrom_id(std::uint32_t chrom_id) const {
