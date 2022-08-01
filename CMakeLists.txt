@@ -22,8 +22,8 @@ include(FetchContent)
 # cmake-format: off
 FetchContent_Declare(
         _project_options
-        URL https://github.com/cpp-best-practices/project_options/archive/refs/tags/v0.20.0.tar.gz
-        URL_HASH SHA512=2bc61405ccd3eba79721780a4c6c9eaed9c82393fce3618e1288247f929cd1c82997eeafc08e1f76be5689a6c695a477b0bb5d2e236be0134783f325c3af67ee
+        URL https://github.com/cpp-best-practices/project_options/archive/refs/tags/v0.24.0.tar.gz
+        URL_HASH SHA512=f3afb9506724a2235a9f23243a78e73ce82017aaa84ba892c5d83e0a4f26c0771963c5e73c1190d8bfbf79a4d35539738e096e6182e19c7a78f6b44598ee9155
 )
 # cmake-format: on
 
@@ -35,7 +35,7 @@ project(
   LANGUAGES CXX
   VERSION 0.0.1
   HOMEPAGE_URL https://github.com/robomics/coolerpp
-  DESCRIPTION "TODO.")
+  DESCRIPTION "High-performance C++ library to read and write .cool files.")
 
 get_property(BUILDING_MULTI_CONFIG GLOBAL PROPERTY GENERATOR_IS_MULTI_CONFIG)
 if(BUILDING_MULTI_CONFIG)
