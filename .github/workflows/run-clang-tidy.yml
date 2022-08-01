@@ -47,6 +47,8 @@ jobs:
       options: "-v ${{ github.workspace }}:${{ github.workspace }}"
 
     steps:
+      - uses: actions/checkout@v3
+
       - name: Install build dependencies
         run: |
           apt-get update
@@ -57,13 +59,18 @@ jobs:
       - name: Print clang-tidy version
         run: clang-tidy --version
 
-      - uses: actions/checkout@v3
+      - name: Generate cache key
+        id: cache-key
+        run: |
+          hash="${{ hashFiles('conanfile.py', '.github/workflows/run-clang-tidy.yml') }}"
+
+          echo "::set-output name=key::run-clang-tidy-$hash"
 
       - name: Cache Conan packages
         id: cache-conan
         uses: actions/cache@v3
         with:
-          key: conan-run-clang-tidy
+          key: ${{ steps.cache-key.outputs.key }}
           path: ${{ env.CONAN_USER_HOME }}
 
       - name: Clean up Conan
