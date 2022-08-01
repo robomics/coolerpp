@@ -78,6 +78,11 @@ set(ENABLE_INTERPROCEDURAL_OPTIMIZATION_DEFAULT OFF)
 set(ENABLE_NATIVE_OPTIMIZATION_DEFAULT OFF)
 set(ENABLE_PCH_DEFAULT OFF)
 
+# HighFive 2.4.1 leaks memory every time an exception is thrown.
+# Disable leak and address sanitizer until this issue is fixed
+set(ENABLE_SANITIZER_ADDRESS_DEFAULT OFF)
+set(ENABLE_SANITIZER_LEAK_DEFAULT OFF)
+
 dynamic_project_options(
   # CLANG_WARNINGS # Override the defaults for the CLANG warnings GCC_WARNINGS   # Override the defaults for the GCC
   CPPCHECK_OPTIONS

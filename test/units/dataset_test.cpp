@@ -249,7 +249,7 @@ TEST_CASE("Dataset: linear iteration", "[dataset][short]") {
 }
 
 // NOLINTNEXTLINE(readability-function-cognitive-complexity)
-TEST_CASE("Dataset: random iteration", "[dataset][long]") {
+TEST_CASE("Dataset: random iteration", "[dataset][medium]") {
   const auto path = testdir() / "dataset_iterator_random.h5";
 
   RootGroup grp{HighFive::File(path.string(), HighFive::File::Truncate).getGroup("/")};
