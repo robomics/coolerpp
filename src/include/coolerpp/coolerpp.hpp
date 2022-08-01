@@ -24,6 +24,7 @@
 #include "coolerpp/index.hpp"
 #include "coolerpp/internal/numeric_variant.hpp"
 #include "coolerpp/pixel.hpp"
+#include "coolerpp/pixel_selector.hpp"
 
 namespace coolerpp {
 
@@ -85,8 +86,6 @@ void init_scool(std::string_view file_path, InputIt first_chrom, InputIt last_ch
 class File {
  public:
   using BinTable = BinTableLazy;
-  template <class N>
-  class iterator;
 
  private:
   IO_MODE _mode{IO_MODE::ReadOnly};
@@ -162,14 +161,20 @@ class File {
                      std::size_t chunk_size = 64 * 1024);
 
   template <class N>
-  [[nodiscard]] auto begin() const -> iterator<N>;
+  [[nodiscard]] typename PixelSelector<N>::iterator begin() const;
   template <class N>
-  [[nodiscard]] auto end() const -> iterator<N>;
+  [[nodiscard]] typename PixelSelector<N>::iterator end() const;
 
   template <class N>
-  [[nodiscard]] auto cbegin() const -> iterator<N>;
+  [[nodiscard]] typename PixelSelector<N>::iterator cbegin() const;
   template <class N>
-  [[nodiscard]] auto cend() const -> iterator<N>;
+  [[nodiscard]] typename PixelSelector<N>::iterator cend() const;
+
+  template <class N>
+  [[nodiscard]] PixelSelector<N> fetch(std::string_view query) const;
+  template <class N>
+  [[nodiscard]] PixelSelector<N> fetch(std::string_view chrom1_name, std::uint32_t pos1,
+                                       std::string_view chrom2_name, std::uint32_t pos2) const;
 
   void flush();
 
@@ -230,38 +235,6 @@ class File {
   static void write_indexes(Dataset &chrom_offset_dset, Dataset &bin_offset_dset, const Index &idx);
 
   void finalize();
-
- public:
-  template <class N>
-  class iterator {
-    static_assert(std::is_arithmetic_v<N>);
-    friend File;
-
-    const BinTableLazy *_bins{};
-    Dataset::iterator<std::uint32_t> _bin1_id_it{};
-    Dataset::iterator<std::uint32_t> _bin2_id_it{};
-    Dataset::iterator<N> _count_it{};
-    Dataset::iterator<N> _count_last{};
-
-    explicit iterator(const File &f) noexcept;
-
-    [[nodiscard]] static auto make_end_iterator(const File &f) -> iterator;
-
-   public:
-    using difference_type = std::ptrdiff_t;
-    using value_type = Pixel<N>;
-    using pointer = value_type *;
-    using reference = value_type &;
-    using iterator_category = std::forward_iterator_tag;
-
-    iterator() = default;
-
-    [[nodiscard]] bool operator==(const iterator &other) const noexcept;
-    [[nodiscard]] bool operator!=(const iterator &other) const noexcept;
-    [[nodiscard]] auto operator*() const -> value_type;
-    auto operator++() -> iterator &;
-    auto operator++(int) -> iterator;
-  };
 };
 
 }  // namespace coolerpp

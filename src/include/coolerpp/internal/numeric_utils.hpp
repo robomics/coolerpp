@@ -53,11 +53,7 @@ inline void throw_except_from_errc(std::string_view tok, std::size_t idx,
         base_error, tok, (std::numeric_limits<N>::min)(), (std::numeric_limits<N>::max)()));
   }
 
-  throw std::logic_error(fmt::format(
-      FMT_STRING("{}. If you see this error, report it to the developers on "
-                 "GitHub.\n throw_except_from_errc "
-                 "called with an invalid std::errc \"{}\". This should not be possible!"),
-      base_error, std::make_error_code(e).message()));
+  throw std::runtime_error(base_error);  // str contains invalid char(s)
 }
 
 inline auto from_chars(const char *first, const char *last, long double &value) noexcept {

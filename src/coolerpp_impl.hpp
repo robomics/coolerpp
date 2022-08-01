@@ -382,81 +382,52 @@ inline void File::append_pixels(PixelIt first_pixel, PixelIt last_pixel, bool va
 }
 
 template <class N>
-inline auto File::begin() const -> iterator<N> {
-  return iterator<N>{*this};
+inline typename PixelSelector<N>::iterator File::begin() const {
+  return this
+      ->fetch<N>(this->chromosomes().begin()->name, 0, this->chromosomes().rbegin()->name,
+                 this->chromosomes().rbegin()->size - 1)
+      .begin();
 }
 
 template <class N>
-inline auto File::cbegin() const -> iterator<N> {
+inline typename PixelSelector<N>::iterator File::cbegin() const {
   return this->begin<N>();
 }
 
 template <class N>
-inline auto File::end() const -> iterator<N> {
-  return iterator<N>::make_end_iterator(*this);
+inline typename PixelSelector<N>::iterator File::end() const {
+  return this
+      ->fetch<N>(this->chromosomes().begin()->name, 0, this->chromosomes().rbegin()->name,
+                 this->chromosomes().rbegin()->size - 1)
+      .end();
 }
 
 template <class N>
-inline auto File::cend() const -> iterator<N> {
+inline typename PixelSelector<N>::iterator File::cend() const {
   return this->end<N>();
 }
 
 template <class N>
-inline File::iterator<N>::iterator(const File &f) noexcept
-    : _bins(&f._bins),
-      _bin1_id_it(f.dataset("pixels/bin1_id").begin<std::uint32_t>()),
-      _bin2_id_it(f.dataset("pixels/bin2_id").begin<std::uint32_t>()),
-      _count_it(f.dataset("pixels/count").begin<N>()),
-      _count_last(f.dataset("pixels/count").end<N>()) {
-  assert(f.dataset("pixels/bin1_id").size() == f.dataset("pixels/bin2_id").size());
-  assert(f.dataset("pixels/bin1_id").size() == f.dataset("pixels/count").size());
-}
-
-template <class N>
-inline auto File::iterator<N>::make_end_iterator(const File &f) -> iterator<N> {
-  iterator<N> it{};
-
-  it._bins = &f.bins();
-  it._count_last = f.dataset("pixels/count").end<N>();
-  it._count_it = it._count_last;
-
-  return it;
-}
-
-template <class N>
-inline bool File::iterator<N>::operator==(const iterator &other) const noexcept {
+inline PixelSelector<N> File::fetch(std::string_view query) const {
   // clang-format off
-  return this->_bins == other._bins &&
-         this->_count_it == other._count_it &&
-         this->_count_last == other._count_last;
+  return PixelSelector<N>(this->_index,
+                          this->dataset("pixels/bin1_id"),
+                          this->dataset("pixels/bin2_id"),
+                          this->dataset("pixels/count"),
+                          PixelSelector<N>::parse_query(this->bins(), query));
   // clang-format on
 }
 
 template <class N>
-inline bool File::iterator<N>::operator!=(const iterator &other) const noexcept {
-  return !(*this == other);
-}
-
-template <class N>
-inline auto File::iterator<N>::operator*() const -> Pixel<N> {
-  assert(_count_it != _count_last);
-  return {PixelCoordinates{*this->_bins, *this->_bin1_id_it, *this->_bin2_id_it}, *this->_count_it};
-}
-
-template <class N>
-inline auto File::iterator<N>::operator++() -> iterator<N> & {
-  std::ignore = ++this->_bin1_id_it;
-  std::ignore = ++this->_bin2_id_it;
-  std::ignore = ++this->_count_it;
-
-  return *this;
-}
-
-template <class N>
-inline auto File::iterator<N>::operator++(int) -> iterator<N> {
-  auto it = *this;
-  std::ignore = ++(*this);
-  return it;
+inline PixelSelector<N> File::fetch(std::string_view chrom1_name, std::uint32_t pos1,
+                                    std::string_view chrom2_name, std::uint32_t pos2) const {
+  // clang-format off
+  return PixelSelector<N>(this->_index,
+                          this->dataset("pixels/bin1_id"),
+                          this->dataset("pixels/bin2_id"),
+                          this->dataset("pixels/count"),
+                          PixelCoordinates{this->_bins, chrom1_name, chrom2_name, pos1, pos2});
+  // clang-format on
 }
 
 }  // namespace coolerpp
