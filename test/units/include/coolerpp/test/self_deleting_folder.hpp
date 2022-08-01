@@ -4,23 +4,18 @@
 
 #pragma once
 
-#ifdef __has_include
-#if __has_include(<unistd.h>)
-#ifndef HAVE_UNISTD_H
-#define HAVE_UNISTD_H
-#endif
+#if defined(__unix__) || (defined(__APPLE__) && defined(__MACH__))
 #include <cstdlib>
-#endif
-#endif
-
-#ifdef _WIN32
+#elif defined(_WIN32)
 #include <windows.h>
+#else
+#error "Unsupported OS"
 #endif
 
-#include <atomic>  // for atomic
-#include <cstdio>  // for tmpnam
+#include <atomic>
+#include <cstdio>
 #include <filesystem>
-#include <utility>  // for move
+#include <utility>
 
 namespace coolerpp::test {
 // The point of this class is to provide a reliable way to create a directory that automatically
@@ -93,23 +88,8 @@ class SelfDeletingFolder {
     } while (!std::filesystem::create_directories(dir));
 
     return dir;
-#endif
-
-#ifdef HAVE_UNISTD_H
+#else
     return {mkdtemp((tmpdir / "coolerpp-ci-XXXXXXXXXX").string().data())};
-#undef HAVE_UNISTD_H
-#endif
-
-#if !defined(_WIN32) && !defined(HAVE_UNISTD_H)
-    std::string buff{L_tmpnam, '\0'};
-
-    std::filesystem::path dir{};
-    do {
-      // NOLINTNEXTLINE(concurrency-mt-unsafe)
-      dir = tmpdir / std::filesystem::path(std::tmpnam(buff.data()));
-    } while (!std::filesystem::create_directories(dir));
-
-    return dir;
 #endif
   }
 };
