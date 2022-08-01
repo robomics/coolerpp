@@ -28,6 +28,16 @@ Index::Index(const BinTableLazy &bins, std::uint64_t nnz)
                           [&](std::size_t sum, const auto &it) { return sum + it.size(); });
 }
 
+const ChromosomeSet &Index::chromosomes() const noexcept {
+  assert(this->_bins);
+  return this->_bins->chromosomes();
+}
+
+const BinTableLazy &Index::bins() const noexcept {
+  assert(this->_bins);
+  return *this->_bins;
+}
+
 std::size_t Index::num_chromosomes() const noexcept {
   assert(this->_idx.size() == this->_bins->num_chromosomes());
   return this->_idx.size();
@@ -74,7 +84,10 @@ auto Index::at(std::uint32_t chrom_id) const -> const mapped_type & {
   return this->_idx.at(chrom_id);
 }
 
-std::uint64_t Index::get_offset_by_bin_id(std::uint64_t bin_id) {
+std::uint64_t Index::get_offset_by_bin_id(std::uint64_t bin_id) const {
+  if (bin_id == this->size()) {
+    return this->_idx.back().back();
+  }
   const auto &coords = this->_bins->bin_id_to_coords(bin_id);
   return this->get_offset_by_pos(coords.chrom, coords.bin_start);
 }
@@ -164,6 +177,8 @@ void Index::finalize(std::uint64_t nnz) {
       return fill_value = offset;
     });
   });
+  assert(this->_idx[0][0] == 0 || this->_idx[0][0] == this->_idx[0][1]);
+  this->_idx[0][0] = 0;
 }
 
 void Index::compute_chrom_offsets(std::vector<std::size_t> &buff) const noexcept {
@@ -172,11 +187,6 @@ void Index::compute_chrom_offsets(std::vector<std::size_t> &buff) const noexcept
 
   std::transform(this->_idx.begin(), this->_idx.end(), buff.begin() + 1,
                  [offset = std::size_t(0)](const auto &it) mutable { return offset += it.size(); });
-}
-
-const ChromosomeSet &Index::chromosomes() const noexcept {
-  assert(this->_bins);
-  return this->_bins->chromosomes();
 }
 
 void Index::validate_chrom_id(std::uint32_t chrom_id) const {

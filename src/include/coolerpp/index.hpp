@@ -49,7 +49,10 @@ class Index {
   using const_iterator = iterator;
 
   Index() = default;
-  Index(const BinTableLazy& bins, std::uint64_t nnz = 0);
+  explicit Index(const BinTableLazy& bins, std::uint64_t nnz = 0);
+
+  [[nodiscard]] const ChromosomeSet& chromosomes() const noexcept;
+  [[nodiscard]] const BinTableLazy& bins() const noexcept;
 
   [[nodiscard]] std::size_t num_chromosomes() const noexcept;
   [[nodiscard]] constexpr std::size_t size() const noexcept { return this->_size; }
@@ -69,7 +72,7 @@ class Index {
   [[nodiscard]] auto at(std::string_view chrom_name) const -> const mapped_type&;
   [[nodiscard]] auto at(std::uint32_t chrom_id) const -> const mapped_type&;
 
-  [[nodiscard]] std::uint64_t get_offset_by_bin_id(std::uint64_t bin_id);
+  [[nodiscard]] std::uint64_t get_offset_by_bin_id(std::uint64_t bin_id) const;
   [[nodiscard]] std::uint64_t get_offset_by_pos(const Chromosome& chrom, std::uint32_t pos) const;
   [[nodiscard]] std::uint64_t get_offset_by_pos(std::string_view chrom_name,
                                                 std::uint32_t pos) const;
@@ -100,7 +103,6 @@ class Index {
   void finalize(std::uint64_t nnz);
 
  private:
-  [[nodiscard]] const ChromosomeSet& chromosomes() const noexcept;
   [[nodiscard]] auto at(std::string_view chrom_name) -> mapped_type&;
   [[nodiscard]] auto at(std::uint32_t chrom_id) -> mapped_type&;
 

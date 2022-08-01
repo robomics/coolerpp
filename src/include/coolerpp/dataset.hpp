@@ -171,10 +171,6 @@ class Dataset {
   [[nodiscard]] auto make_iterator_at_offset(std::size_t offset,
                                              std::size_t chunk_size = 64 * 1024) const
       -> iterator<T>;
-  template <class T>
-  [[nodiscard]] auto make_end_iterator_at_offset(std::size_t offset,
-                                                 std::size_t chunk_size = 64 * 1024) const
-      -> iterator<T>;
 
   [[nodiscard]] static std::pair<std::string, std::string> parse_uri(std::string_view uri);
 
@@ -198,15 +194,14 @@ class Dataset {
   template <class T>
   class iterator {
     friend Dataset;
-
-    std::shared_ptr<std::vector<T>> _buff{};
+    mutable std::shared_ptr<std::vector<T>> _buff{};
     const Dataset *_dset{};
     std::size_t _buff_capacity{};
-    std::size_t _h5_chunk_start{};
+    mutable std::size_t _h5_chunk_start{};
     std::size_t _h5_offset{};
 
     explicit iterator(const Dataset &dset, std::size_t h5_offset = 0,
-                      std::size_t chunk_size = 64 * 1024);
+                      std::size_t chunk_size = 64 * 1024, bool init = true);
 
    public:
     using difference_type = std::ptrdiff_t;
@@ -240,8 +235,11 @@ class Dataset {
     [[nodiscard]] auto operator-(std::size_t i) const -> iterator;
     [[nodiscard]] auto operator-(const iterator &other) const -> difference_type;
 
+    [[nodiscard]] constexpr std::uint64_t h5_offset() const noexcept;
+    [[nodiscard]] constexpr std::size_t underlying_buff_capacity() const noexcept;
+
    private:
-    void read_chunk_at_offset(std::size_t new_offset);
+    void read_chunk_at_offset(std::size_t new_offset) const;
 
     [[nodiscard]] static constexpr auto make_end_iterator(const Dataset &dset,
                                                           std::size_t chunk_size = 64 * 1024)

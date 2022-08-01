@@ -272,27 +272,15 @@ inline auto Dataset::make_iterator_at_offset(std::size_t offset, std::size_t chu
 }
 
 template <class T>
-inline auto Dataset::make_end_iterator_at_offset(std::size_t offset, std::size_t chunk_size) const
-    -> iterator<T> {
-  assert(offset <= this->size());
-  auto it = iterator<T>::make_end_iterator(*this);
-
-  it._buff_capacity = chunk_size;
-  it._h5_chunk_start = offset;
-  it._h5_chunk_end = offset;
-
-  return it;
-}
-
-template <class T>
 inline Dataset::iterator<T>::iterator(const Dataset &dset, std::size_t h5_offset,
-                                      std::size_t chunk_size)
-    : _buff(std::make_shared<std::vector<T>>(std::min(chunk_size, dset.size()))),
-      _dset(&dset),
-      _buff_capacity(_buff->size()),
+                                      std::size_t chunk_size, bool init)
+    : _dset(&dset),
+      _buff_capacity(std::min(chunk_size, dset.size())),
       _h5_chunk_start(h5_offset),
       _h5_offset(h5_offset) {
-  this->read_chunk_at_offset(this->_h5_offset);
+  if (init) {
+    this->read_chunk_at_offset(this->_h5_chunk_start);
+  }
 }
 
 template <class T>
@@ -339,13 +327,14 @@ constexpr bool Dataset::iterator<T>::operator>=(const iterator &other) const noe
 
 template <class T>
 inline auto Dataset::iterator<T>::operator*() const -> value_type {
-  if constexpr (ndebug_not_defined()) {
-    if (!this->_buff) {
-      throw std::out_of_range(fmt::format(FMT_STRING("Caught an attempt to access an element past "
-                                                     "the end of dataset at URI \"{}\" ({} >= {})"),
-                                          this->_dset->uri(), this->_h5_offset,
-                                          this->_dset->size()));
-    }
+  if (!this->_buff || this->_h5_offset >= this->_h5_chunk_start + this->_buff->size()) {
+    // Read first chunk
+    this->read_chunk_at_offset(this->_h5_offset);
+  } else if (this->_h5_offset - this->_h5_chunk_start >= this->_buff->size()) {
+    // Iterator was decremented one or more times since the last dereference, thus we assume the
+    // iterator is being used to traverse the dataset backward
+    this->_h5_chunk_start = this->_h5_offset - std::min(this->_buff->size() - 1, this->_h5_offset);
+    this->read_chunk_at_offset(this->_h5_chunk_start);
   }
 
   assert(this->_buff);
@@ -370,34 +359,33 @@ template <class T>
 inline auto Dataset::iterator<T>::operator++(int) -> iterator {
   auto it = *this;
   std::ignore = ++(*this);
+  if (this->_h5_offset > this->_h5_chunk_start + this->_buff_capacity) {
+    this->read_chunk_at_offset(this->_h5_offset);
+  }
   return it;
 }
 
 template <class T>
 inline auto Dataset::iterator<T>::operator+=(std::size_t i) -> iterator & {
   assert(this->_dset);
-  assert(this->_buff);
   assert(this->_h5_offset + i <= this->_dset->size());
   this->_h5_offset += i;
-  if (this->_h5_offset - this->_h5_chunk_start >= this->_buff->size()) {
-    this->read_chunk_at_offset(this->_h5_offset);
-  }
   return *this;
 }
 
 template <class T>
 inline auto Dataset::iterator<T>::operator+(std::size_t i) const -> iterator {
+  assert(this->_dset);
   assert(this->_buff);
   const auto new_offset = this->_h5_offset + i;
   assert(new_offset <= this->_dset->size());
 
-  if (new_offset - this->_h5_chunk_start < this->_buff->size()) {
-    auto it = *this;
-    return it += i;
+  if (!this->_buff || this->_h5_chunk_start + this->_buff->size() < new_offset) {
+    return iterator(*this->_dset, new_offset);
   }
 
-  assert(this->_dset);
-  return iterator(*this->_dset, new_offset);
+  auto it = *this;
+  return it += i;
 }
 
 template <class T>
@@ -410,6 +398,10 @@ template <class T>
 inline auto Dataset::iterator<T>::operator--(int) -> iterator {
   auto it = *this;
   std::ignore = --(*this);
+  if (this->_h5_offset < this->_h5_chunk_start) {
+    this->read_chunk_at_offset(this->_h5_offset -
+                               std::min(this->_buff_capacity - 1, this->_h5_offset));
+  }
   return it;
 }
 
@@ -417,10 +409,6 @@ template <class T>
 inline auto Dataset::iterator<T>::operator-=(std::size_t i) -> iterator & {
   assert(this->_h5_offset >= i);
   this->_h5_offset -= i;
-  if (this->_h5_offset < this->_h5_chunk_start) {
-    this->_h5_chunk_start = this->_h5_offset - std::min(this->_buff_capacity - 1, this->_h5_offset);
-    this->read_chunk_at_offset(this->_h5_chunk_start);
-  }
   return *this;
 }
 
@@ -444,22 +432,34 @@ inline auto Dataset::iterator<T>::operator-(const iterator &other) const -> diff
 }
 
 template <class T>
-inline void Dataset::iterator<T>::read_chunk_at_offset(std::size_t new_offset) {
+constexpr std::uint64_t Dataset::iterator<T>::h5_offset() const noexcept {
+  return this->_h5_offset;
+}
+
+template <class T>
+constexpr std::size_t Dataset::iterator<T>::underlying_buff_capacity() const noexcept {
+  return this->_buff_capacity;
+}
+
+template <class T>
+inline void Dataset::iterator<T>::read_chunk_at_offset(std::size_t new_offset) const {
   assert(this->_dset);
 
   if (new_offset == this->_dset->size()) {
-    *this = iterator::make_end_iterator(*this->_dset);
+    this->_buff = nullptr;
+    this->_h5_chunk_start = this->_dset->size();
     return;
   }
 
   if (!this->_buff || !this->_buff.unique()) {
-    // This should be fine, as copying Dataset::iterator is not thread-safe anyway
+    //  This should be fine, as copying Dataset::iterator is not thread-safe anyway
     this->_buff = std::make_shared<std::vector<T>>(this->_buff_capacity);
   }
 
   const auto buff_size = std::min(this->_buff_capacity, this->_dset->size() - new_offset);
   this->_buff->resize(buff_size);
   this->_dset->read(*this->_buff, buff_size, new_offset);
+
   this->_h5_chunk_start = new_offset;
 }
 
@@ -468,7 +468,7 @@ constexpr auto Dataset::iterator<T>::make_end_iterator(const Dataset &dset, std:
     -> iterator {
   iterator it{};
   it._buff = nullptr;
-  it._buff_capacity = chunk_size;
+  it._buff_capacity = std::min(chunk_size, dset.size());
   it._dset = &dset;
   it._h5_offset = dset.size();
   it._h5_chunk_start = it._h5_offset;
