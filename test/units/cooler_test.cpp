@@ -316,7 +316,7 @@ TEST_CASE("Coolerpp: read/write bin table", "[cooler][short]") {
 }
 
 // NOLINTNEXTLINE(readability-function-cognitive-complexity)
-TEST_CASE("Coolerpp: read/write pixels", "[cooler][medium]") {
+TEST_CASE("Coolerpp: read/write pixels", "[cooler][long]") {
   auto path1 = datadir / "cooler_test_file.cool";
   auto path2 = testdir() / "cooler_test_read_write_pixels.cool";
 

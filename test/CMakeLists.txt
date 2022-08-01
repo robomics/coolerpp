@@ -60,8 +60,8 @@ catch_discover_tests(
   " - MEDIUM"
   WORKING_DIRECTORY
   ${CMAKE_CURRENT_SOURCE_DIR}/../
-  OUTPUT_DIR
-  ${CMAKE_CURRENT_SOURCE_DIR}/Testing/
+  REPORTER
+  compact # This dramatically speeds up the test suit
   EXTRA_ARGS
   --success)
 
