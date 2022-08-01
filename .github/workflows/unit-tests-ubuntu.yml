@@ -42,10 +42,10 @@ jobs:
       fail-fast: false
       matrix:
         include:
-          - { image: conanio/gcc7,                build_type: Debug,   developer_mode: OFF }
+          - { image: conanio/gcc8,                build_type: Debug,   developer_mode: OFF }
           - { image: conanio/gcc12-ubuntu16.04,   build_type: Debug,   developer_mode: ON }
           - { image: conanio/gcc12-ubuntu16.04,   build_type: Release, developer_mode: OFF }
-          - { image: conanio/clang60,             build_type: Debug,   developer_mode: OFF }
+          - { image: conanio/clang7,              build_type: Debug,   developer_mode: OFF }
           - { image: conanio/clang14-ubuntu16.04, build_type: Debug,   developer_mode: ON }
           - { image: conanio/clang14-ubuntu16.04, build_type: Release, developer_mode: OFF }
 
@@ -99,6 +99,7 @@ jobs:
           cmake -DCMAKE_BUILD_TYPE=${{ matrix.build_type }}          \
                 -DENABLE_DEVELOPER_MODE=${{ matrix.developer_mode }} \
                 -DOPT_ENABLE_CLANG_TIDY=OFF                          \
+                -DOPT_ENABLE_CPPCHECK=OFF                            \
                 -DENABLE_TESTING=ON                                  \
                 -DBUILD_EXAMPLES=ON                                  \
                 -S "${{ github.workspace }}"                         \
