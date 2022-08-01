@@ -1,0 +1,91 @@
+# Copyright (C) 2022 Roberto Rossini (roberros@uio.no)
+# SPDX-License-Identifier: MIT
+
+name: Run clang-tidy
+
+on:
+  push:
+    branches: [ main ]
+    paths:
+      - ".github/workflows/run-clang-tidy.yml"
+      - "cmake/**"
+      - "examples/**"
+      - "src/**"
+      - "test/**"
+      - ".clang-tidy"
+      - "CMakeLists.txt"
+      - "conanfile.py"
+    tags:
+      - 'v*.*.*'
+
+  pull_request:
+    paths:
+      - ".github/workflows/run-clang-tidy.yml"
+      - "cmake/**"
+      - "examples/**"
+      - "src/**"
+      - "test/**"
+      - ".clang-tidy"
+      - "CMakeLists.txt"
+      - "conanfile.py"
+
+# https://stackoverflow.com/a/72408109
+concurrency:
+  group: ${{ github.workflow }}-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: true
+
+env:
+  CONAN_USER_HOME: "${{ github.workspace }}/conan-cache"
+  CONAN_USER_HOME_SHORT: "${{ github.workspace }}/conan-cache/short"
+  CONAN_V2_MODE: "1"
+
+jobs:
+  run-clang-tidy:
+    runs-on: ubuntu-latest
+    container:
+      image: ubuntu:22.04
+      options: "-v ${{ github.workspace }}:${{ github.workspace }}"
+
+    steps:
+      - name: Install build dependencies
+        run: |
+          apt-get update
+          apt-get install -y clang clang-tidy cmake git python3-pip
+          
+          pip install --no-cache-dir 'conan>=1.51.0'
+
+      - name: Print clang-tidy version
+        run: clang-tidy --version
+
+      - uses: actions/checkout@v3
+
+      - name: Cache Conan packages
+        id: cache-conan
+        uses: actions/cache@v3
+        with:
+          key: conan-run-clang-tidy
+          path: ${{ env.CONAN_USER_HOME }}
+
+      - name: Clean up Conan
+        if: steps.cache-conan.outputs.cache-hit != 'true'
+        run: |
+          conan remove -f "*" --builds
+          conan remove -f "*" --src
+          conan remove -f "*" --system-reqs
+
+      - name: Configure project
+        run: |
+          git config --global --add safe.directory ${{ github.workspace }}
+          mkdir ${{ github.workspace }}/build
+          cmake -DCMAKE_BUILD_TYPE=Debug                      \
+                -DENABLE_DEVELOPER_MODE=ON                    \
+                -DOPT_ENABLE_SANITIZER_ADDRESS=OFF            \
+                -DOPT_ENABLE_SANITIZER_UNDEFINED_BEHAVIOR=OFF \
+                -DOPT_ENABLE_CLANG_TIDY=ON                    \
+                -DBUILD_EXAMPLES=ON                           \
+                -DENABLE_TESTING=ON                           \
+                -S "${{ github.workspace }}"                  \
+                -B "${{ github.workspace }}/build"
+
+      - name: Build project
+        run: cmake --build ${{ github.workspace }}/build -j $(nproc)
