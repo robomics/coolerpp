@@ -115,5 +115,5 @@ jobs:
                 --schedule-random   \
                 --output-on-failure \
                 --no-tests=error    \
-                --timeout 15        \
+                --timeout 120       \
                 -j $(nproc)
