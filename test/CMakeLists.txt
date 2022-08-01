@@ -4,6 +4,7 @@
 
 find_package(Catch2 CONFIG REQUIRED)
 find_package(Filesystem REQUIRED)
+find_package(fmt CONFIG REQUIRED)
 
 include(CTest)
 include(Catch)
@@ -26,7 +27,7 @@ target_include_directories(test_main PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/units/i
 target_link_libraries(
   test_main
   PRIVATE project_warnings project_options
-  PUBLIC Coolerpp::Coolerpp)
+  PUBLIC Coolerpp::Coolerpp fmt::fmt)
 
 target_link_system_libraries(
   test_main
