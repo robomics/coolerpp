@@ -118,13 +118,15 @@ int main(int argc, char** argv) {
               "Example: {0} test/data/hg38.chrom.sizes 1000 /tmp/output.cool < contacts.bedpe\n"
               "Example: cat contacts.bedpe | {0} test/data/hg38.chrom.sizes 1000 "
               "/tmp/output.cool\n"),
-          argv[0]);
+          argv[0]);  // NOLINT(cppcoreguidelines-pro-bounds-pointer-arithmetic)
       return 1;
     }
 
-    const std::string path_to_chrom_sizes = argv[1];
-    const auto bin_size = static_cast<std::uint32_t>(std::stoul(argv[2]));
-    const std::string path_to_output_cooler = argv[3];
+    // clang-format off
+    const std::string path_to_chrom_sizes = argv[1];                        // NOLINT(cppcoreguidelines-pro-bounds-pointer-arithmetic)
+    const auto bin_size = static_cast<std::uint32_t>(std::stoul(argv[2]));  // NOLINT(cppcoreguidelines-pro-bounds-pointer-arithmetic)
+    const std::string path_to_output_cooler = argv[3];                      // NOLINT(cppcoreguidelines-pro-bounds-pointer-arithmetic)
+    // clang-format on
 
     using ContactT = std::uint32_t;
 

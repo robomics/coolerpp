@@ -20,10 +20,11 @@ int main(int argc, char** argv) {
                FMT_STRING("Usage:   {0} my_cooler.cool\n"
                           "Example: {0} my_cooler.cool\n"
                           "Example: {0} my_cooler.mcool::/resolutions/10000\n"),
-               argv[0]);
+               argv[0]);  // NOLINT(cppcoreguidelines-pro-bounds-pointer-arithmetic)
     return 1;
   }
 
+  // NOLINTNEXTLINE(cppcoreguidelines-pro-bounds-pointer-arithmetic)
   const std::string path_to_cooler = argv[1];
 
   try {

@@ -85,7 +85,7 @@ TEST_CASE("Dataset: read", "[dataset][short]") {
 
     SECTION("atomic") {
       Dataset dset{grp, "chroms/length"};
-      std::uint64_t buff;
+      std::uint64_t buff{};
       dset.read(buff, 2);
       CHECK(buff == 159'599'783);
 
@@ -321,7 +321,7 @@ TEST_CASE("Dataset: large read/write", "[dataset][long]") {
     Dataset dset{grp, "int", std::uint8_t{}};
 
     std::vector<std::uint8_t> buff(1'000'000);
-    std::mt19937_64 rand_eng{seed};
+    std::mt19937_64 rand_eng{seed};  // NOLINT(cert-msc32-c,cert-msc51-cpp)
     while (dset.size() != N) {
       std::generate(buff.begin(), buff.end(),
                     [&]() { return static_cast<std::uint8_t>(rand_eng()); });
@@ -334,7 +334,7 @@ TEST_CASE("Dataset: large read/write", "[dataset][long]") {
   Dataset dset{grp, "int"};
   REQUIRE(dset.size() == N);
 
-  std::mt19937_64 rand_eng{seed};
+  std::mt19937_64 rand_eng{seed};  // NOLINT(cert-msc32-c,cert-msc51-cpp)
   auto it = dset.begin<std::uint8_t>();
   for (std::size_t i = 0; i < N; ++i) {
     CHECK(*it++ == static_cast<std::uint8_t>(rand_eng()));

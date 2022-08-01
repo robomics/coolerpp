@@ -207,7 +207,7 @@ class File {
   [[nodiscard]] static Index import_indexes(const Dataset &chrom_offset_dset,
                                             const Dataset &bin_offset_dset,
                                             const ChromosomeSet &chroms,
-                                            const BinTableLazy &bintable,
+                                            const BinTableLazy &bin_table,
                                             std::uint64_t expected_nnz, bool missing_ok);
 
   void validate_bins() const;
