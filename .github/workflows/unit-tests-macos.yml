@@ -122,4 +122,5 @@ jobs:
                 --schedule-random   \
                 --output-on-failure \
                 --no-tests=error    \
-                --timeout 240
+                --timeout 120       \
+                -E '.*LONG.*'
