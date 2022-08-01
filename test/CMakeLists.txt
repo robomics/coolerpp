@@ -4,6 +4,7 @@
 
 find_package(Catch2 CONFIG REQUIRED)
 find_package(Filesystem REQUIRED)
+find_package(fmt CONFIG REQUIRED)
 
 include(CTest)
 include(Catch)
@@ -32,6 +33,7 @@ target_link_system_libraries(
   test_main
   PUBLIC
   Catch2::Catch2WithMain
+  fmt::fmt
   std::filesystem)
 
 file(MAKE_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}/Testing/)
