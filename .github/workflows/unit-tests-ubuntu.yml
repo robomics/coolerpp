@@ -45,7 +45,7 @@ jobs:
           - { image: conanio/gcc8,                build_type: Debug,   developer_mode: OFF }
           - { image: conanio/gcc12-ubuntu16.04,   build_type: Debug,   developer_mode: ON }
           - { image: conanio/gcc12-ubuntu16.04,   build_type: Release, developer_mode: OFF }
-          - { image: conanio/clang7,              build_type: Debug,   developer_mode: OFF }
+          - { image: conanio/clang8,              build_type: Debug,   developer_mode: OFF }
           - { image: conanio/clang14-ubuntu16.04, build_type: Debug,   developer_mode: ON }
           - { image: conanio/clang14-ubuntu16.04, build_type: Release, developer_mode: OFF }
 
@@ -63,9 +63,10 @@ jobs:
         id: cache-key
         run: |
           image="${{ matrix.image }}"
+          build_type="${{ matrix.build_type }}"
           hash="${{ hashFiles('conanfile.py', '.github/workflows/unit-tests-ubuntu.yml') }}"
 
-          echo "::set-output name=key::$image-$hash"
+          echo "::set-output name=key::$image-$build_type-$hash"
 
       - name: Cache Conan packages
         id: cache-conan
@@ -84,13 +85,11 @@ jobs:
       - name: Install build dependencies
         if: steps.cache-conan.outputs.cache-hit != 'true'
         run: |
-          for build_type in Debug Release; do
-            conan install conanfile.py        \
-               --build outdated               \
-               -s build_type="$build_type"    \
-               -s compiler.libcxx=libstdc++11 \
-               -s compiler.cppstd=17
-          done
+          conan install conanfile.py                  \
+             --build outdated                         \
+             -s build_type="${{ matrix.build_type }}" \
+             -s compiler.libcxx=libstdc++11           \
+             -s compiler.cppstd=17
 
       - name: Configure project
         run: |
