@@ -22,8 +22,8 @@ include(FetchContent)
 # cmake-format: off
 FetchContent_Declare(
         _coolerpp_project_options
-        URL https://github.com/cpp-best-practices/project_options/archive/refs/tags/v0.24.0.tar.gz
-        URL_HASH SHA512=f3afb9506724a2235a9f23243a78e73ce82017aaa84ba892c5d83e0a4f26c0771963c5e73c1190d8bfbf79a4d35539738e096e6182e19c7a78f6b44598ee9155
+        URL ${CMAKE_CURRENT_SOURCE_DIR}/external/project_options-v0.24.0.tar.xz
+        URL_HASH SHA512=d190965c1992864d7c8c213bff20aceb63fa7b6704a72f36fbadd40e18d88c4001d7aca13ae883e5fdd662f272b6f448cb60b7c58a77b6fb56b3115505bf5b52
 )
 # cmake-format: on
 
