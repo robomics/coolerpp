@@ -11,6 +11,6 @@ foreach(target_name ${example_targets})
 add_executable(${target_name} ${target_name}_example.cpp)
 target_link_libraries(
         ${target_name}
-        PRIVATE project_warnings project_options
+        PRIVATE coolerpp_project_warnings coolerpp_project_options
         PUBLIC Coolerpp::Coolerpp fmt::fmt std::filesystem)
 endforeach()

@@ -21,14 +21,14 @@ set(ENABLE_DEVELOPER_MODE
 include(FetchContent)
 # cmake-format: off
 FetchContent_Declare(
-        _project_options
+        _coolerpp_project_options
         URL https://github.com/cpp-best-practices/project_options/archive/refs/tags/v0.24.0.tar.gz
         URL_HASH SHA512=f3afb9506724a2235a9f23243a78e73ce82017aaa84ba892c5d83e0a4f26c0771963c5e73c1190d8bfbf79a4d35539738e096e6182e19c7a78f6b44598ee9155
 )
 # cmake-format: on
 
-FetchContent_MakeAvailable(_project_options)
-include(${_project_options_SOURCE_DIR}/Index.cmake)
+FetchContent_MakeAvailable(_coolerpp_project_options)
+include(${_coolerpp_project_options_SOURCE_DIR}/Index.cmake)
 
 project(
   coolerpp
@@ -54,7 +54,7 @@ if(BUILDING_MULTI_CONFIG)
   endif()
 endif()
 
-include(${_project_options_SOURCE_DIR}/src/DynamicProjectOptions.cmake)
+include(${_coolerpp_project_options_SOURCE_DIR}/src/DynamicProjectOptions.cmake)
 include(${CMAKE_CURRENT_SOURCE_DIR}/cmake/CompilerWarnings.cmake)
 
 # dynamic_project_options sets recommended defaults and provides user and developer modes and full GUI support for
@@ -103,17 +103,17 @@ dynamic_project_options(
   CUDA_WARNINGS
   ${CUDA_WARNINGS})
 
-target_compile_features(project_options INTERFACE cxx_std_${CMAKE_CXX_STANDARD})
+target_compile_features(coolerpp_project_options INTERFACE cxx_std_${CMAKE_CXX_STANDARD})
 
 # Tweak fmt
-target_compile_definitions(project_options INTERFACE FMT_ENFORCE_COMPILE_STRING)
+target_compile_definitions(coolerpp_project_options INTERFACE FMT_ENFORCE_COMPILE_STRING)
 
 add_subdirectory(src)
 
 if(ENABLE_TESTING)
   enable_testing()
   message("Building unit tests.")
-  target_compile_definitions(project_options INTERFACE ENABLE_TESTING)
+  target_compile_definitions(coolerpp_project_options INTERFACE ENABLE_TESTING)
   add_subdirectory(test)
 endif()
 

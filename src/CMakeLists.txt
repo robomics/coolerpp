@@ -34,7 +34,7 @@ target_include_directories(coolerpp PUBLIC ${CMAKE_CURRENT_SOURCE_DIR}/include/)
 # cmake-format: off
 target_link_libraries(
   coolerpp
-  PRIVATE project_warnings project_options
+  PRIVATE coolerpp_project_warnings coolerpp_project_options
   PUBLIC fmt::fmt # For some reason linking fmt as sys library raises a
                   # "Found relative path while evaluating include directories"
                   # error
