@@ -9,10 +9,10 @@ find_package(fmt CONFIG REQUIRED)
 include(CTest)
 include(Catch)
 
-add_executable(test_main)
+add_executable(coolerpp_test_main)
 
 target_sources(
-  test_main
+  coolerpp_test_main
   PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/units/attribute_test.cpp
           ${CMAKE_CURRENT_SOURCE_DIR}/units/bin_table_test.cpp
           ${CMAKE_CURRENT_SOURCE_DIR}/units/chromosome_test.cpp
@@ -22,15 +22,15 @@ target_sources(
           ${CMAKE_CURRENT_SOURCE_DIR}/units/pixel_selector_test.cpp
           ${CMAKE_CURRENT_SOURCE_DIR}/units/variant_buff_test.cpp)
 
-target_include_directories(test_main PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/units/include/)
+target_include_directories(coolerpp_test_main PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/units/include/)
 
 target_link_libraries(
-  test_main
+  coolerpp_test_main
   PRIVATE coolerpp_project_warnings coolerpp_project_options
   PUBLIC Coolerpp::Coolerpp fmt::fmt)
 
 target_link_system_libraries(
-  test_main
+  coolerpp_test_main
   PUBLIC
   Catch2::Catch2WithMain
   std::filesystem)
@@ -40,7 +40,7 @@ file(MAKE_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}/Testing/)
 # automatically discover tests that are defined in catch based test files you can modify the unittests. TEST_PREFIX to
 # whatever you want, or use different for different binaries
 catch_discover_tests(
-  test_main
+  coolerpp_test_main
   TEST_SPEC
   "[short]"
   TEST_SUFFIX
@@ -53,7 +53,7 @@ catch_discover_tests(
   --success)
 
 catch_discover_tests(
-  test_main
+  coolerpp_test_main
   TEST_SPEC
   "[medium]"
   TEST_SUFFIX
@@ -66,7 +66,7 @@ catch_discover_tests(
   --success)
 
 catch_discover_tests(
-  test_main
+  coolerpp_test_main
   TEST_SPEC
   "[long]"
   TEST_SUFFIX
