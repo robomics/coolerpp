@@ -105,7 +105,6 @@ jobs:
 
       - name: Configure project
         run: |
-          mkdir ${{ github.workspace }}/build
           cmake -DCMAKE_BUILD_TYPE=${{ matrix.build_type }}          \
                 -DENABLE_DEVELOPER_MODE=${{ matrix.developer_mode }} \
                 -DENABLE_TESTING=ON                                  \
