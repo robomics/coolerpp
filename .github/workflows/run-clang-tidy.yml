@@ -73,6 +73,13 @@ jobs:
           key: ${{ steps.cache-key.outputs.key }}
           path: ${{ env.CONAN_USER_HOME }}
 
+      - name: Clean Conan cache (pre-build)
+        if: steps.cache-conan.outputs.cache-hit != 'true'
+        run: |
+          conan remove -f "*" --builds
+          conan remove -f "*" --src
+          conan remove -f "*" --system-reqs
+
       - name: Clean up Conan
         if: steps.cache-conan.outputs.cache-hit != 'true'
         run: |
@@ -93,6 +100,14 @@ jobs:
                 -DENABLE_TESTING=ON                           \
                 -S "${{ github.workspace }}"                  \
                 -B "${{ github.workspace }}/build"
+
+      - name: Clean Conan cache (post-build)
+        if: steps.cache-conan.outputs.cache-hit != 'true'
+        run: |
+          conan remove -f "*" --builds
+          conan remove -f "*" --src
+          conan remove -f "*" --system-reqs
+          conan remove -f "*" --outdated
 
       - name: Build project
         run: cmake --build ${{ github.workspace }}/build -j $(nproc)

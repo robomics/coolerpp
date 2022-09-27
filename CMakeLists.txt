@@ -2,13 +2,14 @@
 #
 # SPDX-License-Identifier: MIT
 
-cmake_minimum_required(VERSION 3.16)
+cmake_minimum_required(VERSION 3.18)
+cmake_policy(VERSION 3.18...3.24)
 
 list(APPEND CMAKE_MODULE_PATH "${CMAKE_CURRENT_SOURCE_DIR}/cmake/modules/")
 
 # Not ideal to use this global variable, but necessary to make sure that tooling and projects use the same version
 set(CMAKE_CXX_STANDARD 17)
-set(CMAKE_C_STANDARD 99)
+set(CMAKE_C_STANDARD 11)
 
 # strongly encouraged to enable this globally to avoid conflicts between -Wpedantic being enabled and -std=c++20 and
 # -std=gnu++20 for example when compiling with PCH enabled
@@ -22,8 +23,8 @@ include(FetchContent)
 # cmake-format: off
 FetchContent_Declare(
         _coolerpp_project_options
-        URL ${CMAKE_CURRENT_SOURCE_DIR}/external/project_options-v0.24.0.tar.xz
-        URL_HASH SHA512=d190965c1992864d7c8c213bff20aceb63fa7b6704a72f36fbadd40e18d88c4001d7aca13ae883e5fdd662f272b6f448cb60b7c58a77b6fb56b3115505bf5b52
+        URL ${CMAKE_CURRENT_SOURCE_DIR}/external/project_options-v0.25.2.tar.xz
+        URL_HASH SHA512=ff7bdd70e19f5b77913fa18e5e059cbd783015dfab3a32ef073ace9ce9db69248adb07436c69ab893941950fd01e9c48b5f6ec48d198a2188188d1984ddd9d6d
 )
 # cmake-format: on
 
@@ -84,6 +85,7 @@ set(ENABLE_SANITIZER_ADDRESS_DEFAULT OFF)
 set(ENABLE_SANITIZER_LEAK_DEFAULT OFF)
 
 dynamic_project_options(
+  PREFIX coolerpp
   # CLANG_WARNINGS # Override the defaults for the CLANG warnings GCC_WARNINGS   # Override the defaults for the GCC
   CPPCHECK_OPTIONS
   --enable=performance,portability,style,warning
