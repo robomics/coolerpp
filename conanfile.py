@@ -82,10 +82,10 @@ class Coolerpp(ConanFile):
         self.cpp_info.bindirs = []
         self.cpp_info.libdirs = []
         self.cpp_info.resdirs = []
-        self.cpp_info.requires = ["FastFloat::fast_float",
-                                  "HighFive::HighFive",
-                                  "tsl::hopscotch_map",
-                                  "tsl::ordered_map"]
+        self.cpp_info.requires = ["fastfloat::fastfloat",
+                                  "highfive::highfive",
+                                  "tsl_hopscotch_map::tsl_hopscotch_map",
+                                  "tsl_ordered_map::tsl_ordered_map"]
 
         # TODO: Remove in Conan 2.0
         self.cpp_info.names["cmake_find_package"] = "coolerpp"
