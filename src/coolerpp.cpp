@@ -533,11 +533,9 @@ void File::write_attributes(bool skip_sentinel_attr) {
   File::write_standard_attributes(this->_root_group, this->_attrs, skip_sentinel_attr);
   this->flush();
   if (skip_sentinel_attr) {
-    if constexpr (ndebug_not_defined()) {
-      using T = remove_cvref_t<decltype(internal::SENTINEL_ATTR_VALUE)>;
-      assert(Attribute::read<T>(this->_root_group(), internal::SENTINEL_ATTR_NAME) ==
-             internal::SENTINEL_ATTR_VALUE);
-    }
+    using T [[maybe_unused]] = remove_cvref_t<decltype(internal::SENTINEL_ATTR_VALUE)>;
+    assert(Attribute::read<T>(this->_root_group(), internal::SENTINEL_ATTR_NAME) ==
+           internal::SENTINEL_ATTR_VALUE);
     Attribute::write(this->_root_group(), "format-version", this->_attrs.format_version, true);
     this->flush();
   }
