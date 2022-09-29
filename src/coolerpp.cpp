@@ -131,7 +131,7 @@ bool File::check_sentinel_attr(const HighFive::Group &grp) {
   const auto sentinel_v = Attribute::read(grp, internal::SENTINEL_ATTR_NAME, true);
   const auto *sentinel = std::get_if<T>(&sentinel_v);
 
-  return !!sentinel && *sentinel == internal::SENTINEL_ATTR_VALUE;
+  return static_cast<bool>(sentinel) && *sentinel == internal::SENTINEL_ATTR_VALUE;
 }
 
 void File::write_sentinel_attr(HighFive::Group grp) {
