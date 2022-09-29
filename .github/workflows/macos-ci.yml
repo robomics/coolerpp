@@ -1,13 +1,13 @@
 # Copyright (C) 2022 Roberto Rossini (roberros@uio.no)
 # SPDX-License-Identifier: MIT
 
-name: Unit tests macOS
+name: MacOS CI
 
 on:
   push:
     branches: [ main ]
     paths:
-      - ".github/workflows/unit-tests-macos.yml"
+      - ".github/workflows/macos-ci.yml"
       - "cmake/**"
       - "examples/**"
       - "src/**"
@@ -19,7 +19,7 @@ on:
 
   pull_request:
     paths:
-      - ".github/workflows/unit-tests-macos.yml"
+      - ".github/workflows/macos-ci.yml"
       - "cmake/**"
       - "examples/**"
       - "src/**"
