@@ -54,13 +54,15 @@ inline constexpr std::string_view SENTINEL_ATTR_NAME{"format-version"};
 inline constexpr std::uint8_t SENTINEL_ATTR_VALUE{255};
 }  // namespace internal
 
-constexpr bool ndebug_defined() noexcept {
+[[nodiscard]] constexpr bool ndebug_defined() noexcept {
 #ifdef NDEBUG
   return true;
 #else
   return false;
 #endif
 }
+
+[[nodiscard]] constexpr bool ndebug_not_defined() noexcept { return !ndebug_defined(); }
 
 #if defined(__GNUC__) || defined(__builtin_unreachable)
 #define COOLERPP_UNREACHABLE_CODE __builtin_unreachable()
@@ -70,7 +72,6 @@ constexpr bool ndebug_defined() noexcept {
 #define COOLERPP_UNREACHABLE_CODE
 #endif
 
-constexpr bool ndebug_not_defined() noexcept { return !ndebug_defined(); }
 
 [[noreturn]] inline void unreachable_code() {
   if constexpr (ndebug_not_defined()) {
