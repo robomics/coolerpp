@@ -50,9 +50,9 @@ inline constexpr std::array<std::string_view, 10> MANDATORY_DATASET_NAMES{
 // clang-format on
 
 namespace internal {
-    inline constexpr std::string_view SENTINEL_ATTR_NAME{"format-version"};
-    inline constexpr std::uint8_t SENTINEL_ATTR_VALUE{255};
-}
+inline constexpr std::string_view SENTINEL_ATTR_NAME{"format-version"};
+inline constexpr std::uint8_t SENTINEL_ATTR_VALUE{255};
+}  // namespace internal
 
 constexpr bool ndebug_defined() noexcept {
 #ifdef NDEBUG
