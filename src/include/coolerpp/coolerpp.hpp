@@ -28,17 +28,6 @@
 
 namespace coolerpp {
 
-enum class IO_MODE : std::uint_fast16_t {
-  ReadOnly = HighFive::File::ReadOnly,
-  ReadWrite = HighFive::File::ReadWrite,
-  Truncate = HighFive::File::Truncate,
-  Excl = HighFive::File::Excl,
-  Debug = HighFive::File::Debug,
-  Create = HighFive::File::Create,
-  Overwrite = Truncate,
-  OpenOrCreate = ReadWrite | Create
-};
-
 struct StandardAttributes {
   // Mandatory attributes
   std::uint32_t bin_size{0};
@@ -88,7 +77,7 @@ class File {
   using BinTable = BinTableLazy;
 
  private:
-  IO_MODE _mode{IO_MODE::ReadOnly};
+  unsigned int _mode{HighFive::File::ReadOnly};
   HighFive::File _fp;
   RootGroup _root_group;
   GroupMap _groups;
@@ -179,7 +168,8 @@ class File {
   void flush();
 
  private:
-  [[nodiscard]] static HighFive::File open_file(std::string_view uri, IO_MODE mode, bool validate);
+  [[nodiscard]] static HighFive::File open_file(std::string_view uri, unsigned int mode,
+                                                bool validate);
 
   [[nodiscard]] static auto open_or_create_root_group(HighFive::File &f, std::string_view uri)
       -> RootGroup;

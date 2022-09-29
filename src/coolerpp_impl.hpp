@@ -38,8 +38,8 @@ void init_mcool(std::string_view file_path, InputIt first_resolution, InputIt la
   static_assert(std::is_integral_v<I>,
                 "InputIt should be an iterator over a collection of integral numbers.");
   [[maybe_unused]] HighFive::SilenceHDF5 silencer{};
-  const auto mode = force_overwrite ? IO_MODE::Truncate : IO_MODE::Create;
-  HighFive::File fp(std::string{file_path}, static_cast<unsigned>(mode));
+  const auto mode = force_overwrite ? HighFive::File::Truncate : HighFive::File::Create;
+  HighFive::File fp(std::string{file_path}, mode);
   Attribute::write(fp, "format", std::string{MCOOL_MAGIC});
   Attribute::write(fp, "format-version", std::int64_t(3));
 
@@ -69,7 +69,7 @@ void init_mcool(std::string_view file_path, InputIt first_resolution, InputIt la
 template <class PixelT>
 File::File(std::string_view uri, ChromosomeSet chroms, [[maybe_unused]] PixelT pixel,
            StandardAttributes attributes)
-    : _mode(IO_MODE::ReadWrite),
+    : _mode(HighFive::File::ReadWrite),
       _fp(open_file(uri, _mode, false)),
       _root_group(open_or_create_root_group(_fp, uri)),
       _groups(create_groups(_root_group)),
@@ -108,11 +108,11 @@ File File::create_new_cooler(std::string_view uri, const ChromosomeSet &chroms,
       throw std::runtime_error("URI points to an existing file");
     }
 
-    auto mode = overwrite_if_exists ? IO_MODE::Overwrite : IO_MODE::Create;
+    auto mode = overwrite_if_exists ? HighFive::File::Overwrite : HighFive::File::Create;
 
     // File exists but cooler may not
     if (std::filesystem::exists(file_path) && !uri_is_file_path) {
-      mode = IO_MODE::ReadWrite;
+      mode = HighFive::File::ReadWrite;
     }
 
     {

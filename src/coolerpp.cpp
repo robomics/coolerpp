@@ -56,7 +56,7 @@ Chromosome find_chromosome_with_longest_name(const ChromosomeSet &chroms) {
 }
 
 File::File(std::string_view uri, bool validate)
-    : _mode(IO_MODE::ReadOnly),  // NOLINT(modernize-use-default-member-init)
+    : _mode(HighFive::File::ReadOnly),  // NOLINT(modernize-use-default-member-init)
       _fp(open_file(uri, _mode, validate)),
       _root_group(open_root_group(_fp, uri)),
       _groups(open_groups(_root_group)),
@@ -104,12 +104,12 @@ internal::NumericVariant File::detect_pixel_type(const RootGroup &root_grp, std:
   return internal::read_pixel_variant<internal::NumericVariant>(dset);
 }
 
-HighFive::File File::open_file(std::string_view uri, IO_MODE mode, bool validate) {
+HighFive::File File::open_file(std::string_view uri, unsigned int mode, bool validate) {
   [[maybe_unused]] const HighFive::SilenceHDF5 silencer{};
   const auto [file_path, root_grp] = parse_cooler_uri(uri);
 
   const auto new_file = !std::filesystem::exists(file_path);
-  HighFive::File f(file_path, static_cast<unsigned int>(mode));
+  HighFive::File f(file_path, mode);
   if (!validate || new_file) {
     return f;
   }
@@ -586,7 +586,7 @@ void File::write_indexes(Dataset &chrom_offset_dset, Dataset &bin_offset_dset, c
 }
 
 void File::finalize() {
-  if (_mode == IO_MODE::ReadOnly) {
+  if (_mode == HighFive::File::ReadOnly) {
     return;
   }
   try {
