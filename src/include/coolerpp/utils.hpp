@@ -17,6 +17,7 @@ namespace coolerpp::utils {
 namespace internal {
 struct ValidationStatusBase {
   bool is_hdf5{false};
+  bool file_was_properly_closed{false};
 
   bool missing_or_invalid_format_attr{true};
   bool missing_or_invalid_bin_type_attr{true};

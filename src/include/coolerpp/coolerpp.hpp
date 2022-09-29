@@ -11,6 +11,7 @@
 #include <highfive/H5DataSpace.hpp>
 #include <highfive/H5File.hpp>
 #include <highfive/H5Group.hpp>
+#include <memory>
 #include <optional>
 #include <string>
 #include <string_view>
@@ -39,7 +40,7 @@ struct StandardAttributes {
   // Reserved attributes
   std::optional<std::string> creation_date{fmt::format(
       FMT_STRING("{:%FT%T}"), fmt::gmtime(std::time(nullptr)))};  // e.g. 2022-07-26T20:35:19
-  std::optional<std::string> generated_by{"coolerpp-v0.0.1"};     // TODO fixme
+  std::optional<std::string> generated_by{COOLERPP_VERSION_STR_LONG};
   std::optional<std::string> assembly{"unknown"};
   std::optional<std::string> metadata{"{}"};
 
@@ -78,13 +79,13 @@ class File {
 
  private:
   unsigned int _mode{HighFive::File::ReadOnly};
-  HighFive::File _fp;
-  RootGroup _root_group;
-  GroupMap _groups;
-  DatasetMap _datasets;
-  StandardAttributes _attrs;
-  internal::NumericVariant _pixel_variant;
-  BinTable _bins;
+  std::unique_ptr<HighFive::File> _fp{};
+  RootGroup _root_group{};
+  GroupMap _groups{};
+  DatasetMap _datasets{};
+  StandardAttributes _attrs{};
+  internal::NumericVariant _pixel_variant{};
+  BinTable _bins{};
   Index _index{};
 
   // Constructors are private. Cooler files are opened using factory methods
@@ -95,9 +96,9 @@ class File {
                 StandardAttributes attributes);
 
  public:
-  File() = delete;
+  File() = default;
   File(const File &other) = delete;
-  File(File &&other) noexcept = delete;
+  File(File &&other) noexcept = default;
 
   // Simple constructor. Open file in read-only mode. Automatically detects pixel count type
   [[nodiscard]] static File open_read_only(std::string_view uri, bool validate = true);
@@ -110,7 +111,16 @@ class File {
   ~File() noexcept;
 
   File &operator=(const File &other) = delete;
-  File &operator=(File &&other) noexcept = delete;
+  File &operator=(File &&other) noexcept = default;
+
+  [[nodiscard]] explicit operator bool() const noexcept;
+
+  void open(std::string_view uri, bool validate = true);
+  template <class PixelT = std::uint32_t>
+  void create(std::string_view uri, const ChromosomeSet &chroms, std::uint32_t bin_size,
+              bool overwrite_if_exists = false,
+              StandardAttributes attributes = StandardAttributes::init<PixelT>(0));
+  void close();
 
   // template <class PixelT, class InputIt>
   // [[nodiscard]] static  File create_new_mcool(std::string_view file_path,
@@ -184,12 +194,14 @@ class File {
       -> StandardAttributes;
 
   // Create/write groups, datasets and attributes
-  [[nodiscard]] static auto create_root_group(HighFive::File &f, std::string_view uri) -> RootGroup;
+  [[nodiscard]] static auto create_root_group(HighFive::File &f, std::string_view uri,
+                                              bool write_sentinel_attr = true) -> RootGroup;
   [[nodiscard]] static auto create_groups(RootGroup &root_grp) -> GroupMap;
   template <class PixelT>
   [[nodiscard]] static auto create_datasets(RootGroup &root_grp, const ChromosomeSet &chroms)
       -> DatasetMap;
-  static void write_standard_attributes(RootGroup &root_grp, const StandardAttributes &attributes);
+  static void write_standard_attributes(RootGroup &root_grp, const StandardAttributes &attributes,
+                                        bool skip_sentinel_attr = true);
 
   [[nodiscard]] static auto import_chroms(const Dataset &chrom_names, const Dataset &chrom_sizes,
                                           bool missing_ok) -> ChromosomeSet;
@@ -207,7 +219,7 @@ class File {
 
   [[nodiscard]] static internal::NumericVariant detect_pixel_type(
       const RootGroup &root_grp, std::string_view path = "pixels/count");
-  void write_attributes();
+  void write_attributes(bool skip_sentinel_attr = true);
   void write_chromosomes();
 
   template <class ChromIt, class UnaryOperation = identity,
@@ -225,6 +237,11 @@ class File {
   static void write_indexes(Dataset &chrom_offset_dset, Dataset &bin_offset_dset, const Index &idx);
 
   void finalize();
+
+  static void write_sentinel_attr(HighFive::Group grp);
+  [[nodiscard]] static bool check_sentinel_attr(const HighFive::Group &grp);
+  void write_sentinel_attr();
+  [[nodiscard]] bool check_sentinel_attr();
 };
 
 }  // namespace coolerpp

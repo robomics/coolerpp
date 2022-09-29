@@ -72,6 +72,7 @@ ValidationStatusCooler is_cooler(const HighFive::Group &root_group) {
 
   if (Attribute::exists(root_group, "format-version")) {
     const auto version = Attribute::read<std::uint8_t>(root_group, "format-version");
+    status.file_was_properly_closed = version != coolerpp::internal::SENTINEL_ATTR_VALUE;
     status.missing_or_invalid_format_attr |= version == 0 || version > 3;
   }
 
@@ -92,6 +93,7 @@ ValidationStatusCooler is_cooler(const HighFive::Group &root_group) {
 
   // clang-format off
   status.is_cooler = status.is_hdf5 &&
+                     status.file_was_properly_closed &&
                      !status.missing_or_invalid_format_attr &&
                      !status.missing_or_invalid_bin_type_attr &&
                      status.missing_groups.empty();
@@ -106,6 +108,7 @@ ValidationStatusMultiresCooler is_multires_file(const HighFive::File &fp, bool v
   ValidationStatusMultiresCooler status{};
   status.uri = fp.getName();
 
+  status.file_was_properly_closed = true;
   status.is_hdf5 = fp.isValid();
   // Check file is in HDF5 format
   if (!status.is_hdf5) {
@@ -167,6 +170,7 @@ ValidationStatusMultiresCooler is_multires_file(const HighFive::File &fp, bool v
       const auto suffix = fmt::format(FMT_STRING("resolutions/{}"), resolution);
 
       if (auto status_ = is_cooler(fp, suffix); !status_) {
+        status.file_was_properly_closed &= status_.file_was_properly_closed;
         status.invalid_resolutions.emplace_back(std::move(status_));
       }
     }
@@ -174,6 +178,7 @@ ValidationStatusMultiresCooler is_multires_file(const HighFive::File &fp, bool v
 
   // clang-format off
   status.is_multires_file = status.is_hdf5 &&
+                            status.file_was_properly_closed &&
                             !status.missing_or_invalid_format_attr &&
                             !status.missing_or_invalid_bin_type_attr &&
                             status.missing_groups.empty() &&
@@ -188,6 +193,7 @@ ValidationStatusScool is_scool_file(const HighFive::File &fp, bool validate_cell
   ValidationStatusScool status{};
   status.uri = fp.getName();
 
+  status.file_was_properly_closed = true;
   status.is_hdf5 = fp.isValid();
   // Check file is in HDF5 format
   if (!status.is_hdf5) {
@@ -247,6 +253,7 @@ ValidationStatusScool is_scool_file(const HighFive::File &fp, bool validate_cell
     for (const auto &cell : cells) {
       const auto suffix = fmt::format(FMT_STRING("cells/{}"), cell);
       if (auto status_ = is_cooler(fp, suffix); !status_) {
+        status.file_was_properly_closed &= status_.file_was_properly_closed;
         status.invalid_cells.emplace_back(std::move(status_));
       }
     }
@@ -254,6 +261,7 @@ ValidationStatusScool is_scool_file(const HighFive::File &fp, bool validate_cell
 
   // clang-format off
   status.is_scool_file = status.is_hdf5 &&
+                         status.file_was_properly_closed &&
                          !status.missing_or_invalid_format_attr &&
                          !status.missing_or_invalid_bin_type_attr &&
                          status.missing_groups.empty() &&

@@ -121,6 +121,8 @@ TEST_CASE("Coolerpp: format checking", "[cooler][short]") {
 
 // NOLINTNEXTLINE(readability-function-cognitive-complexity)
 TEST_CASE("Coolerpp: file ctors", "[cooler][short]") {
+  SECTION("default") { CHECK_NOTHROW(File{}); }
+
   SECTION("open .cool") {
     const auto path = datadir / "cooler_test_file.cool";
     const auto f = File::open_read_only(path.string());
@@ -241,6 +243,39 @@ TEST_CASE("Coolerpp: init files", "[cooler][short]") {
       CHECK(utils::is_scool_file(path));
     }
     */
+}
+
+// NOLINTNEXTLINE(readability-function-cognitive-complexity)
+TEST_CASE("Coolerpp: sentinel attribute", "[cooler][short]") {
+  const ChromosomeSet chroms{Chromosome{"chr1", 10000}, Chromosome{"chr2", 5000}};
+
+  const auto path = testdir() / "test_sentinel_attr.cool";
+  constexpr std::uint32_t bin_size = 1000;
+  auto f = File::create_new_cooler(path.string(), chroms, bin_size, true);
+
+  SECTION("Read-only") {
+    const auto path1 = datadir / "cooler_test_file.cool";
+    const auto f1 = File::open_read_only(path1.string());
+    CHECK(Attribute::read<std::uint8_t>(f1.group("/")(), internal::SENTINEL_ATTR_NAME) !=
+          internal::SENTINEL_ATTR_VALUE);
+  }
+
+  SECTION("Create") {
+    CHECK(Attribute::read<std::uint8_t>(f.group("/")(), internal::SENTINEL_ATTR_NAME) ==
+          internal::SENTINEL_ATTR_VALUE);
+    f.close();
+    f = File::open_read_only(path.string());
+    CHECK(Attribute::read<std::uint8_t>(f.group("/")(), internal::SENTINEL_ATTR_NAME) !=
+          internal::SENTINEL_ATTR_VALUE);
+  }
+
+  SECTION("Create (file was not closed properly)") {
+    CHECK(Attribute::read<std::uint8_t>(f.group("/")(), internal::SENTINEL_ATTR_NAME) ==
+          internal::SENTINEL_ATTR_VALUE);
+
+    CHECK_THROWS(f = File::open_read_only(path.string()));
+    CHECK_THROWS(f = File::create_new_cooler(path.string(), chroms, bin_size, true));
+  }
 }
 
 // NOLINTNEXTLINE(readability-function-cognitive-complexity)

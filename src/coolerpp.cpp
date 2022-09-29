@@ -57,8 +57,8 @@ Chromosome find_chromosome_with_longest_name(const ChromosomeSet &chroms) {
 
 File::File(std::string_view uri, bool validate)
     : _mode(HighFive::File::ReadOnly),  // NOLINT(modernize-use-default-member-init)
-      _fp(open_file(uri, _mode, validate)),
-      _root_group(open_root_group(_fp, uri)),
+      _fp(std::make_unique<HighFive::File>(open_file(uri, _mode, validate))),
+      _root_group(open_root_group(*_fp, uri)),
       _groups(open_groups(_root_group)),
       _datasets(open_datasets(_root_group)),
       _attrs(read_standard_attributes(_root_group)),
@@ -88,6 +88,17 @@ File::~File() noexcept {
   }
 }
 
+File::operator bool() const noexcept { return !!this->_fp; }
+
+void File::open(std::string_view uri, bool validate) {
+  *this = File::open_read_only(uri, validate);
+}
+
+void File::close() {
+  this->finalize();
+  *this = File{};
+}
+
 std::string File::uri() const {
   if (this->hdf5_path() == "/") {
     return this->path();
@@ -96,13 +107,43 @@ std::string File::uri() const {
 }
 
 std::string File::hdf5_path() const { return this->_root_group.hdf5_path(); }
-std::string File::path() const { return this->_fp.getName(); }
+std::string File::path() const {
+  if (!*this) {
+    return "";
+  }
+  return this->_fp->getName();
+}
 
 internal::NumericVariant File::detect_pixel_type(const RootGroup &root_grp, std::string_view path) {
   [[maybe_unused]] HighFive::SilenceHDF5 silencer{};
   auto dset = root_grp().getDataSet(std::string{path});
   return internal::read_pixel_variant<internal::NumericVariant>(dset);
 }
+
+bool File::check_sentinel_attr(const HighFive::Group &grp) {
+  const auto generated_by_v = Attribute::read(grp, "generated-by", true);
+  if (const auto *generated_by = std::get_if<std::string>(&generated_by_v);
+      !generated_by || generated_by->find("coolerpp") == std::string::npos) {
+    return false;
+  }
+
+  using T = remove_cvref_t<decltype(internal::SENTINEL_ATTR_VALUE)>;
+  const auto sentinel_v = Attribute::read(grp, internal::SENTINEL_ATTR_NAME, true);
+  const auto *sentinel = std::get_if<T>(&sentinel_v);
+
+  return !!sentinel && *sentinel == internal::SENTINEL_ATTR_VALUE;
+}
+
+void File::write_sentinel_attr(HighFive::Group grp) {
+  assert(!check_sentinel_attr(grp));
+
+  Attribute::write(grp, internal::SENTINEL_ATTR_NAME, internal::SENTINEL_ATTR_VALUE, true);
+  grp.getFile().flush();
+}
+
+void File::write_sentinel_attr() { File::write_sentinel_attr(this->_root_group()); }
+
+bool File::check_sentinel_attr() { return File::check_sentinel_attr(this->_root_group()); }
 
 HighFive::File File::open_file(std::string_view uri, unsigned int mode, bool validate) {
   [[maybe_unused]] const HighFive::SilenceHDF5 silencer{};
@@ -137,14 +178,22 @@ auto File::open_root_group(const HighFive::File &f, std::string_view uri) -> Roo
   return {f.getGroup(parse_cooler_uri(uri).group_path)};
 }
 
-auto File::create_root_group(HighFive::File &f, std::string_view uri) -> RootGroup {
+auto File::create_root_group(HighFive::File &f, std::string_view uri, bool write_sentinel_attr)
+    -> RootGroup {
   [[maybe_unused]] HighFive::SilenceHDF5 silencer{};
-  return {f.createGroup(parse_cooler_uri(uri).group_path)};
+  auto grp = f.createGroup(parse_cooler_uri(uri).group_path);
+  if (write_sentinel_attr) {
+    Attribute::write(grp, internal::SENTINEL_ATTR_NAME, internal::SENTINEL_ATTR_VALUE);
+    f.flush();
+  }
+
+  return {grp};
 }
 
 auto File::open_groups(const RootGroup &root_grp) -> GroupMap {
   [[maybe_unused]] HighFive::SilenceHDF5 silencer{};
-  GroupMap groups(MANDATORY_GROUP_NAMES.size());
+  GroupMap groups(MANDATORY_GROUP_NAMES.size() + 1);
+  groups.emplace(root_grp.hdf5_path(), Group{root_grp, root_grp()});
 
   std::transform(MANDATORY_GROUP_NAMES.begin(), MANDATORY_GROUP_NAMES.end(),
                  std::inserter(groups, groups.begin()), [&root_grp](const auto group_name) {
@@ -158,7 +207,8 @@ auto File::open_groups(const RootGroup &root_grp) -> GroupMap {
 
 auto File::create_groups(RootGroup &root_grp) -> GroupMap {
   [[maybe_unused]] HighFive::SilenceHDF5 silencer{};
-  GroupMap groups(MANDATORY_GROUP_NAMES.size());
+  GroupMap groups(MANDATORY_GROUP_NAMES.size() + 1);
+  groups.emplace(root_grp.hdf5_path(), Group{root_grp, root_grp()});
 
   std::transform(MANDATORY_GROUP_NAMES.begin(), MANDATORY_GROUP_NAMES.end(),
                  std::inserter(groups, groups.begin()), [&root_grp](const auto group_name) {
@@ -170,7 +220,8 @@ auto File::create_groups(RootGroup &root_grp) -> GroupMap {
   return groups;
 }
 
-void File::write_standard_attributes(RootGroup &root_grp, const StandardAttributes &attributes) {
+void File::write_standard_attributes(RootGroup &root_grp, const StandardAttributes &attributes,
+                                     bool skip_sentinel_attr) {
   assert(attributes.bin_size != 0);
   [[maybe_unused]] HighFive::SilenceHDF5 silencer{};
   Attribute::write(root_grp(), "bin-size", attributes.bin_size);
@@ -178,7 +229,10 @@ void File::write_standard_attributes(RootGroup &root_grp, const StandardAttribut
   Attribute::write(root_grp(), "creation-date", *attributes.creation_date);
   Attribute::write(root_grp(), "format", std::string{COOL_MAGIC});
   Attribute::write(root_grp(), "format-url", *attributes.format_url);
-  Attribute::write(root_grp(), "format-version", attributes.format_version);
+  if (!skip_sentinel_attr) {
+    static_assert(internal::SENTINEL_ATTR_NAME == "format-version");
+    Attribute::write(root_grp(), "format-version", attributes.format_version);
+  }
   Attribute::write(root_grp(), "generated-by", *attributes.generated_by);
   Attribute::write(root_grp(), "metadata", *attributes.metadata);
   Attribute::write(root_grp(), "nbins", *attributes.nbins);
@@ -458,8 +512,8 @@ void File::validate_bins() const {
 
   } catch (const HighFive::Exception &e) {
     throw std::runtime_error(
-        fmt::format(FMT_STRING("Bin table at URI {}::{} is invalid or corrupted: {}"),
-                    this->_fp.getName(), this->group("bins")().getPath(), e.what()));
+        fmt::format(FMT_STRING("Bin table at URI {}/{} is invalid or corrupted: {}"), this->uri(),
+                    this->group("bins")().getPath(), e.what()));
   }
 }
 
@@ -469,15 +523,22 @@ const internal::NumericVariant &File::pixel_variant() const noexcept {
   return this->_pixel_variant;
 }
 
-void File::flush() { this->_fp.flush(); }
+void File::flush() { this->_fp->flush(); }
 
-void File::write_attributes() {
+void File::write_attributes(bool skip_sentinel_attr) {
   assert(this->_attrs.nbins == this->_bins.size());
   assert(this->_attrs.nchroms == this->chromosomes().size());
   assert(this->_attrs.nnz == this->_datasets.at("pixels/count").size());
 
-  this->write_standard_attributes(this->_root_group, this->_attrs);
+  File::write_standard_attributes(this->_root_group, this->_attrs, skip_sentinel_attr);
   this->flush();
+  if (skip_sentinel_attr) {
+    using T = remove_cvref_t<decltype(internal::SENTINEL_ATTR_VALUE)>;
+    assert(Attribute::read<T>(this->_root_group(), internal::SENTINEL_ATTR_NAME) ==
+           internal::SENTINEL_ATTR_VALUE);
+    Attribute::write(this->_root_group(), "format-version", this->_attrs.format_version, true);
+    this->flush();
+  }
 }
 
 void File::write_chromosomes() {
@@ -593,7 +654,7 @@ void File::finalize() {
     this->write_chromosomes();
     this->write_bin_table();
 
-    this->_index.nnz() = *this->_attrs.nnz;
+    _index.nnz() = *_attrs.nnz;
     this->write_indexes();
     this->write_attributes();
 

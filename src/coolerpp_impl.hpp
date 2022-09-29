@@ -32,8 +32,8 @@
 namespace coolerpp {
 
 template <class InputIt>
-void init_mcool(std::string_view file_path, InputIt first_resolution, InputIt last_resolution,
-                bool force_overwrite) {
+inline void init_mcool(std::string_view file_path, InputIt first_resolution,
+                       InputIt last_resolution, bool force_overwrite) {
   using I = remove_cvref_t<decltype(*first_resolution)>;
   static_assert(std::is_integral_v<I>,
                 "InputIt should be an iterator over a collection of integral numbers.");
@@ -51,9 +51,10 @@ void init_mcool(std::string_view file_path, InputIt first_resolution, InputIt la
 }
 
 // template <class ChromSizeInputIt, class CellIDInputIt>
-// void init_scool(std::string_view file_path, ChromSizeInputIt first_chrom,
-//                 ChromSizeInputIt last_chrom, CellIDInputIt first_cell_id,
-//                 CellIDInputIt last_cell_id, std::uint32_t bin_size, bool force_overwrite) {
+// inline void init_scool(std::string_view file_path, ChromSizeInputIt first_chrom,
+//                        ChromSizeInputIt last_chrom, CellIDInputIt first_cell_id,
+//                        CellIDInputIt last_cell_id, std::uint32_t bin_size, bool force_overwrite)
+//                        {
 //   [[maybe_unused]] HighFive::SilenceHDF5 silencer{};
 //   const auto mode = force_overwrite ? IO_MODE::Truncate : IO_MODE::Create;
 //   HighFive::File fp(std::string{file_path}, static_cast<unsigned>(mode));
@@ -67,11 +68,11 @@ void init_mcool(std::string_view file_path, InputIt first_resolution, InputIt la
 // }
 
 template <class PixelT>
-File::File(std::string_view uri, ChromosomeSet chroms, [[maybe_unused]] PixelT pixel,
-           StandardAttributes attributes)
+inline File::File(std::string_view uri, ChromosomeSet chroms, [[maybe_unused]] PixelT pixel,
+                  StandardAttributes attributes)
     : _mode(HighFive::File::ReadWrite),
-      _fp(open_file(uri, _mode, false)),
-      _root_group(open_or_create_root_group(_fp, uri)),
+      _fp(std::make_unique<HighFive::File>(open_file(uri, _mode, false))),
+      _root_group(open_or_create_root_group(*_fp, uri)),
       _groups(create_groups(_root_group)),
       _datasets(create_datasets<PixelT>(_root_group, chroms)),
       _attrs(std::move(attributes)),
@@ -83,12 +84,14 @@ File::File(std::string_view uri, ChromosomeSet chroms, [[maybe_unused]] PixelT p
   assert(!chromosomes().empty());
   assert(!_index.empty());
   assert(std::holds_alternative<PixelT>(this->_pixel_variant));
+
+  this->write_sentinel_attr();
 }
 
 template <class PixelT>
-File File::create_new_cooler(std::string_view uri, const ChromosomeSet &chroms,
-                             std::uint32_t bin_size, bool overwrite_if_exists,
-                             StandardAttributes attributes) {
+inline File File::create_new_cooler(std::string_view uri, const ChromosomeSet &chroms,
+                                    std::uint32_t bin_size, bool overwrite_if_exists,
+                                    StandardAttributes attributes) {
   assert(bin_size != 0);
   attributes.bin_size = bin_size;
   try {
@@ -140,6 +143,13 @@ File File::create_new_cooler(std::string_view uri, const ChromosomeSet &chroms,
   }
 }
 
+template <class PixelT>
+inline void File::create(std::string_view uri, const coolerpp::ChromosomeSet &chroms,
+                         std::uint32_t bin_size, bool overwrite_if_exists,
+                         coolerpp::StandardAttributes attributes) {
+  *this = File::create_new_cooler<PixelT>(uri, chroms, bin_size, overwrite_if_exists, attributes);
+}
+
 constexpr std::uint32_t File::bin_size() const noexcept { return this->_attrs.bin_size; }
 
 constexpr auto File::chromosomes() const noexcept -> const ChromosomeSet & {
@@ -150,7 +160,7 @@ constexpr auto File::bins() const noexcept -> const BinTable & { return this->_b
 
 namespace internal {
 template <class Variant, std::size_t i = 0>
-[[nodiscard]] Variant read_pixel_variant(const HighFive::DataSet &dset) {
+[[nodiscard]] inline Variant read_pixel_variant(const HighFive::DataSet &dset) {
   if constexpr (i < std::variant_size_v<Variant>) {
     using T = std::variant_alternative_t<i, Variant>;
     if (dset.getDataType() != HighFive::create_datatype<T>()) {
@@ -171,7 +181,7 @@ template <class Variant, std::size_t i = 0>
 }  // namespace internal
 
 template <class PixelT>
-auto File::create_datasets(RootGroup &root_grp, const ChromosomeSet &chroms) -> DatasetMap {
+inline auto File::create_datasets(RootGroup &root_grp, const ChromosomeSet &chroms) -> DatasetMap {
   DatasetMap datasets(MANDATORY_DATASET_NAMES.size() + 1);
 
   auto create_dataset = [&](const auto &path, const auto &type) {
@@ -205,7 +215,7 @@ auto File::create_datasets(RootGroup &root_grp, const ChromosomeSet &chroms) -> 
 }
 
 template <class PixelIt>
-void File::validate_pixels_before_append(PixelIt first_pixel, PixelIt last_pixel) const {
+inline void File::validate_pixels_before_append(PixelIt first_pixel, PixelIt last_pixel) const {
   using PixelT = typename std::iterator_traits<PixelIt>::value_type;
   using T = decltype(std::declval<PixelT>().count);
   try {
@@ -263,12 +273,12 @@ void File::validate_pixels_before_append(PixelIt first_pixel, PixelIt last_pixel
 }
 
 template <class T>
-bool File::has_pixel_of_type() const noexcept {
+inline bool File::has_pixel_of_type() const noexcept {
   return std::holds_alternative<T>(this->_pixel_variant);
 }
 
 template <class PixelT, class>
-StandardAttributes StandardAttributes::init(std::uint32_t bin_size_) {
+inline StandardAttributes StandardAttributes::init(std::uint32_t bin_size_) {
   StandardAttributes attrs{};
   attrs.bin_size = bin_size_;
   if constexpr (std::is_floating_point_v<PixelT>) {
@@ -283,8 +293,8 @@ StandardAttributes StandardAttributes::init(std::uint32_t bin_size_) {
 }
 
 template <class ChromIt, class UnaryOperation, class>
-void File::write_chromosomes(Dataset &name_dset, Dataset &size_dset, ChromIt first_chrom,
-                             ChromIt last_chrom, UnaryOperation op) {
+inline void File::write_chromosomes(Dataset &name_dset, Dataset &size_dset, ChromIt first_chrom,
+                                    ChromIt last_chrom, UnaryOperation op) {
   const auto num_chroms = std::distance(first_chrom, last_chrom);
   if (num_chroms == 0) {
     return;

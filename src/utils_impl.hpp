@@ -31,23 +31,23 @@ template <class FormatContext>
 auto fmt::formatter<coolerpp::utils::ValidationStatusCooler>::format(
     const coolerpp::utils::ValidationStatusCooler &s, FormatContext &ctx) const
     -> decltype(ctx.out()) {
-  auto bool_to_str = [](bool x) { return x ? "true" : "false"; };
-
   // clang-format off
   return fmt::format_to(
       ctx.out(),
       FMT_STRING("uri=\"{}\"\n"
                  "is_hdf5={}\n"
+                 "file_was_properly_closed={}\n"
                  "missing_or_invalid_format_attr={}\n"
                  "missing_or_invalid_bin_type_attr={}\n"
                  "missing_groups=[{}]\n"
                  "is_valid_cooler={}"),
       s.uri,
-      bool_to_str(s.is_hdf5),
-      bool_to_str(s.missing_or_invalid_format_attr),
-      bool_to_str(s.missing_or_invalid_bin_type_attr),
+      s.is_hdf5,
+      s.file_was_properly_closed,
+      s.missing_or_invalid_format_attr,
+      s.missing_or_invalid_bin_type_attr,
       fmt::join(s.missing_groups, ", "),
-      bool_to_str(s.is_cooler));
+      s.is_cooler);
   // clang-format on
 }
 
@@ -63,24 +63,24 @@ template <class FormatContext>
 auto fmt::formatter<coolerpp::utils::ValidationStatusMultiresCooler>::format(
     const coolerpp::utils::ValidationStatusMultiresCooler &s, FormatContext &ctx) const
     -> decltype(ctx.out()) {
-  auto bool_to_str = [](bool x) { return x ? "true" : "false"; };
-
   // clang-format off
   return fmt::format_to(
       ctx.out(),
       FMT_STRING("uri=\"{}\"\n"
                  "is_hdf5={}\n"
+                 "file_was_properly_closed={}\n"
                  "missing_or_invalid_format_attr={}\n"
                  "missing_or_invalid_bin_type_attr={}\n"
                  "missing_groups=[{}]\n"
                  "is_valid_multires_file={}\n"
                  "invalid_resolutions{}{}"),
       s.uri,
-      bool_to_str(s.is_hdf5),
-      bool_to_str(s.missing_or_invalid_format_attr),
-      bool_to_str(s.missing_or_invalid_bin_type_attr),
+      s.is_hdf5,
+      s.file_was_properly_closed,
+      s.missing_or_invalid_format_attr,
+      s.missing_or_invalid_bin_type_attr,
       fmt::join(s.missing_groups, ", "),
-      bool_to_str(s.is_multires_file),
+      s.is_multires_file,
       s.invalid_resolutions.empty() ? "=[]" : ":\n - ",
       fmt::join(s.invalid_resolutions, "\n - "));
   // clang-format on
@@ -105,17 +105,19 @@ auto fmt::formatter<coolerpp::utils::ValidationStatusScool>::format(
       ctx.out(),
       FMT_STRING("uri=\"{}\"\n"
                  "is_hdf5={}\n"
+                 "file_was_properly_closed={}\n"
                  "missing_or_invalid_format_attr={}\n"
                  "missing_or_invalid_bin_type_attr={}\n"
                  "missing_groups=[{}]\n"
                  "is_valid_scool_file={}\n"
                  "invalid_cells{}{}"),
       s.uri,
-      bool_to_str(s.is_hdf5),
-      bool_to_str(s.missing_or_invalid_format_attr),
-      bool_to_str(s.missing_or_invalid_bin_type_attr),
+      s.is_hdf5,
+      s.file_was_properly_closed,
+      s.missing_or_invalid_format_attr,
+      s.missing_or_invalid_bin_type_attr,
       fmt::join(s.missing_groups, ", "),
-      bool_to_str(s.is_scool_file),
+      s.is_scool_file,
       s.invalid_cells.empty() ? "=[]" : ":\n - ",
       fmt::join(s.invalid_cells, "\n - "));
   // clang-format on
