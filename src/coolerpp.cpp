@@ -647,7 +647,7 @@ void File::write_indexes(Dataset &chrom_offset_dset, Dataset &bin_offset_dset, c
 }
 
 void File::finalize() {
-  if (_mode == HighFive::File::ReadOnly) {
+  if (!_fp || _mode == HighFive::File::ReadOnly) {
     return;
   }
   try {
