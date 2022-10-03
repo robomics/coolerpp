@@ -123,6 +123,38 @@ TEST_CASE("Coolerpp: format checking", "[cooler][short]") {
 TEST_CASE("Coolerpp: file ctors", "[cooler][short]") {
   SECTION("default") { CHECK_NOTHROW(File{}); }
 
+  SECTION("move #1") {
+    const auto path = datadir / "cooler_test_file.cool";
+
+    File f{};
+    CHECK(!f);
+    f = File::open_read_only(path.string());
+
+    CHECK(f.chromosomes().size() == 20);
+    CHECK(f.bins().size() == 26'398);
+    CHECK(f.has_pixel_of_type<std::int32_t>());
+  }
+  SECTION("move #2") {
+    const ChromosomeSet chroms{Chromosome{"chr1", 10000}, Chromosome{"chr2", 5000}};
+    const auto path = testdir() / "move_ctor.cool";
+
+    constexpr std::uint32_t bin_size = 1000;
+    using PixelT = Pixel<std::uint32_t>;
+    {
+      File f{};
+      CHECK(!f);
+
+      std::vector<PixelT> pixels{};
+      f = File::create_new_cooler(path.string(), chroms, bin_size, true);
+      for (std::uint32_t pos1 = 0; pos1 < chroms.at("chr1").size; pos1 += bin_size) {
+        for (std::uint32_t pos2 = pos1; pos2 < chroms.at("chr1").size; pos2 += bin_size) {
+          pixels.emplace_back(PixelT{{f.bins(), "chr1", pos1, pos2},
+                                     static_cast<std::uint32_t>(pixels.size() + 1)});
+        }
+      }
+      f.append_pixels(pixels.begin(), pixels.end(), true);
+    }
+  }
   SECTION("open .cool") {
     const auto path = datadir / "cooler_test_file.cool";
     const auto f = File::open_read_only(path.string());

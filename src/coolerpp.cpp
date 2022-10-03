@@ -13,6 +13,7 @@
 #include <highfive/H5File.hpp>
 #include <highfive/H5Group.hpp>
 #include <highfive/H5Utility.hpp>
+#include <memory>
 #include <string>
 #include <string_view>
 #include <utility>
@@ -63,11 +64,12 @@ File::File(std::string_view uri, bool validate)
       _datasets(open_datasets(_root_group)),
       _attrs(read_standard_attributes(_root_group)),
       _pixel_variant(detect_pixel_type(_root_group)),
-      _bins(import_chroms(_datasets.at("chroms/name"), _datasets.at("chroms/length"), false),
-            this->bin_size()),
-      _index(import_indexes(_datasets.at("indexes/chrom_offset"),
-                            _datasets.at("indexes/bin1_offset"), chromosomes(), _bins, *_attrs.nnz,
-                            false)) {
+      _bins(std::make_unique<BinTable>(
+          import_chroms(_datasets.at("chroms/name"), _datasets.at("chroms/length"), false),
+          this->bin_size())),
+      _index(std::make_unique<Index>(import_indexes(_datasets.at("indexes/chrom_offset"),
+                                                    _datasets.at("indexes/bin1_offset"),
+                                                    chromosomes(), *_bins, *_attrs.nnz, false))) {
   if (validate) {
     this->validate_bins();
   }
@@ -473,13 +475,13 @@ void File::validate_bins() const {
                                                       " - \"bins/start\": {}\n"
                                                       " - \"bins/end\": {}\n"
                                                       "Expected {}"),
-                                           nchroms, nstarts, nends, this->_bins.size()));
+                                           nchroms, nstarts, nends, this->bins().size()));
     }
 
     const auto &nbins = nchroms;
-    if (nbins != this->_bins.size()) {
+    if (nbins != this->bins().size()) {
       throw std::runtime_error(
-          fmt::format(FMT_STRING("Expected {} bins, found {}"), this->_bins.size(), nchroms));
+          fmt::format(FMT_STRING("Expected {} bins, found {}"), this->bins().size(), nchroms));
     }
 
     auto chrom_it = this->dataset("bins/chrom").begin<std::uint32_t>();
@@ -491,10 +493,10 @@ void File::validate_bins() const {
     auto last_end = this->dataset("bins/end").end<std::uint32_t>();
 
     std::size_t i = 0;
-    for (const Bin &bin : this->_bins) {
+    for (const Bin &bin : this->bins()) {
       if (chrom_it == last_chrom || start_it == last_start || end_it == last_end) {
         throw std::runtime_error(
-            fmt::format(FMT_STRING("Expected {} bins, found {}"), this->_bins.size(), i));
+            fmt::format(FMT_STRING("Expected {} bins, found {}"), this->bins().size(), i));
       }
 
       if (this->chromosomes().at(*chrom_it).name != bin.chrom.name || *start_it != bin.bin_start ||
@@ -526,7 +528,7 @@ const internal::NumericVariant &File::pixel_variant() const noexcept {
 void File::flush() { this->_fp->flush(); }
 
 void File::write_attributes(bool skip_sentinel_attr) {
-  assert(this->_attrs.nbins == this->_bins.size());
+  assert(this->_attrs.nbins == this->bins().size());
   assert(this->_attrs.nchroms == this->chromosomes().size());
   assert(this->_attrs.nnz == this->_datasets.at("pixels/count").size());
 
@@ -609,9 +611,9 @@ StandardAttributes StandardAttributes::init_empty() noexcept {
 
 void File::write_bin_table() {
   File::write_bin_table(this->dataset("bins/chrom"), this->dataset("bins/start"),
-                        this->dataset("bins/end"), this->_bins);
+                        this->dataset("bins/end"), this->bins());
 
-  this->_attrs.nbins = this->_bins.size();
+  this->_attrs.nbins = this->bins().size();
 }
 void File::write_bin_table(Dataset &chrom_dset, Dataset &start_dset, Dataset &end_dset,
                            const BinTable &bin_table) {
@@ -632,9 +634,9 @@ void File::write_bin_table(Dataset &chrom_dset, Dataset &start_dset, Dataset &en
 }
 
 void File::write_indexes() {
-  this->_index.finalize(*this->_attrs.nnz);
+  this->index().finalize(*this->_attrs.nnz);
   File::write_indexes(this->dataset("indexes/chrom_offset"), this->dataset("indexes/bin1_offset"),
-                      this->_index);
+                      this->index());
 }
 
 void File::write_indexes(Dataset &chrom_offset_dset, Dataset &bin_offset_dset, const Index &idx) {
@@ -648,13 +650,18 @@ void File::write_indexes(Dataset &chrom_offset_dset, Dataset &bin_offset_dset, c
 
 void File::finalize() {
   if (!_fp || _mode == HighFive::File::ReadOnly) {
+    assert(!_bins == !_fp);
+    assert(!_index == !_fp);
     return;
   }
+
+  assert(this->_bins);
+  assert(this->_index);
   try {
     this->write_chromosomes();
     this->write_bin_table();
 
-    _index.nnz() = *_attrs.nnz;
+    _index->nnz() = *_attrs.nnz;
     this->write_indexes();
     this->write_attributes();
 
@@ -664,6 +671,15 @@ void File::finalize() {
                                "File is likely corrupted or incomplete"),
                     this->path(), e.what()));
   }
+}
+
+auto File::get_last_bin_written() const -> Bin {
+  const auto &dset = this->dataset("pixels/bin1_id");
+  if (dset.empty()) {
+    return this->bins().bin_id_to_coords(0);
+  }
+  const auto bin1_id = dset.read_last<std::uint64_t>();
+  return this->bins().bin_id_to_coords(bin1_id);
 }
 
 }  // namespace coolerpp

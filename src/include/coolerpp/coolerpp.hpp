@@ -85,8 +85,8 @@ class File {
   DatasetMap _datasets{};
   StandardAttributes _attrs{};
   internal::NumericVariant _pixel_variant{};
-  BinTable _bins{};
-  Index _index{};
+  std::unique_ptr<BinTable> _bins{};
+  std::unique_ptr<Index> _index{};
 
   // Constructors are private. Cooler files are opened using factory methods
   explicit File(std::string_view uri, bool validate = true);
@@ -98,7 +98,7 @@ class File {
  public:
   File() = default;
   File(const File &other) = delete;
-  File(File &&other) noexcept(noexcept_move_ctor()) = default;  // NOLINT
+  File(File &&other) noexcept(noexcept_move_assigment_op()) = default;  // NOLINT
 
   // Simple constructor. Open file in read-only mode. Automatically detects pixel count type
   [[nodiscard]] static File open_read_only(std::string_view uri, bool validate = true);
@@ -178,6 +178,9 @@ class File {
   void flush();
 
  private:
+  [[nodiscard]] constexpr auto index() const noexcept -> const Index &;
+  [[nodiscard]] constexpr auto index() noexcept -> Index &;
+
   [[nodiscard]] static HighFive::File open_file(std::string_view uri, unsigned int mode,
                                                 bool validate);
 
@@ -242,6 +245,8 @@ class File {
   [[nodiscard]] static bool check_sentinel_attr(const HighFive::Group &grp);
   void write_sentinel_attr();
   [[nodiscard]] bool check_sentinel_attr();
+
+  [[nodiscard]] auto get_last_bin_written() const -> Bin;
 };
 
 }  // namespace coolerpp

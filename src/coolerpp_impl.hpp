@@ -77,12 +77,12 @@ inline File::File(std::string_view uri, ChromosomeSet chroms, [[maybe_unused]] P
       _datasets(create_datasets<PixelT>(_root_group, chroms)),
       _attrs(std::move(attributes)),
       _pixel_variant(PixelT(0)),
-      _bins(std::move(chroms), this->bin_size()),
-      _index(_bins) {
+      _bins(std::make_unique<BinTable>(std::move(chroms), this->bin_size())),
+      _index(std::make_unique<Index>(*_bins)) {
   assert(this->bin_size() != 0);
-  assert(!_bins.empty());
+  assert(!_bins->empty());
   assert(!chromosomes().empty());
-  assert(!_index.empty());
+  assert(!_index->empty());
   assert(std::holds_alternative<PixelT>(this->_pixel_variant));
 
   this->write_sentinel_attr();
@@ -153,10 +153,13 @@ inline void File::create(std::string_view uri, const coolerpp::ChromosomeSet &ch
 constexpr std::uint32_t File::bin_size() const noexcept { return this->_attrs.bin_size; }
 
 constexpr auto File::chromosomes() const noexcept -> const ChromosomeSet & {
-  return this->_bins.chromosomes();
+  return this->bins().chromosomes();
 }
 
-constexpr auto File::bins() const noexcept -> const BinTable & { return this->_bins; }
+constexpr auto File::bins() const noexcept -> const BinTable & {
+  assert(this->_bins);
+  return *this->_bins;
+}
 
 namespace internal {
 template <class Variant, std::size_t i = 0>
@@ -235,12 +238,12 @@ inline void File::validate_pixels_before_append(PixelIt first_pixel, PixelIt las
             fmt::format(FMT_STRING("invalid chromosome id {}"), *pixel.coords.chrom2));
       }
 
-      if (const auto bin_id = pixel.coords.bin1_id(); bin_id > this->_bins.size()) {
+      if (const auto bin_id = pixel.coords.bin1_id(); bin_id > this->bins().size()) {
         throw std::runtime_error(fmt::format(
             FMT_STRING("invalid bin id {}: bin maps outside of the bin table"), bin_id));
       }
 
-      if (const auto bin_id = pixel.coords.bin2_id(); bin_id > this->_bins.size()) {
+      if (const auto bin_id = pixel.coords.bin2_id(); bin_id > this->bins().size()) {
         throw std::runtime_error(fmt::format(
             FMT_STRING("invalid bin id {}: bin maps outside of the bin table"), bin_id));
       }
@@ -255,14 +258,14 @@ inline void File::validate_pixels_before_append(PixelIt first_pixel, PixelIt las
 
       if (last_bin1 == new_bin1) {
         if (last_bin2 >= new_bin2) {
-          const auto coord1 = this->_bins.bin_id_to_coords(new_bin2);
-          const auto coord2 = this->_bins.bin_id_to_coords(last_bin2);
+          const auto coord1 = this->bins().bin_id_to_coords(new_bin2);
+          const auto coord2 = this->bins().bin_id_to_coords(last_bin2);
           throw std::runtime_error(fmt::format(
               FMT_STRING("new pixel {} is located upstream of pixel {}"), coord1, coord2));
         }
       } else if (last_bin1 >= new_bin1) {
-        const auto coord1 = this->_bins.bin_id_to_coords(new_bin1);
-        const auto coord2 = this->_bins.bin_id_to_coords(last_bin1);
+        const auto coord1 = this->bins().bin_id_to_coords(new_bin1);
+        const auto coord2 = this->bins().bin_id_to_coords(last_bin1);
         throw std::runtime_error(fmt::format(
             FMT_STRING("new pixel {} is located upstream of pixel {}"), coord1, coord2));
       }
@@ -330,24 +333,16 @@ inline void File::update_indexes(PixelIt first_pixel, PixelIt last_pixel) {
     return;
   }
 
-  Bin last_bin_written = [&]() {
-    auto &dset = this->dataset("pixels/bin1_id");
-    if (dset.empty()) {
-      return this->_bins.bin_id_to_coords(0);
-    }
-    const auto bin1_id = dset.read_last<std::uint64_t>();
-    return this->_bins.bin_id_to_coords(bin1_id);
-  }();
+  const auto last_bin_written = this->get_last_bin_written();
 
   auto nnz = *this->_attrs.nnz;
-  Pixel<T> first_pixel_in_row{{this->_bins, last_bin_written.chrom.name, last_bin_written.bin_start,
-                               last_bin_written.bin_start},
-                              T{}};
+  PixelCoordinates first_pixel_in_row{this->bins(), last_bin_written.chrom.name,
+                                      last_bin_written.bin_start, last_bin_written.bin_start};
 
   std::for_each(first_pixel, last_pixel, [&](const Pixel<T> &p) {
-    if (first_pixel_in_row.coords.bin1_start != p.coords.bin1_start) {
-      first_pixel_in_row = p;
-      this->_index.set_offset_by_bin_id(first_pixel_in_row.coords.bin1_id(), nnz);
+    if (first_pixel_in_row.bin1_start != p.coords.bin1_start) {
+      first_pixel_in_row = p.coords;
+      this->index().set_offset_by_bin_id(first_pixel_in_row.bin1_id(), nnz);
     }
     nnz++;
   });
@@ -420,7 +415,7 @@ inline typename PixelSelector<N>::iterator File::cend() const {
 template <class N>
 inline PixelSelector<N> File::fetch(std::string_view query) const {
   // clang-format off
-  return PixelSelector<N>(this->_index,
+  return PixelSelector<N>(this->index(),
                           this->dataset("pixels/bin1_id"),
                           this->dataset("pixels/bin2_id"),
                           this->dataset("pixels/count"),
@@ -432,12 +427,21 @@ template <class N>
 inline PixelSelector<N> File::fetch(std::string_view chrom1_name, std::uint32_t pos1,
                                     std::string_view chrom2_name, std::uint32_t pos2) const {
   // clang-format off
-  return PixelSelector<N>(this->_index,
+  return PixelSelector<N>(this->index(),
                           this->dataset("pixels/bin1_id"),
                           this->dataset("pixels/bin2_id"),
                           this->dataset("pixels/count"),
-                          PixelCoordinates{this->_bins, chrom1_name, chrom2_name, pos1, pos2});
+                          PixelCoordinates{this->bins(), chrom1_name, chrom2_name, pos1, pos2});
   // clang-format on
+}
+
+constexpr auto File::index() noexcept -> Index & {
+  assert(this->_index);
+  return *this->_index;
+}
+constexpr auto File::index() const noexcept -> const Index & {
+  assert(this->_index);
+  return *this->_index;
 }
 
 }  // namespace coolerpp
