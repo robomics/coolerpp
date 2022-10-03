@@ -74,7 +74,7 @@ inline constexpr std::uint8_t SENTINEL_ATTR_VALUE{255};
 
 [[nodiscard]] constexpr bool noexcept_move_ctor() noexcept {
 #if defined(__GNUC__) && defined(__clang__)
-  return __clang__ > 8;
+  return __clang_major__ > 8;
 #elif defined(__GNUC__)
   return __GNUC__ > 9;
 #else
