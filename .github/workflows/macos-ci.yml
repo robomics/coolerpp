@@ -154,5 +154,5 @@ jobs:
                 --schedule-random   \
                 --output-on-failure \
                 --no-tests=error    \
-                --timeout 120       \
+                --timeout 180       \
                 -E '.*LONG.*'
