@@ -134,7 +134,7 @@ jobs:
         run: |
           image="${{ matrix.image }}"
           build_type="${{ matrix.build_type }}"
-          hash="${{ hashFiles('conanfile.py', '.github/workflows/unit-tests-ubuntu.yml') }}"
+          hash="${{ hashFiles('conanfile.py', '.github/workflows/ubuntu-ci.yml') }}"
 
           echo "::set-output name=key::$image-$build_type-$hash"
 
