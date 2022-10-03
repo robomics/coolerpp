@@ -150,17 +150,6 @@ inline void File::create(std::string_view uri, const coolerpp::ChromosomeSet &ch
   *this = File::create_new_cooler<PixelT>(uri, chroms, bin_size, overwrite_if_exists, attributes);
 }
 
-constexpr std::uint32_t File::bin_size() const noexcept { return this->_attrs.bin_size; }
-
-constexpr auto File::chromosomes() const noexcept -> const ChromosomeSet & {
-  return this->bins().chromosomes();
-}
-
-constexpr auto File::bins() const noexcept -> const BinTable & {
-  assert(this->_bins);
-  return *this->_bins;
-}
-
 namespace internal {
 template <class Variant, std::size_t i = 0>
 [[nodiscard]] inline Variant read_pixel_variant(const HighFive::DataSet &dset) {
@@ -433,15 +422,6 @@ inline PixelSelector<N> File::fetch(std::string_view chrom1_name, std::uint32_t 
                           this->dataset("pixels/count"),
                           PixelCoordinates{this->bins(), chrom1_name, chrom2_name, pos1, pos2});
   // clang-format on
-}
-
-constexpr auto File::index() noexcept -> Index & {
-  assert(this->_index);
-  return *this->_index;
-}
-constexpr auto File::index() const noexcept -> const Index & {
-  assert(this->_index);
-  return *this->_index;
 }
 
 }  // namespace coolerpp

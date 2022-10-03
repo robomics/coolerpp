@@ -116,6 +116,17 @@ std::string File::path() const {
   return this->_fp->getName();
 }
 
+std::uint32_t File::bin_size() const noexcept { return this->_attrs.bin_size; }
+
+auto File::chromosomes() const noexcept -> const ChromosomeSet & {
+  return this->bins().chromosomes();
+}
+
+auto File::bins() const noexcept -> const BinTable & {
+  assert(this->_bins);
+  return *this->_bins;
+}
+
 internal::NumericVariant File::detect_pixel_type(const RootGroup &root_grp, std::string_view path) {
   [[maybe_unused]] HighFive::SilenceHDF5 silencer{};
   auto dset = root_grp().getDataSet(std::string{path});
@@ -526,6 +537,15 @@ const internal::NumericVariant &File::pixel_variant() const noexcept {
 }
 
 void File::flush() { this->_fp->flush(); }
+
+auto File::index() noexcept -> Index & {
+  assert(this->_index);
+  return *this->_index;
+}
+auto File::index() const noexcept -> const Index & {
+  assert(this->_index);
+  return *this->_index;
+}
 
 void File::write_attributes(bool skip_sentinel_attr) {
   assert(this->_attrs.nbins == this->bins().size());

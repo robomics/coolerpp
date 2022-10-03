@@ -141,9 +141,9 @@ class File {
   [[nodiscard]] std::string hdf5_path() const;
   [[nodiscard]] std::string path() const;
 
-  [[nodiscard]] constexpr std::uint32_t bin_size() const noexcept;
-  [[nodiscard]] constexpr auto chromosomes() const noexcept -> const ChromosomeSet &;
-  [[nodiscard]] constexpr auto bins() const noexcept -> const BinTable &;
+  [[nodiscard]] std::uint32_t bin_size() const noexcept;
+  [[nodiscard]] auto chromosomes() const noexcept -> const ChromosomeSet &;
+  [[nodiscard]] auto bins() const noexcept -> const BinTable &;
 
   [[nodiscard]] auto attributes() const noexcept -> const StandardAttributes &;
   [[nodiscard]] auto group(std::string_view group_name) -> Group &;
@@ -178,8 +178,8 @@ class File {
   void flush();
 
  private:
-  [[nodiscard]] constexpr auto index() const noexcept -> const Index &;
-  [[nodiscard]] constexpr auto index() noexcept -> Index &;
+  [[nodiscard]] auto index() const noexcept -> const Index &;
+  [[nodiscard]] auto index() noexcept -> Index &;
 
   [[nodiscard]] static HighFive::File open_file(std::string_view uri, unsigned int mode,
                                                 bool validate);
