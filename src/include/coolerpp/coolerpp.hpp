@@ -98,7 +98,7 @@ class File {
  public:
   File() = default;
   File(const File &other) = delete;
-  File(File &&other) noexcept(noexcept_move_assigment_op()) = default;  // NOLINT
+  File(File &&other) noexcept(noexcept_move_ctor()) = default;  // NOLINT
 
   // Simple constructor. Open file in read-only mode. Automatically detects pixel count type
   [[nodiscard]] static File open_read_only(std::string_view uri, bool validate = true);
