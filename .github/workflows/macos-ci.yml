@@ -79,7 +79,7 @@ jobs:
           os="${{ matrix.os }}"
           compiler="${{ matrix.compiler }}"
           build_type="${{ matrix.build_type }}"
-          hash="${{ hashFiles('conanfile.py', '.github/workflows/unit-tests-macos.yml') }}"
+          hash="${{ hashFiles('conanfile.py', '.github/workflows/macos-ci.yml') }}"
 
           # This can be used by to always update a cache entry (useful e.g. for ccache)
 
@@ -98,6 +98,10 @@ jobs:
           conan profile new "$HOME/.conan/profiles/default" --detect --force
           conan config init
           conan profile update settings.compiler.cppstd=17 default
+          
+          # Add apple-clang 14.0 to setting.yml
+          sed 's/"10.0", "11.0", "12.0", "13", "13.0", "13.1"\]/"10.0", "11.0", "12.0", "13", "13.0", "13.1", "14.0"\]/' \
+            "$HOME/.conan/settings.yml"
 
       - name: Clean Conan cache (pre-build)
         if: steps.cache-conan.outputs.cache-hit != 'true'
