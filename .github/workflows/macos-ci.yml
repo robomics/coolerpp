@@ -95,13 +95,13 @@ jobs:
       - name: Configure Conan
         if: steps.cache-conan.outputs.cache-hit != 'true'
         run: |
-          conan profile new "$HOME/.conan/profiles/default" --detect --force
+          conan profile new "$CONAN_USER_HOME/.conan/profiles/default" --detect --force
           conan config init
           conan profile update settings.compiler.cppstd=17 default
           
-          # Add apple-clang 14.0 to setting.yml
-          sed 's/"10.0", "11.0", "12.0", "13", "13.0", "13.1"\]/"10.0", "11.0", "12.0", "13", "13.0", "13.1", "14.0"\]/' \
-            "$HOME/.conan/settings.yml"
+          # Add apple-clang 14.0 to settings.yml
+          sed -i.bak 's/"10.0", "11.0", "12.0", "13", "13.0", "13.1"\]/"10.0", "11.0", "12.0", "13", "13.0", "13.1", "14.0"\]/' \
+            "$CONAN_USER_HOME/.conan/settings.yml"
 
       - name: Clean Conan cache (pre-build)
         if: steps.cache-conan.outputs.cache-hit != 'true'
