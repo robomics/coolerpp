@@ -50,7 +50,9 @@ catch_discover_tests(
   OUTPUT_DIR
   ${CMAKE_CURRENT_SOURCE_DIR}/Testing/
   EXTRA_ARGS
-  --success)
+  --success
+  PROPERTIES ENVIRONMENT
+  "LSAN_OPTIONS=suppressions=${PROJECT_SOURCE_DIR}/lsan.supp")
 
 catch_discover_tests(
   coolerpp_test_main
@@ -63,7 +65,9 @@ catch_discover_tests(
   REPORTER
   compact # This dramatically speeds up the test suit
   EXTRA_ARGS
-  --success)
+  --success
+  PROPERTIES ENVIRONMENT
+  "LSAN_OPTIONS=suppressions=${PROJECT_SOURCE_DIR}/lsan.supp")
 
 catch_discover_tests(
   coolerpp_test_main
@@ -76,4 +80,6 @@ catch_discover_tests(
   REPORTER
   compact # This dramatically speeds up the test suit
   EXTRA_ARGS
-  --success)
+  --success
+  PROPERTIES ENVIRONMENT
+  "LSAN_OPTIONS=suppressions=${PROJECT_SOURCE_DIR}/lsan.supp")
