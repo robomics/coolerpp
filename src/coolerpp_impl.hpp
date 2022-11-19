@@ -92,6 +92,7 @@ template <class PixelT>
 inline File File::create_new_cooler(std::string_view uri, const ChromosomeSet &chroms,
                                     std::uint32_t bin_size, bool overwrite_if_exists,
                                     StandardAttributes attributes) {
+  static_assert(std::is_arithmetic_v<PixelT>);
   assert(bin_size != 0);
   attributes.bin_size = bin_size;
   try {
@@ -188,18 +189,18 @@ inline auto File::create_datasets(RootGroup &root_grp, const ChromosomeSet &chro
   };
 
   create_dataset("chroms/name", std::string{});
-  create_dataset("chroms/length", std::uint32_t{});
+  create_dataset("chroms/length", std::int32_t{});
 
-  create_dataset("bins/chrom", std::uint32_t{});
-  create_dataset("bins/start", std::uint32_t{});
-  create_dataset("bins/end", std::uint32_t{});
+  create_dataset("bins/chrom", std::int32_t{});
+  create_dataset("bins/start", std::int32_t{});
+  create_dataset("bins/end", std::int32_t{});
 
-  create_dataset("pixels/bin1_id", std::uint64_t{});
-  create_dataset("pixels/bin2_id", std::uint64_t{});
+  create_dataset("pixels/bin1_id", std::int64_t{});
+  create_dataset("pixels/bin2_id", std::int64_t{});
   create_dataset("pixels/count", PixelT{});
 
-  create_dataset("indexes/bin1_offset", std::uint64_t{});
-  create_dataset("indexes/chrom_offset", std::uint64_t{});
+  create_dataset("indexes/bin1_offset", std::int64_t{});
+  create_dataset("indexes/chrom_offset", std::int64_t{});
 
   assert(datasets.size() == MANDATORY_DATASET_NAMES.size());
 

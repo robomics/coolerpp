@@ -139,7 +139,7 @@ TEST_CASE("Coolerpp: file ctors", "[cooler][short]") {
     const auto path = testdir() / "move_ctor.cool";
 
     constexpr std::uint32_t bin_size = 1000;
-    using PixelT = Pixel<std::uint32_t>;
+    using PixelT = Pixel<std::int32_t>;
     {
       File f{};
       CHECK(!f);
@@ -149,7 +149,7 @@ TEST_CASE("Coolerpp: file ctors", "[cooler][short]") {
       for (std::uint32_t pos1 = 0; pos1 < chroms.at("chr1").size; pos1 += bin_size) {
         for (std::uint32_t pos2 = pos1; pos2 < chroms.at("chr1").size; pos2 += bin_size) {
           pixels.emplace_back(PixelT{{f.bins(), "chr1", pos1, pos2},
-                                     static_cast<std::uint32_t>(pixels.size() + 1)});
+                                     static_cast<std::int32_t>(pixels.size() + 1)});
         }
       }
       f.append_pixels(pixels.begin(), pixels.end(), true);

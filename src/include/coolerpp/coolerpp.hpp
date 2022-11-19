@@ -102,7 +102,7 @@ class File {
 
   // Simple constructor. Open file in read-only mode. Automatically detects pixel count type
   [[nodiscard]] static File open_read_only(std::string_view uri, bool validate = true);
-  template <class PixelT = std::uint32_t>
+  template <class PixelT = std::int32_t>
   [[nodiscard]] static File create_new_cooler(
       std::string_view uri, const ChromosomeSet &chroms, std::uint32_t bin_size,
       bool overwrite_if_exists = false,
