@@ -6,7 +6,7 @@
 from conan import ConanFile
 from conan.tools.build import check_min_cppstd
 
-required_conan_version = ">=1.51.3"
+required_conan_version = ">=1.53.0"
 
 
 class Coolerpp(ConanFile):
