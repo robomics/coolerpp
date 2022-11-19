@@ -15,14 +15,14 @@ class Coolerpp(ConanFile):
     license = "MIT"
     author = "Roberto Rossini (roberros@uio.no)"
     settings = "os", "compiler", "build_type", "arch"
-    requires = ["catch2/3.1.0",
-                "fast_float/3.5.1",
+    requires = ["catch2/3.2.0",
+                "fast_float/3.7.0",
                 "fmt/9.1.0",
                 "hdf5/1.12.2",
-                "highfive/2.4.1@",
+                "highfive/2.4.1",
                 "tsl-hopscotch-map/2.3.0",
                 "tsl-ordered-map/1.0.0",
-                "zlib/1.2.12"]
+                "zlib/1.2.13"]
 
     generators = "cmake", "cmake_find_package", "cmake_find_package_multi"
 
