@@ -4,3 +4,4 @@
 
 # See: https://github.com/BlueBrain/HighFive/issues/658
 leak:H5Aread
+leak:H5T__vlen_mem_str_write
