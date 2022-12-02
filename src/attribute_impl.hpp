@@ -36,7 +36,6 @@ template <class T, class ParentObj>
 inline void Attribute::write(ParentObj& h5obj, std::string_view key, const T& value,
                              bool overwrite_if_exists) {
   [[maybe_unused]] HighFive::SilenceHDF5 silencer{};
-  [[maybe_unused]] const AttributeVar buff = value;
   const std::string key_{key};
   if (overwrite_if_exists && Attribute::exists(h5obj, key)) {
     h5obj.deleteAttribute(key_);
