@@ -19,7 +19,7 @@ class Coolerpp(ConanFile):
                 "fast_float/3.7.0",
                 "fmt/9.1.0",
                 "hdf5/1.12.2",
-                "highfive/2.4.1",
+                "highfive/2.6.2",
                 "tsl-hopscotch-map/2.3.0",
                 "tsl-ordered-map/1.0.0",
                 "zlib/1.2.13"]
