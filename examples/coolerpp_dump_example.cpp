@@ -4,15 +4,22 @@
 
 #include <fmt/compile.h>
 #include <fmt/format.h>
-#include <fmt/std.h>
 
+#include <algorithm>
 #include <chrono>
-#include <cstdint>
+#include <fstream>
 #include <string>
+#include <fmt/os.h>
 
 #include "coolerpp/coolerpp.hpp"
 
 using namespace coolerpp;
+
+template <class N>
+void print_pixel(const Pixel<N>& pixel) {
+  fmt::print(FMT_COMPILE("{:bedpe}\t{}\n"), pixel.coords, pixel.count);
+}
+
 
 int main(int argc, char** argv) {
   if (argc != 2) {
@@ -29,19 +36,17 @@ int main(int argc, char** argv) {
 
   try {
     const auto t0 = std::chrono::steady_clock::now();
-    auto cooler = File::open_read_only(path_to_cooler);
-    const auto bin_size = cooler.bin_size();
+    const auto cooler = File::open_read_only(path_to_cooler);
 
-    using ContactT = std::uint32_t;
-    std::for_each(
-        cooler.begin<ContactT>(), cooler.end<ContactT>(), [&](const Pixel<ContactT>& pixel) {
-          fmt::print(FMT_COMPILE("{:s}\t{:d}\t{:d}\t{:s}\t{:d}\t{:d}\t{}\n"),
-                     pixel.coords.chrom1->name, pixel.coords.bin1_start,
-                     std::min(pixel.coords.bin1_start + bin_size, pixel.coords.chrom1->size),
-                     pixel.coords.chrom2->name, pixel.coords.bin2_start,
-                     std::min(pixel.coords.bin2_start + bin_size, pixel.coords.chrom2->size),
-                     pixel.count);
-        });
+    if (cooler.has_integral_pixels()) {
+      using T = std::int64_t;
+      std::for_each(cooler.begin<T>(), cooler.end<T>(), print_pixel<T>);
+
+    } else {
+      using T = double;
+      std::for_each(cooler.begin<T>(), cooler.end<T>(), print_pixel<T>);
+    }
+
     const auto t1 = std::chrono::steady_clock::now();
 
     const auto elapsed_time_ms =
