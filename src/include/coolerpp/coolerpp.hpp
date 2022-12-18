@@ -29,6 +29,8 @@
 
 namespace coolerpp {
 
+using DefaultPixelT = std::int32_t;
+
 struct StandardAttributes {
   // Mandatory attributes
   std::uint32_t bin_size{0};
@@ -50,11 +52,15 @@ struct StandardAttributes {
   std::optional<std::uint32_t> nchroms{0};
   std::optional<std::uint64_t> nnz{0};
   using SumVar = std::variant<double, std::int64_t, std::uint64_t>;
-  SumVar sum{std::uint64_t(0)};
+  SumVar sum{std::int64_t(0)};
 
-  template <class PixelT = std::uint32_t, class = std::enable_if_t<std::is_arithmetic_v<PixelT>>>
+  template <class PixelT = DefaultPixelT, class = std::enable_if_t<std::is_arithmetic_v<PixelT>>>
   [[nodiscard]] static StandardAttributes init(std::uint32_t bin_size_);
   [[nodiscard]] static StandardAttributes init_empty() noexcept;
+
+ private:
+  // Use the init factory methods to construct a StandardAttribute object
+  StandardAttributes() = default;
 };
 
 template <class InputIt>
@@ -102,7 +108,7 @@ class File {
 
   // Simple constructor. Open file in read-only mode. Automatically detects pixel count type
   [[nodiscard]] static File open_read_only(std::string_view uri, bool validate = true);
-  template <class PixelT = std::int32_t>
+  template <class PixelT = DefaultPixelT>
   [[nodiscard]] static File create_new_cooler(
       std::string_view uri, const ChromosomeSet &chroms, std::uint32_t bin_size,
       bool overwrite_if_exists = false,
@@ -116,7 +122,7 @@ class File {
   [[nodiscard]] explicit operator bool() const noexcept;
 
   void open(std::string_view uri, bool validate = true);
-  template <class PixelT = std::uint32_t>
+  template <class PixelT = DefaultPixelT>
   void create(std::string_view uri, const ChromosomeSet &chroms, std::uint32_t bin_size,
               bool overwrite_if_exists = false,
               StandardAttributes attributes = StandardAttributes::init<PixelT>(0));
