@@ -184,8 +184,8 @@ jobs:
                 -DENABLE_DEVELOPER_MODE=${{ matrix.developer_mode }} \
                 -DOPT_ENABLE_CLANG_TIDY=OFF                          \
                 -DOPT_ENABLE_CPPCHECK=OFF                            \
-                -DENABLE_TESTING=ON                                  \
-                -DBUILD_EXAMPLES=ON                                  \
+                -DCOOLERPP_ENABLE_TESTING=ON                         \
+                -DCOOLERPP_BUILD_EXAMPLES=ON                         \
                 -S "${{ github.workspace }}"                         \
                 -B "${{ github.workspace }}/build"
 

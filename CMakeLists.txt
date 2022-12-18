@@ -112,15 +112,15 @@ target_compile_definitions(coolerpp_project_options INTERFACE FMT_ENFORCE_COMPIL
 
 add_subdirectory(src)
 
-if(ENABLE_TESTING)
+if(COOLERPP_ENABLE_TESTING)
   enable_testing()
   message("Building unit tests.")
-  target_compile_definitions(coolerpp_project_options INTERFACE ENABLE_TESTING)
+  target_compile_definitions(coolerpp_project_options INTERFACE COOLERPP_ENABLE_TESTING)
   add_subdirectory(test)
 endif()
 
-option(BUILD_EXAMPLES "Build examples" ON)
-if(BUILD_EXAMPLES)
+option(COOLERPP_BUILD_EXAMPLES "Build examples" ON)
+if(COOLERPP_BUILD_EXAMPLES)
   message("Building examples.")
   add_subdirectory(examples)
 endif()

@@ -96,8 +96,8 @@ jobs:
                 -DOPT_ENABLE_SANITIZER_ADDRESS=OFF            \
                 -DOPT_ENABLE_SANITIZER_UNDEFINED_BEHAVIOR=OFF \
                 -DOPT_ENABLE_CLANG_TIDY=ON                    \
-                -DBUILD_EXAMPLES=ON                           \
-                -DENABLE_TESTING=ON                           \
+                -DCOOLERPP_BUILD_EXAMPLES=ON                  \
+                -DCOOLERPP_ENABLE_TESTING=ON                  \
                 -S "${{ github.workspace }}"                  \
                 -B "${{ github.workspace }}/build"
 
