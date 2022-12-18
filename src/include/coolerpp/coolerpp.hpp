@@ -247,6 +247,12 @@ class File {
   [[nodiscard]] bool check_sentinel_attr();
 
   [[nodiscard]] auto get_last_bin_written() const -> Bin;
+
+  template <class N>
+  void update_pixel_sum(N partial_sum);
+
+  template <class PixelT>
+  void validate_pixel_type() const noexcept;
 };
 
 }  // namespace coolerpp

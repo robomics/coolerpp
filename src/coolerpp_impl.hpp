@@ -344,6 +344,10 @@ inline void File::append_pixels(PixelIt first_pixel, PixelIt last_pixel, bool va
   using PixelT = typename std::iterator_traits<PixelIt>::value_type;
   using T = decltype(std::declval<PixelT>().count);
 
+  if constexpr (ndebug_not_defined()) {
+    this->validate_pixel_type<T>();
+  }
+
   this->update_indexes(first_pixel, last_pixel);
 
   if (validate) {
@@ -366,14 +370,7 @@ inline void File::append_pixels(PixelIt first_pixel, PixelIt last_pixel, bool va
 
   this->_attrs.nnz = this->dataset("pixels/bin1_id").size();
 
-  if constexpr (std::is_floating_point_v<T>) {
-    std::get<double>(this->_attrs.sum) += sum;
-  } else if constexpr (std::is_signed_v<T>) {
-    std::get<std::int64_t>(this->_attrs.sum) += sum;
-  } else {
-    assert(std::is_unsigned_v<T>);
-    std::get<std::uint64_t>(this->_attrs.sum) += sum;
-  }
+  this->update_pixel_sum(sum);
 }
 
 template <class N>
@@ -423,6 +420,52 @@ inline PixelSelector<N> File::fetch(std::string_view chrom1_name, std::uint32_t 
                           this->dataset("pixels/count"),
                           PixelCoordinates{this->bins(), chrom1_name, chrom2_name, pos1, pos2});
   // clang-format on
+}
+
+template <class N>
+inline void File::update_pixel_sum(N partial_sum) {
+  static_assert(std::is_arithmetic_v<N>);
+  if constexpr (std::is_floating_point_v<N>) {
+    std::get<double>(this->_attrs.sum) += conditional_static_cast<double>(partial_sum);
+  } else if constexpr (std::is_signed_v<N>) {
+    std::get<std::int64_t>(this->_attrs.sum) += conditional_static_cast<std::int64_t>(partial_sum);
+  } else {
+    std::get<std::uint64_t>(this->_attrs.sum) +=
+        conditional_static_cast<std::uint64_t>(partial_sum);
+  }
+}
+
+template <class PixelT>
+inline void File::validate_pixel_type() const noexcept {
+  static_assert(std::is_arithmetic_v<PixelT>);
+
+  if constexpr (std::is_floating_point_v<PixelT>) {
+    // clang-format off
+    assert(this->has_pixel_of_type<float>()  ||
+           this->has_pixel_of_type<double>() ||
+           this->has_pixel_of_type<long double>());
+
+    assert(std::holds_alternative<double>(this->_attrs.sum));
+    // clang-format on
+  } else if constexpr (std::is_signed_v<PixelT>) {
+    // clang-format off
+    assert(this->has_pixel_of_type<std::int8_t>()  ||
+           this->has_pixel_of_type<std::int16_t>() ||
+           this->has_pixel_of_type<std::int32_t>() ||
+           this->has_pixel_of_type<std::int64_t>());
+
+    assert(std::holds_alternative<std::int64_t>(this->_attrs.sum));
+    // clang-format on
+  } else {
+    // clang-format off
+    assert(this->has_pixel_of_type<std::uint8_t>()  ||
+           this->has_pixel_of_type<std::uint16_t>() ||
+           this->has_pixel_of_type<std::uint32_t>() ||
+           this->has_pixel_of_type<std::uint64_t>());
+
+    assert(std::holds_alternative<std::uint64_t>(this->_attrs.sum));
+    // clang-format on
+  }
 }
 
 }  // namespace coolerpp
