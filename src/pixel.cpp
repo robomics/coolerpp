@@ -99,4 +99,10 @@ std::uint64_t PixelCoordinates::bin2_id() const {
   assert(this->chrom2);
   return this->_bins->coord_to_bin_id(*this->chrom2, this->bin2_start);
 }
+
+std::uint32_t PixelCoordinates::bin_size() const noexcept {
+  assert(this->_bins);
+  return this->_bins->bin_size();
+}
+
 }  // namespace coolerpp

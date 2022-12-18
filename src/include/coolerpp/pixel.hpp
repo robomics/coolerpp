@@ -4,6 +4,8 @@
 
 #pragma once
 
+#include <fmt/format.h>
+
 #include <cstdint>
 #include <string_view>
 #include <type_traits>
@@ -46,6 +48,8 @@ class PixelCoordinates {
 
   [[nodiscard]] std::uint64_t bin1_id() const;
   [[nodiscard]] std::uint64_t bin2_id() const;
+
+  [[nodiscard]] std::uint32_t bin_size() const noexcept;
 };
 
 template <class N>
@@ -65,3 +69,22 @@ struct Pixel {
 };
 
 }  // namespace coolerpp
+
+template <>
+struct fmt::formatter<coolerpp::PixelCoordinates> {
+  // Presentation can be any of the following:
+  //  - raw
+  //  - bedpe
+
+  constexpr auto parse(format_parse_context &ctx) -> decltype(ctx.begin());
+  // Formats the point p using the parsed format specification (presentation)
+  // stored in this formatter.
+  template <typename FormatContext>
+  auto format(const coolerpp::PixelCoordinates &c, FormatContext &ctx) const -> decltype(ctx.out());
+
+ private:
+  enum Presentation { raw, bedpe };
+  Presentation presentation{Presentation::bedpe};
+};
+
+#include "../../pixel_impl.hpp"

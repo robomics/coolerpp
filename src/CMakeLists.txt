@@ -24,6 +24,7 @@ target_sources(
           ${CMAKE_CURRENT_SOURCE_DIR}/dataset_impl.hpp
           ${CMAKE_CURRENT_SOURCE_DIR}/index.cpp
           ${CMAKE_CURRENT_SOURCE_DIR}/pixel.cpp
+          ${CMAKE_CURRENT_SOURCE_DIR}/pixel_impl.hpp
           ${CMAKE_CURRENT_SOURCE_DIR}/uri.cpp
           ${CMAKE_CURRENT_SOURCE_DIR}/utils.cpp
           ${CMAKE_CURRENT_SOURCE_DIR}/utils_impl.hpp
