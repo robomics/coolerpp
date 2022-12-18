@@ -350,7 +350,7 @@ auto File::read_standard_attributes(const RootGroup &root_grp, bool initialize_m
   read_or_throw("format", attrs.format);
 
   // Read mandatory attributes for Cooler v3
-  auto missing_ok = attrs.format_version >= 3;
+  auto missing_ok = attrs.format_version < 3;
   read_optional("bin-type", attrs.bin_type, missing_ok);
   read_optional("storage-mode", attrs.storage_mode, missing_ok);
 
