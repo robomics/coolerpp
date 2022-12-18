@@ -161,6 +161,11 @@ class File {
   template <class T>
   [[nodiscard]] bool has_pixel_of_type() const noexcept;
 
+  [[nodiscard]] bool has_signed_pixels() const noexcept;
+  [[nodiscard]] bool has_unsigned_pixels() const noexcept;
+  [[nodiscard]] bool has_integral_pixels() const noexcept;
+  [[nodiscard]] bool has_float_pixels() const noexcept;
+
   template <class PixelIt, class = std::enable_if_t<is_iterator_v<PixelIt>>>
   void append_pixels(PixelIt first_pixel, PixelIt last_pixel, bool validate = false,
                      std::size_t chunk_size = 64 * 1024);

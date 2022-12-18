@@ -440,31 +440,14 @@ inline void File::validate_pixel_type() const noexcept {
   static_assert(std::is_arithmetic_v<PixelT>);
 
   if constexpr (std::is_floating_point_v<PixelT>) {
-    // clang-format off
-    assert(this->has_pixel_of_type<float>()  ||
-           this->has_pixel_of_type<double>() ||
-           this->has_pixel_of_type<long double>());
-
+    assert(this->has_float_pixels());
     assert(std::holds_alternative<double>(this->_attrs.sum));
-    // clang-format on
   } else if constexpr (std::is_signed_v<PixelT>) {
-    // clang-format off
-    assert(this->has_pixel_of_type<std::int8_t>()  ||
-           this->has_pixel_of_type<std::int16_t>() ||
-           this->has_pixel_of_type<std::int32_t>() ||
-           this->has_pixel_of_type<std::int64_t>());
-
+    assert(this->has_signed_pixels());
     assert(std::holds_alternative<std::int64_t>(this->_attrs.sum));
-    // clang-format on
   } else {
-    // clang-format off
-    assert(this->has_pixel_of_type<std::uint8_t>()  ||
-           this->has_pixel_of_type<std::uint16_t>() ||
-           this->has_pixel_of_type<std::uint32_t>() ||
-           this->has_pixel_of_type<std::uint64_t>());
-
+    assert(this->has_unsigned_pixels());
     assert(std::holds_alternative<std::uint64_t>(this->_attrs.sum));
-    // clang-format on
   }
 }
 

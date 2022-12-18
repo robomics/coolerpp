@@ -536,6 +536,36 @@ const internal::NumericVariant &File::pixel_variant() const noexcept {
   return this->_pixel_variant;
 }
 
+bool File::has_signed_pixels() const noexcept {
+  // clang-format off
+  return this->has_pixel_of_type<std::int8_t>()  ||
+         this->has_pixel_of_type<std::int16_t>() ||
+         this->has_pixel_of_type<std::int32_t>() ||
+         this->has_pixel_of_type<std::int64_t>();
+  // clang-format on
+}
+
+bool File::has_unsigned_pixels() const noexcept {
+  // clang-format off
+  return this->has_pixel_of_type<std::uint8_t>()  ||
+         this->has_pixel_of_type<std::uint16_t>() ||
+         this->has_pixel_of_type<std::uint32_t>() ||
+         this->has_pixel_of_type<std::uint64_t>();
+  // clang-format on
+}
+
+bool File::has_integral_pixels() const noexcept {
+  return this->has_signed_pixels() || this->has_unsigned_pixels();
+}
+
+bool File::has_float_pixels() const noexcept {
+  // clang-format off
+  return this->has_pixel_of_type<float>()  ||
+         this->has_pixel_of_type<double>() ||
+         this->has_pixel_of_type<long double>();
+  // clang-format on
+}
+
 void File::flush() { this->_fp->flush(); }
 
 auto File::index() noexcept -> Index & {
