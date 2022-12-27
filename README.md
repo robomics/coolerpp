@@ -1,3 +1,9 @@
+<!--
+Copyright (C) 2022 Roberto Rossini <roberros@uio.no>
+
+SPDX-License-Identifier: MIT
+-->
+
 # Coolerpp: High-performance C++ library to read and write .cool files
 
 [![Ubuntu CI](https://github.com/robomics/coolerpp/actions/workflows/ubuntu-ci.yml/badge.svg)](https://github.com/robomics/coolerpp/actions/workflows/ubuntu-ci.yml)
