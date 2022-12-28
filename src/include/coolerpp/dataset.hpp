@@ -3,11 +3,17 @@
 // SPDX-License-Identifier: MIT
 
 #pragma once
+// clang-format off
+#include "coolerpp/internal/suppress_warnings.hpp"
+// clang-format on
 
 #include <tsl/hopscotch_map.h>
 
 #include <cstdint>
+DISABLE_WARNING_PUSH
+DISABLE_WARNING_NULL_DEREF
 #include <highfive/H5DataSet.hpp>
+DISABLE_WARNING_POP
 #include <limits>
 #include <memory>
 #include <utility>
@@ -16,7 +22,6 @@
 #include "coolerpp/common.hpp"
 #include "coolerpp/group.hpp"
 #include "coolerpp/internal/generic_variant.hpp"
-#include "coolerpp/internal/suppress_warnings.hpp"
 #include "coolerpp/internal/variant_buff.hpp"
 
 namespace coolerpp {

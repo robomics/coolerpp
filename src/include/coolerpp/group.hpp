@@ -3,11 +3,17 @@
 // SPDX-License-Identifier: MIT
 
 #pragma once
+// clang-format off
+#include "coolerpp/internal/suppress_warnings.hpp"
+// clang-format on
 
 #include <fmt/format.h>
 #include <tsl/hopscotch_map.h>
 
+DISABLE_WARNING_PUSH
+DISABLE_WARNING_NULL_DEREF
 #include <highfive/H5File.hpp>
+DISABLE_WARNING_POP
 #include <highfive/H5Group.hpp>
 #include <string>
 

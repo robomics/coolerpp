@@ -14,7 +14,9 @@
     #define DISABLE_WARNING_PUSH                    __pragma(warning(push))
     #define DISABLE_WARNING_POP                     __pragma(warning(pop))
     #define DISABLE_WARNING(warningNumber)          __pragma(warning(disable : warningNumber))
+
     #define DISABLE_WARNING_DEPRECATED_DECLARATIONS
+    #define DISABLE_WARNING_NULL_DEREF
     #define DISABLE_WARNING_USELESS_CAST
 #endif
 
@@ -26,6 +28,7 @@
     #define DISABLE_WARNING(warningName)              DO_PRAGMA(GCC diagnostic ignored warningName)  // NOLINT(cppcoreguidelines-macro-usage)
 
     #define DISABLE_WARNING_DEPRECATED_DECLARATIONS   DISABLE_WARNING("-Wdeprecated-declarations")   // NOLINT(cppcoreguidelines-macro-usage)
+    #define DISABLE_WARNING_NULL_DEREF                DISABLE_WARNING("-Wnull-dereference")          // NOLINT(cppcoreguidelines-macro-usage)
 #endif
 
 // Defines for GCC only
@@ -45,6 +48,7 @@
   #define DISABLE_WARNING_POP
 
   #define DISABLE_WARNING_DEPRECATED_DECLARATIONS
+  #define DISABLE_WARNING_NULL_DEREF
   #define DISABLE_WARNING_USELESS_CAST
 #endif
 

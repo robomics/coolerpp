@@ -7,10 +7,16 @@
 #include <fmt/chrono.h>
 
 #include <cstdint>
+// clang-format off
+#include "coolerpp/internal/suppress_warnings.hpp"
+// clang-format on
+DISABLE_WARNING_PUSH
+DISABLE_WARNING_NULL_DEREF
 #include <highfive/H5DataSet.hpp>
 #include <highfive/H5DataSpace.hpp>
 #include <highfive/H5File.hpp>
 #include <highfive/H5Group.hpp>
+DISABLE_WARNING_POP
 #include <memory>
 #include <optional>
 #include <string>
