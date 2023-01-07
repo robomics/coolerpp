@@ -237,6 +237,9 @@ void File::write_standard_attributes(RootGroup &root_grp, const StandardAttribut
                                      bool skip_sentinel_attr) {
   assert(attributes.bin_size != 0);
   [[maybe_unused]] HighFive::SilenceHDF5 silencer{};
+  if (attributes.assembly) {
+    Attribute::write(root_grp(), "assembly", *attributes.assembly);
+  }
   Attribute::write(root_grp(), "bin-size", attributes.bin_size);
   Attribute::write(root_grp(), "bin-type", *attributes.bin_type);
   Attribute::write(root_grp(), "creation-date", *attributes.creation_date);
