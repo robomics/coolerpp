@@ -199,16 +199,16 @@ jobs:
                 -j $(nproc)
 
 
-ubuntu-ci-status-check:
-  name: Status Check (Ubuntu CI)
-  if: ${{ always() }}
-  runs-on: ubuntu-latest
-  needs:
-    - build-project
+  ubuntu-ci-status-check:
+    name: Status Check (Ubuntu CI)
+    if: ${{ always() }}
+    runs-on: ubuntu-latest
+    needs:
+      - build-project
 
-  steps:
-    - name: Collect job results
-      if: |
-        needs.matrix-factory.result != 'success' ||
-        needs.build-project.result != 'success'
-      run: exit 1
+    steps:
+      - name: Collect job results
+        if: |
+          needs.matrix-factory.result != 'success' ||
+          needs.build-project.result != 'success'
+        run: exit 1
