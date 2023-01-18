@@ -204,6 +204,7 @@ jobs:
     if: ${{ always() }}
     runs-on: ubuntu-latest
     needs:
+      - matrix-factory
       - build-project
 
     steps:
