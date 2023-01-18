@@ -18,10 +18,10 @@ class Coolerpp(ConanFile):
     requires = ["catch2/3.2.1",
                 "fast_float/3.8.1",
                 "fmt/9.1.0",
-                "hdf5/1.12.2",
+                "hdf5/1.14.0",
                 "highfive/2.6.2",
                 "tsl-hopscotch-map/2.3.0",
-                "tsl-ordered-map/1.0.0",
+                "tsl-ordered-map/1.1.0",
                 "zlib/1.2.13"]
 
     generators = "cmake", "cmake_find_package", "cmake_find_package_multi"
