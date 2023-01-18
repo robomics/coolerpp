@@ -50,6 +50,26 @@ jobs:
 
     steps:
       - uses: actions/checkout@v3
+      
+      - name: Generate requirements.txt for pip
+        run: |
+          echo 'conan>=1.54' > requirements.txt
+
+      - uses: actions/setup-python@v4
+        with:
+          python-version: '3.11'
+          cache: 'pip'
+
+      - name: Detect number available CPUs
+        run: |
+          ncpus=$(python -c 'import multiprocessing as mp; print(mp.cpu_count())')
+
+          echo "CMAKE_BUILD_PARALLEL_LEVEL=$ncpus" >> $GITHUB_ENV
+          echo "CTEST_PARALLEL_LEVEL=$ncpus" >> $GITHUB_ENV
+
+      - name: Install deps with PIP
+        run: |
+          pip install -r requirements.txt
 
       - name: Cache Conan packages
         id: cache-conan
