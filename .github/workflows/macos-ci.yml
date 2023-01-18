@@ -163,3 +163,16 @@ jobs:
                 --no-tests=error    \
                 --timeout 180       \
                 -E '.*LONG.*'
+
+
+macos-ci-status-check:
+  name: Status Check (MacOS CI)
+  if: ${{ always() }}
+  runs-on: ubuntu-latest
+  needs:
+    - build-project
+
+  steps:
+    - name: Collect job results
+      if: needs.build-project.result != 'success'
+      run: exit 1
