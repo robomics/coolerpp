@@ -113,10 +113,6 @@ jobs:
             includes.push({ image: 'conanio/clang11-ubuntu16.04',   build_type: 'Release', developer_mode: 'OFF' })
             includes.push({ image: 'conanio/clang12-ubuntu16.04',   build_type: 'Release', developer_mode: 'ON'  })
             includes.push({ image: 'conanio/clang13-ubuntu16.04',   build_type: 'Release', developer_mode: 'ON'  })
-            // Make sure project builds with CMake 3.18
-            includes.push({ image: 'conanio/clang14-ubuntu16.04',   build_type: 'Release', developer_mode: 'OFF' })
-            // Make sure project builds with make
-            includes.push({ image: 'conanio/clang14-ubuntu16.04',   build_type: 'Release', developer_mode: 'OFF' })
             return { include: includes }
 
   build-project:
