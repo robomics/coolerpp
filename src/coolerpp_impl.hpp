@@ -237,6 +237,11 @@ inline void File::validate_pixels_before_append(PixelIt first_pixel, PixelIt las
         throw std::runtime_error(fmt::format(
             FMT_STRING("invalid bin id {}: bin maps outside of the bin table"), bin_id));
       }
+
+      if (pixel.coords.bin1_id() > pixel.coords.bin2_id()) {
+        throw std::runtime_error(fmt::format(FMT_STRING("bin1_id is greater than bin2_id: {} > {}"),
+                                             pixel.coords.bin1_id(), pixel.coords.bin2_id()));
+      }
     });
 
     if (!this->dataset("pixels/bin1_id").empty()) {
