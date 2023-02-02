@@ -23,7 +23,7 @@ inline PixelSelector<N>::PixelSelector(const Index &index, const Dataset &pixels
       _pixels_bin1_id(&pixels_bin1_id),
       _pixels_bin2_id(&pixels_bin2_id),
       _pixels_count(&pixels_count),
-      _empty(_coords.chrom1 == _coords.chrom2 && coords.bin1_start == coords.bin2_start) {
+      _empty(_coords.chrom1_id == _coords.chrom2_id && _coords.bin1_start == _coords.bin2_start) {
   if (_coords.bin2_start != 0) {
     _coords.bin2_start--;
   }
@@ -157,8 +157,8 @@ inline PixelSelector<N>::iterator::iterator(const Index &index, const Dataset &p
                                             const Dataset &pixels_count,
                                             const coolerpp::PixelCoordinates &coords) noexcept
     : _index(&index),
-      _first_chrom_id(index.chromosomes().get_id(coords.chrom1->name)),
-      _last_chrom_id(index.chromosomes().get_id(coords.chrom2->name) + 1),
+      _first_chrom_id(index.chromosomes().get_id(coords.chrom1().name)),
+      _last_chrom_id(index.chromosomes().get_id(coords.chrom2().name) + 1),
       _first_bin_id(coords.bin1_id()),
       _last_bin_id(coords.bin2_id() + 1),
       _bin1_id_it(pixels_bin1_id.make_iterator_at_offset<std::uint64_t>(
@@ -181,8 +181,8 @@ inline auto PixelSelector<N>::iterator::make_end_iterator(const Index &index,
   iterator it{};
 
   it._index = &index;
-  it._first_chrom_id = index.chromosomes().get_id(coords.chrom1->name);
-  it._last_chrom_id = index.chromosomes().get_id(coords.chrom2->name) + 1;
+  it._first_chrom_id = coords.chrom1_id;
+  it._last_chrom_id = coords.chrom2_id + 1;
 
   it._first_bin_id = coords.bin1_id();
   it._last_bin_id = coords.bin2_id() + 1;

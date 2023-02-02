@@ -129,6 +129,9 @@ class ChromosomeSet {
   [[nodiscard]] const Chromosome& at(std::uint32_t id) const;
   [[nodiscard]] const Chromosome& at(std::string_view chrom_name) const;
 
+  [[nodiscard]] const Chromosome& operator[](std::uint32_t id) const noexcept;
+  [[nodiscard]] const Chromosome& operator[](std::string_view chrom_name) const noexcept;
+
   [[nodiscard]] bool contains(std::uint32_t id) const;
   [[nodiscard]] bool contains(const Chromosome& chrom) const;
   [[nodiscard]] bool contains(std::string_view chrom_name) const;

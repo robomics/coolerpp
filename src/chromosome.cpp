@@ -101,6 +101,17 @@ const Chromosome& ChromosomeSet::at(std::string_view chrom_name) const {
   throw std::out_of_range(fmt::format(FMT_STRING("chromosome \"{}\" not found"), chrom_name));
 }
 
+const Chromosome& ChromosomeSet::operator[](std::uint32_t id) const noexcept {
+  auto it = this->find(id);
+  assert(it != this->end());
+  return *it;
+}
+const Chromosome& ChromosomeSet::operator[](std::string_view chrom_name) const noexcept {
+  auto it = this->find(chrom_name);
+  assert(it != this->end());
+  return *it;
+}
+
 bool ChromosomeSet::contains(std::uint32_t id) const { return this->find(id) != this->end(); }
 bool ChromosomeSet::contains(const Chromosome& chrom) const {
   return this->find(chrom) != this->end();

@@ -217,15 +217,15 @@ inline void File::validate_pixels_before_append(PixelIt first_pixel, PixelIt las
         throw std::runtime_error("found a pixel of value 0");
       }
 
-      if (!this->chromosomes().contains(*pixel.coords.chrom1)) {
+      if (!this->chromosomes().contains(pixel.coords.chrom1_id)) {
         throw std::runtime_error(
-            fmt::format(FMT_STRING("invalid chromosome id {}"), *pixel.coords.chrom1));
+            fmt::format(FMT_STRING("invalid chromosome id {}"), pixel.coords.chrom1_id));
       }
 
-      if (*pixel.coords.chrom1 != *pixel.coords.chrom2 &&
-          !this->chromosomes().contains(*pixel.coords.chrom2)) {
+      if (pixel.coords.chrom1_id != pixel.coords.chrom2_id &&
+          !this->chromosomes().contains(pixel.coords.chrom2_id)) {
         throw std::runtime_error(
-            fmt::format(FMT_STRING("invalid chromosome id {}"), *pixel.coords.chrom2));
+            fmt::format(FMT_STRING("invalid chromosome id {}"), pixel.coords.chrom2_id));
       }
 
       if (const auto bin_id = pixel.coords.bin1_id(); bin_id > this->bins().size()) {
