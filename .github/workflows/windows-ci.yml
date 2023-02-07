@@ -54,7 +54,6 @@ jobs:
       - name: Generate requirements.txt for pip
         run: |
           echo 'conan>=1.58' > requirements.txt
-          echo 'cmake>=3.20' >> requirements.txt
 
       - uses: actions/setup-python@v4
         with:
@@ -106,9 +105,11 @@ jobs:
         run: |
           CTEST_PARALLEL_LEVEL=$(python -c 'import multiprocessing as mp; print(mp.cpu_count())')
           export CTEST_PARALLEL_LEVEL
+          build/test/Debug/coolerpp_test_main.exe --verbosity=high 'Attribute: read'
 
           ctest --test-dir build    \
                 --schedule-random   \
+                --verbose           \
                 --output-on-failure \
                 --no-tests=error    \
                 --timeout 240

@@ -343,17 +343,20 @@ TEST_CASE("Attribute: read", "[cooler][short]") {
 
   SECTION("long double") {
     const long double buff{0.123456789L};
+#if defined(_WIN32)
+    using T = double;
+
+#else
+    using T = long double;
+#endif
     SECTION("File") {
-      CHECK_THAT(double(Attribute::read<long double>(f, "long double")),
-                 Catch::Matchers::WithinRel(double(buff)));
+      CHECK_THAT(Attribute::read<T>(f, "long double"), Catch::Matchers::WithinRel(double(buff)));
     }
     SECTION("Group") {
-      CHECK_THAT(double(Attribute::read<long double>(g, "long double")),
-                 Catch::Matchers::WithinRel(double(buff)));
+      CHECK_THAT(Attribute::read<T>(g, "long double"), Catch::Matchers::WithinRel(double(buff)));
     }
     SECTION("Dataset") {
-      CHECK_THAT(double(Attribute::read<long double>(d, "long double")),
-                 Catch::Matchers::WithinRel(double(buff)));
+      CHECK_THAT(Attribute::read<T>(d, "long double"), Catch::Matchers::WithinRel(double(buff)));
     }
   }
 
