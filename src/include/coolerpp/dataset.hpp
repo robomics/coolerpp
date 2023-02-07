@@ -67,7 +67,6 @@ class Dataset {
   template <class T, class = std::enable_if_t<std::is_arithmetic_v<T>>>
   Dataset(RootGroup root_group, std::string_view path_to_dataset, const T &type,
           std::size_t max_dim = HighFive::DataSpace::UNLIMITED,
-
           const HighFive::DataSetAccessProps &aprops = generate_default_dset_access_props(),
           const HighFive::DataSetCreateProps &cprops = generate_default_dset_create_props());
 
@@ -75,6 +74,9 @@ class Dataset {
           std::size_t max_dim = HighFive::DataSpace::UNLIMITED,
           const HighFive::DataSetAccessProps &aprops = generate_default_dset_access_props(),
           const HighFive::DataSetCreateProps &cprops = generate_default_dset_create_props());
+
+  const HighFive::DataSet &operator()() const noexcept;
+  HighFive::DataSet operator()();
 
   [[nodiscard]] std::string file_name() const;
   [[nodiscard]] std::string hdf5_path() const;
