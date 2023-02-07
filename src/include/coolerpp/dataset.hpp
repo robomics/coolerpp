@@ -163,7 +163,7 @@ class Dataset {
   [[nodiscard]] auto read_attribute(std::string_view key, bool missing_ok = false) const
       -> Attribute::AttributeVar;
 
-  [[nodiscard]] bool has_attribute(std::string_view key) const noexcept;
+  [[nodiscard]] bool has_attribute(std::string_view key) const;
 
   template <class T>
   [[nodiscard]] T read_attribute(std::string_view key) const;

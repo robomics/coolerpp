@@ -203,7 +203,7 @@ auto Dataset::read_attribute(std::string_view key, bool missing_ok) const
   return Attribute::read(this->_dataset, key, missing_ok);
 }
 
-bool Dataset::has_attribute(std::string_view key) const noexcept {
+bool Dataset::has_attribute(std::string_view key) const {
   return Attribute::exists(this->_dataset, key);
 }
 
