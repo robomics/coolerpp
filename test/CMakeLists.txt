@@ -19,6 +19,7 @@ target_sources(
           ${CMAKE_CURRENT_SOURCE_DIR}/units/cooler_test.cpp
           ${CMAKE_CURRENT_SOURCE_DIR}/units/dataset_test.cpp
           ${CMAKE_CURRENT_SOURCE_DIR}/units/index_test.cpp
+          ${CMAKE_CURRENT_SOURCE_DIR}/units/pixel_test.cpp
           ${CMAKE_CURRENT_SOURCE_DIR}/units/pixel_selector_test.cpp
           ${CMAKE_CURRENT_SOURCE_DIR}/units/variant_buff_test.cpp)
 

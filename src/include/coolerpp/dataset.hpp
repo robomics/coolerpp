@@ -19,6 +19,7 @@ DISABLE_WARNING_POP
 #include <utility>
 #include <vector>
 
+#include "coolerpp/attribute.hpp"
 #include "coolerpp/common.hpp"
 #include "coolerpp/group.hpp"
 #include "coolerpp/internal/generic_variant.hpp"
@@ -67,7 +68,6 @@ class Dataset {
   template <class T, class = std::enable_if_t<std::is_arithmetic_v<T>>>
   Dataset(RootGroup root_group, std::string_view path_to_dataset, const T &type,
           std::size_t max_dim = HighFive::DataSpace::UNLIMITED,
-
           const HighFive::DataSetAccessProps &aprops = generate_default_dset_access_props(),
           const HighFive::DataSetCreateProps &cprops = generate_default_dset_create_props());
 
@@ -75,6 +75,9 @@ class Dataset {
           std::size_t max_dim = HighFive::DataSpace::UNLIMITED,
           const HighFive::DataSetAccessProps &aprops = generate_default_dset_access_props(),
           const HighFive::DataSetCreateProps &cprops = generate_default_dset_create_props());
+
+  const HighFive::DataSet &operator()() const noexcept;
+  HighFive::DataSet operator()();
 
   [[nodiscard]] std::string file_name() const;
   [[nodiscard]] std::string hdf5_path() const;
@@ -153,6 +156,17 @@ class Dataset {
   template <class BuffT>
   [[nodiscard]] BuffT read_last() const;
   [[nodiscard]] internal::GenericVariant read_last() const;
+
+  template <class T>
+  void write_attribute(std::string_view key, const T &value, bool overwrite_if_exists = false);
+
+  [[nodiscard]] auto read_attribute(std::string_view key, bool missing_ok = false) const
+      -> Attribute::AttributeVar;
+
+  [[nodiscard]] bool has_attribute(std::string_view key) const;
+
+  template <class T>
+  [[nodiscard]] T read_attribute(std::string_view key) const;
 
   template <class T>
   [[nodiscard]] auto begin() const -> iterator<T>;
