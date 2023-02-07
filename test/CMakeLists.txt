@@ -13,15 +13,15 @@ add_executable(coolerpp_test_main)
 
 target_sources(
   coolerpp_test_main
-  PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/units/attribute_test.cpp)
-          #${CMAKE_CURRENT_SOURCE_DIR}/units/bin_table_test.cpp
-          #${CMAKE_CURRENT_SOURCE_DIR}/units/chromosome_test.cpp
-          #${CMAKE_CURRENT_SOURCE_DIR}/units/cooler_test.cpp
-          #${CMAKE_CURRENT_SOURCE_DIR}/units/dataset_test.cpp
-          #${CMAKE_CURRENT_SOURCE_DIR}/units/index_test.cpp
-          #${CMAKE_CURRENT_SOURCE_DIR}/units/pixel_test.cpp
-          #${CMAKE_CURRENT_SOURCE_DIR}/units/pixel_selector_test.cpp
-          #${CMAKE_CURRENT_SOURCE_DIR}/units/variant_buff_test.cpp)
+  PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/units/attribute_test.cpp
+          ${CMAKE_CURRENT_SOURCE_DIR}/units/bin_table_test.cpp
+          ${CMAKE_CURRENT_SOURCE_DIR}/units/chromosome_test.cpp
+          ${CMAKE_CURRENT_SOURCE_DIR}/units/cooler_test.cpp
+          ${CMAKE_CURRENT_SOURCE_DIR}/units/dataset_test.cpp
+          ${CMAKE_CURRENT_SOURCE_DIR}/units/index_test.cpp
+          ${CMAKE_CURRENT_SOURCE_DIR}/units/pixel_test.cpp
+          ${CMAKE_CURRENT_SOURCE_DIR}/units/pixel_selector_test.cpp
+          ${CMAKE_CURRENT_SOURCE_DIR}/units/variant_buff_test.cpp)
 
 target_include_directories(coolerpp_test_main PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/units/include/)
 

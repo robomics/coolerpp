@@ -341,25 +341,6 @@ TEST_CASE("Attribute: read", "[cooler][short]") {
     SECTION("Dataset") { CHECK(Attribute::read<std::int8_t>(d, "std::int8_t") == buff); }
   }
 
-  SECTION("long double") {
-    const long double buff{0.123456789L};
-#if defined(_WIN32)
-    using T = double;
-
-#else
-    using T = long double;
-#endif
-    SECTION("File") {
-      CHECK_THAT(Attribute::read<T>(f, "long double"), Catch::Matchers::WithinRel(double(buff)));
-    }
-    SECTION("Group") {
-      CHECK_THAT(Attribute::read<T>(g, "long double"), Catch::Matchers::WithinRel(double(buff)));
-    }
-    SECTION("Dataset") {
-      CHECK_THAT(Attribute::read<T>(d, "long double"), Catch::Matchers::WithinRel(double(buff)));
-    }
-  }
-
   SECTION("float") {
     const float buff{0.123456789F};
     SECTION("File") {

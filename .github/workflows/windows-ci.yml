@@ -80,10 +80,7 @@ jobs:
 
       - name: Configure project
         run: |
-          CMAKE_BUILD_PARALLEL_LEVEL=$(python -c 'import multiprocessing as mp; print(mp.cpu_count())')
-          export CMAKE_BUILD_PARALLEL_LEVEL
-
-          cmake -DCMAKE_BUILD_TYPE=Debug     \
+          cmake -DCMAKE_BUILD_TYPE=Release   \
                 -DENABLE_DEVELOPER_MODE=OFF  \
                 -DCOOLERPP_ENABLE_TESTING=ON \
                 -DCOOLERPP_BUILD_EXAMPLES=ON \
@@ -99,18 +96,12 @@ jobs:
           conan remove -f "*" --outdated
 
       - name: Build project
-        run: cmake --build build
+        run: cmake --build build --config Release
 
       - name: Run unit tests
         run: |
-          CTEST_PARALLEL_LEVEL=$(python -c 'import multiprocessing as mp; print(mp.cpu_count())')
-          export CTEST_PARALLEL_LEVEL
-          build/test/Debug/coolerpp_test_main.exe --verbosity=high 'Attribute: read'
-
           ctest --test-dir build    \
                 --schedule-random   \
-                --verbose           \
-                --output-on-failure \
                 --no-tests=error    \
                 --timeout 240
 
