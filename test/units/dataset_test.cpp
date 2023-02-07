@@ -364,11 +364,11 @@ TEST_CASE("Dataset: attributes", "[dataset][short]") {
     RootGroup grp{HighFive::File(path.string(), HighFive::File::Truncate).getGroup("/")};
     Dataset dset{grp, "int", std::uint8_t{}};
 
-    dset.write_attribute("attr", std::int32_t(123));
+    dset.write_attribute("attr", 123);
     CHECK(dset.read_attribute<std::int32_t>("attr") == 123);
 
-    CHECK_THROWS(dset.write_attribute("attr", std::int32_t(-1), false));
-    dset.write_attribute("attr", std::int32_t(-1), true);
+    CHECK_THROWS(dset.write_attribute("attr", -1, false));
+    dset.write_attribute("attr", -1, true);
     CHECK(dset.read_attribute<std::int32_t>("attr") == -1);
   }
 }
