@@ -198,6 +198,15 @@ internal::GenericVariant Dataset::read_last() const {
   return this->read_last<internal::GenericVariant>();
 }
 
+auto Dataset::read_attribute(std::string_view key, bool missing_ok) const
+    -> Attribute::AttributeVar {
+  return Attribute::read(this->_dataset, key, missing_ok);
+}
+
+bool Dataset::has_attribute(std::string_view key) const noexcept {
+  return Attribute::exists(this->_dataset, key);
+}
+
 internal::GenericVariant Dataset::read(std::size_t offset) const {
   return this->read<internal::GenericVariant>(offset);
 }

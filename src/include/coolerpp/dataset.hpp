@@ -19,6 +19,7 @@ DISABLE_WARNING_POP
 #include <utility>
 #include <vector>
 
+#include "coolerpp/attribute.hpp"
 #include "coolerpp/common.hpp"
 #include "coolerpp/group.hpp"
 #include "coolerpp/internal/generic_variant.hpp"
@@ -155,6 +156,17 @@ class Dataset {
   template <class BuffT>
   [[nodiscard]] BuffT read_last() const;
   [[nodiscard]] internal::GenericVariant read_last() const;
+
+  template <class T>
+  void write_attribute(std::string_view key, const T &value, bool overwrite_if_exists = false);
+
+  [[nodiscard]] auto read_attribute(std::string_view key, bool missing_ok = false) const
+      -> Attribute::AttributeVar;
+
+  [[nodiscard]] bool has_attribute(std::string_view key) const noexcept;
+
+  template <class T>
+  [[nodiscard]] T read_attribute(std::string_view key) const;
 
   template <class T>
   [[nodiscard]] auto begin() const -> iterator<T>;

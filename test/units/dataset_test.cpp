@@ -342,4 +342,35 @@ TEST_CASE("Dataset: large read/write", "[dataset][long]") {
   CHECK(it == dset.end<std::uint8_t>());
 }
 
+TEST_CASE("Dataset: attributes", "[dataset][short]") {
+  SECTION("read") {
+    const auto path = datadir / "test_read_attrs.cool";
+
+    RootGroup grp{HighFive::File(path.string()).getGroup("/")};
+    Dataset dset{grp, "dst"};
+
+    CHECK(dset.has_attribute("std::string"));
+    CHECK(dset.read_attribute<std::string>("std::string") == "abc");
+    auto attr = dset.read_attribute("std::string");
+    CHECK(std::holds_alternative<std::string>(attr));
+    CHECK_THROWS(dset.read_attribute("invalid"));
+    attr = dset.read_attribute("invalid", true);
+    CHECK(std::holds_alternative<std::monostate>(attr));
+  }
+
+  SECTION("write") {
+    const auto path = testdir() / "test_dataset_write_attr.h5";
+
+    RootGroup grp{HighFive::File(path.string(), HighFive::File::Truncate).getGroup("/")};
+    Dataset dset{grp, "int", std::uint8_t{}};
+
+    dset.write_attribute("attr", std::int32_t(123));
+    CHECK(dset.read_attribute<std::int32_t>("attr") == 123);
+
+    CHECK_THROWS(dset.write_attribute("attr", std::int32_t(-1), false));
+    dset.write_attribute("attr", std::int32_t(-1), true);
+    CHECK(dset.read_attribute<std::int32_t>("attr") == -1);
+  }
+}
+
 }  // namespace coolerpp::test::dataset
