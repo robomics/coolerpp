@@ -112,3 +112,15 @@ jobs:
                 --output-on-failure \
                 --no-tests=error    \
                 --timeout 240
+
+  windows-ci-status-check:
+    name: Status Check (Windows CI)
+    if: ${{ always() }}
+    runs-on: ubuntu-latest
+    needs:
+      - build-project
+
+    steps:
+      - name: Collect job results
+        if: needs.build-project.result != 'success'
+        run: exit 1
