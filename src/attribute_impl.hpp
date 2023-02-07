@@ -95,7 +95,7 @@ inline auto Attribute::read_variant(const HighFive::Attribute& attr) -> Attribut
       return read_variant<i + 1>(attr);
     }
     T buff{};
-    attr.template read(buff);
+    attr.read(buff);
     return buff;
   }
   return std::monostate();

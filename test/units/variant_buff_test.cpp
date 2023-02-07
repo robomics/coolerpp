@@ -6,6 +6,7 @@
 
 #include <algorithm>
 #include <catch2/catch_test_macros.hpp>
+#include <numeric>
 #include <random>
 
 namespace coolerpp::test::variantbuff {

@@ -151,7 +151,7 @@ Bin BinTableLazy::bin_id_to_coords(std::uint64_t bin_id) const {
   const auto relative_bin_id = bin_id - *match;
   const auto bin_start = static_cast<uint32_t>(relative_bin_id * this->bin_size());
   assert(bin_start < chrom.size);
-  const auto bin_end = std::min(bin_start + this->bin_size(), chrom.size);
+  const auto bin_end = (std::min)(bin_start + this->bin_size(), chrom.size);
 
   return {chrom, bin_start, bin_end};
 }
@@ -180,7 +180,7 @@ std::uint64_t BinTableLazy::coord_to_bin_id(const Chromosome &chrom, std::uint32
     throw std::out_of_range(
         fmt::format(FMT_STRING("position is greater than chromosome size: {} > {}"), pos, chrom));
   }
-  return this->coord_to_bin_id(Bin{chrom, pos, std::min(pos + this->bin_size(), chrom.size)});
+  return this->coord_to_bin_id(Bin{chrom, pos, (std::min)(pos + this->bin_size(), chrom.size)});
 }
 
 std::uint64_t BinTableLazy::coord_to_bin_id(std::string_view chrom_name, std::uint32_t pos) const {
@@ -194,7 +194,7 @@ std::uint64_t BinTableLazy::coord_to_bin_id(std::string_view chrom_name, std::ui
         fmt::format(FMT_STRING("position is greater than chromosome size: {} > {}"), pos, *match));
   }
 
-  return this->coord_to_bin_id(Bin{*match, pos, std::min(pos + this->bin_size(), match->size)});
+  return this->coord_to_bin_id(Bin{*match, pos, (std::min)(pos + this->bin_size(), match->size)});
 }
 
 std::uint64_t BinTableLazy::coord_to_bin_id(std::uint32_t chrom_id, std::uint32_t pos) const {
@@ -208,7 +208,7 @@ std::uint64_t BinTableLazy::coord_to_bin_id(std::uint32_t chrom_id, std::uint32_
         fmt::format(FMT_STRING("position is greater than chromosome size: {} > {}"), pos, *match));
   }
 
-  return this->coord_to_bin_id(Bin{*match, pos, std::min(pos + this->bin_size(), match->size)});
+  return this->coord_to_bin_id(Bin{*match, pos, (std::min)(pos + this->bin_size(), match->size)});
 }
 
 std::vector<std::uint64_t> BinTableLazy::compute_num_bins_prefix_sum(const ChromosomeSet &chroms,
@@ -232,8 +232,8 @@ auto BinTableLazy::iterator::operator*() const -> value_type {
   const auto &chrom = this->chromosome();
   const auto bin_size = this->bin_size();
 
-  const auto start = std::min(static_cast<std::uint32_t>(this->_idx) * bin_size, chrom.size);
-  const auto end = std::min(start + bin_size, chrom.size);
+  const auto start = (std::min)(static_cast<std::uint32_t>(this->_idx) * bin_size, chrom.size);
+  const auto end = (std::min)(start + bin_size, chrom.size);
 
   return value_type{chrom, start, end};
 }

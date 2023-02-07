@@ -22,7 +22,7 @@ namespace coolerpp::test::dataset {
 // NOLINTNEXTLINE(readability-function-cognitive-complexity)
 TEST_CASE("Dataset: read", "[dataset][short]") {
   const auto path = datadir / "cooler_test_file.cool";
-  RootGroup grp{HighFive::File(path.string()).getGroup("/")};
+  const RootGroup grp{HighFive::File(path.string()).getGroup("/")};
 
   SECTION("fixed str") {
     SECTION("vector") {
@@ -38,7 +38,7 @@ TEST_CASE("Dataset: read", "[dataset][short]") {
     }
 
     SECTION("atomic") {
-      Dataset dset{grp, "chroms/name"};
+      const Dataset dset{grp, "chroms/name"};
       std::string buff;
       dset.read(buff, 9);
       CHECK(buff == "10");
@@ -84,7 +84,7 @@ TEST_CASE("Dataset: read", "[dataset][short]") {
     }
 
     SECTION("atomic") {
-      Dataset dset{grp, "chroms/length"};
+      const Dataset dset{grp, "chroms/length"};
       std::uint64_t buff{};
       dset.read(buff, 2);
       CHECK(buff == 159'599'783);
@@ -100,7 +100,7 @@ TEST_CASE("Dataset: read", "[dataset][short]") {
 // NOLINTNEXTLINE(readability-function-cognitive-complexity)
 TEST_CASE("Dataset: write", "[dataset][short]") {
   const auto path = testdir() / "test_dataset_write.cool";
-  RootGroup grp{HighFive::File(path.string(), HighFive::File::Truncate).getGroup("/")};
+  const RootGroup grp{HighFive::File(path.string(), HighFive::File::Truncate).getGroup("/")};
 
   SECTION("fixed str") {
     SECTION("vector") {
@@ -197,7 +197,7 @@ TEST_CASE("Dataset: write", "[dataset][short]") {
 // NOLINTNEXTLINE(readability-function-cognitive-complexity)
 TEST_CASE("Dataset: accessors", "[dataset][short]") {
   const auto path = datadir / "cooler_test_file.cool";
-  RootGroup grp{HighFive::File(path.string()).getGroup("/")};
+  const RootGroup grp{HighFive::File(path.string()).getGroup("/")};
 
   Dataset dset{grp, "chroms/name"};
 
@@ -212,18 +212,18 @@ TEST_CASE("Dataset: accessors", "[dataset][short]") {
 
 // NOLINTNEXTLINE(readability-function-cognitive-complexity)
 TEST_CASE("Dataset: linear iteration", "[dataset][short]") {
-  const auto path1 = datadir / "cooler_test_file.cool";
+  const auto path = datadir / "cooler_test_file.cool";
 
-  RootGroup grp1{HighFive::File(path1.string()).getGroup("/")};
-  Dataset dset1(grp1, "/pixels/count");
+  const RootGroup grp{HighFive::File(path.string()).getGroup("/")};
+  const Dataset dset(grp, "/pixels/count");
 
   std::vector<std::uint32_t> pixel_buff;
-  dset1.read_all(pixel_buff);
+  dset.read_all(pixel_buff);
   REQUIRE(pixel_buff.size() == 107'041);
 
   SECTION("forward") {
-    auto it = dset1.begin<std::uint32_t>();
-    auto last_pixel = dset1.end<std::uint32_t>();
+    auto it = dset.begin<std::uint32_t>();
+    auto last_pixel = dset.end<std::uint32_t>();
     REQUIRE(std::distance(it, last_pixel) == 107'041);
 
     for (const auto& expected : pixel_buff) {
@@ -234,8 +234,8 @@ TEST_CASE("Dataset: linear iteration", "[dataset][short]") {
   }
 
   SECTION("backward") {
-    auto it = dset1.end<std::uint32_t>();
-    auto first_pixel = dset1.begin<std::uint32_t>();
+    auto it = dset.end<std::uint32_t>();
+    auto first_pixel = dset.begin<std::uint32_t>();
 
     REQUIRE(std::distance(first_pixel, it) == 107'041);
 
@@ -252,7 +252,7 @@ TEST_CASE("Dataset: linear iteration", "[dataset][short]") {
 TEST_CASE("Dataset: random iteration", "[dataset][medium]") {
   const auto path = testdir() / "dataset_iterator_random.h5";
 
-  RootGroup grp{HighFive::File(path.string(), HighFive::File::Truncate).getGroup("/")};
+  const RootGroup grp{HighFive::File(path.string(), HighFive::File::Truncate).getGroup("/")};
   Dataset dset(grp, "int", std::uint64_t{});
 
   std::random_device rd;
@@ -285,7 +285,7 @@ TEST_CASE("Dataset: random iteration", "[dataset][medium]") {
         CHECK(*first == buff[j]);
 
         const auto step = std::uniform_int_distribution<std::size_t>{
-            0, std::min(std::size_t(500), buff.size() - j)}(rand_eng);
+            0, (std::min)(std::size_t(500), buff.size() - j)}(rand_eng);
         first += step;
         j += step;
       }
@@ -301,8 +301,8 @@ TEST_CASE("Dataset: random iteration", "[dataset][medium]") {
       while (first > last) {
         CHECK(*first == buff[j]);
 
-        const auto step =
-            std::uniform_int_distribution<std::size_t>{0, std::min(std::size_t(500), j)}(rand_eng);
+        const auto step = std::uniform_int_distribution<std::size_t>{
+            0, (std::min)(std::size_t(500), j)}(rand_eng);
 
         first -= step;
         j -= step;
@@ -317,7 +317,7 @@ TEST_CASE("Dataset: large read/write", "[dataset][long]") {
   constexpr std::uint64_t seed{4195331987557451569};
   constexpr std::size_t N = 5'000'000;
   {
-    RootGroup grp{HighFive::File(path.string(), HighFive::File::Truncate).getGroup("/")};
+    const RootGroup grp{HighFive::File(path.string(), HighFive::File::Truncate).getGroup("/")};
     Dataset dset{grp, "int", std::uint8_t{}};
 
     std::vector<std::uint8_t> buff(1'000'000);
@@ -330,8 +330,8 @@ TEST_CASE("Dataset: large read/write", "[dataset][long]") {
     CHECK(dset.size() == N);
   }
 
-  RootGroup grp{HighFive::File(path.string()).getGroup("/")};
-  Dataset dset{grp, "int"};
+  const RootGroup grp{HighFive::File(path.string()).getGroup("/")};
+  const Dataset dset{grp, "int"};
   REQUIRE(dset.size() == N);
 
   std::mt19937_64 rand_eng{seed};  // NOLINT(cert-msc32-c,cert-msc51-cpp)
@@ -346,8 +346,8 @@ TEST_CASE("Dataset: attributes", "[dataset][short]") {
   SECTION("read") {
     const auto path = datadir / "test_read_attrs.cool";
 
-    RootGroup grp{HighFive::File(path.string()).getGroup("/")};
-    Dataset dset{grp, "dst"};
+    const RootGroup grp{HighFive::File(path.string()).getGroup("/")};
+    const Dataset dset{grp, "dst"};
 
     CHECK(dset.has_attribute("std::string"));
     CHECK(dset.read_attribute<std::string>("std::string") == "abc");
@@ -361,7 +361,7 @@ TEST_CASE("Dataset: attributes", "[dataset][short]") {
   SECTION("write") {
     const auto path = testdir() / "test_dataset_write_attr.h5";
 
-    RootGroup grp{HighFive::File(path.string(), HighFive::File::Truncate).getGroup("/")};
+    const RootGroup grp{HighFive::File(path.string(), HighFive::File::Truncate).getGroup("/")};
     Dataset dset{grp, "int", std::uint8_t{}};
 
     dset.write_attribute("attr", 123);
