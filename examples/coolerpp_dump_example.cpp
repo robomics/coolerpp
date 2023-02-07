@@ -4,12 +4,12 @@
 
 #include <fmt/compile.h>
 #include <fmt/format.h>
+#include <fmt/os.h>
 
 #include <algorithm>
 #include <chrono>
 #include <fstream>
 #include <string>
-#include <fmt/os.h>
 
 #include "coolerpp/coolerpp.hpp"
 
@@ -19,7 +19,6 @@ template <class N>
 void print_pixel(const Pixel<N>& pixel) {
   fmt::print(FMT_COMPILE("{:bedpe}\t{}\n"), pixel.coords, pixel.count);
 }
-
 
 int main(int argc, char** argv) {
   if (argc != 2) {

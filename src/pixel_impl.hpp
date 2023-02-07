@@ -8,6 +8,109 @@
 #include "coolerpp/bin_table.hpp"
 #include "coolerpp/chromosome.hpp"
 
+namespace coolerpp {
+
+constexpr PixelCoordinates::operator bool() const noexcept {
+  return this->chrom1_id != (std::numeric_limits<std::uint32_t>::max)() &&
+         this->chrom2_id != (std::numeric_limits<std::uint32_t>::max)();
+}
+
+constexpr bool PixelCoordinates::operator==(const PixelCoordinates &other) const noexcept {
+  return this->chrom1_id == other.chrom1_id && this->chrom2_id == other.chrom2_id &&
+         this->bin1_start == other.bin1_start && this->bin2_start == other.bin2_start;
+}
+
+constexpr bool PixelCoordinates::operator!=(const PixelCoordinates &other) const noexcept {
+  return !(*this == other);
+}
+
+constexpr bool PixelCoordinates::operator<(const PixelCoordinates &other) const noexcept {
+  if (this->chrom1_id != other.chrom1_id) {
+    return this->chrom1_id < other.chrom1_id;
+  }
+  if (this->bin1_start != other.bin1_start) {
+    return this->bin1_start < other.bin1_start;
+  }
+
+  if (this->chrom2_id != other.chrom2_id) {
+    return this->chrom2_id < other.chrom2_id;
+  }
+  return this->bin2_start < other.bin2_start;
+}
+
+constexpr bool PixelCoordinates::operator<=(const PixelCoordinates &other) const noexcept {
+  if (this->chrom1_id != other.chrom1_id) {
+    return this->chrom1_id <= other.chrom1_id;
+  }
+  if (this->bin1_start != other.bin1_start) {
+    return this->bin1_start <= other.bin1_start;
+  }
+
+  if (this->chrom2_id != other.chrom2_id) {
+    return this->chrom2_id <= other.chrom2_id;
+  }
+  return this->bin2_start <= other.bin2_start;
+}
+
+constexpr bool PixelCoordinates::operator>(const PixelCoordinates &other) const noexcept {
+  if (this->chrom1_id != other.chrom1_id) {
+    return this->chrom1_id > other.chrom1_id;
+  }
+  if (this->bin1_start != other.bin1_start) {
+    return this->bin1_start > other.bin1_start;
+  }
+
+  if (this->chrom2_id != other.chrom2_id) {
+    return this->chrom2_id > other.chrom2_id;
+  }
+  return this->bin2_start > other.bin2_start;
+}
+
+constexpr bool PixelCoordinates::operator>=(const PixelCoordinates &other) const noexcept {
+  if (this->chrom1_id != other.chrom1_id) {
+    return this->chrom1_id >= other.chrom1_id;
+  }
+  if (this->bin1_start != other.bin1_start) {
+    return this->bin1_start >= other.bin1_start;
+  }
+
+  if (this->chrom2_id != other.chrom2_id) {
+    return this->chrom2_id >= other.chrom2_id;
+  }
+  return this->bin2_start >= other.bin2_start;
+}
+
+template <typename N>
+constexpr Pixel<N>::operator bool() const noexcept {
+  return !!this->coords;
+}
+template <typename N>
+constexpr bool Pixel<N>::operator==(const Pixel<N> &other) const noexcept {
+  return this->coords == other.coords;
+}
+template <typename N>
+constexpr bool Pixel<N>::operator!=(const Pixel<N> &other) const noexcept {
+  return !(*this == other);
+}
+template <typename N>
+constexpr bool Pixel<N>::operator<(const Pixel<N> &other) const noexcept {
+  return this->coords < other.coords;
+}
+template <typename N>
+constexpr bool Pixel<N>::operator<=(const Pixel<N> &other) const noexcept {
+  return this->coords <= other.coords;
+}
+template <typename N>
+constexpr bool Pixel<N>::operator>(const Pixel<N> &other) const noexcept {
+  return this->coords > other.coords;
+}
+template <typename N>
+constexpr bool Pixel<N>::operator>=(const Pixel<N> &other) const noexcept {
+  return this->coords >= other.coords;
+}
+
+}  // namespace coolerpp
+
 constexpr auto fmt::formatter<coolerpp::PixelCoordinates>::parse(format_parse_context &ctx)
     -> decltype(ctx.begin()) {
   const auto *it = ctx.begin();
@@ -40,9 +143,6 @@ template <typename FormatContext>
 inline auto fmt::formatter<coolerpp::PixelCoordinates>::format(const coolerpp::PixelCoordinates &c,
                                                                FormatContext &ctx) const
     -> decltype(ctx.out()) {
-  assert(c.chrom1);
-  assert(c.chrom2);
-
   if (this->presentation == Presentation::raw) {
     // clang-format off
     return fmt::format_to(ctx.out(),
@@ -55,11 +155,11 @@ inline auto fmt::formatter<coolerpp::PixelCoordinates>::format(const coolerpp::P
   // clang-format off
   return fmt::format_to(ctx.out(),
                         FMT_STRING("{}\t{}\t{}\t{}\t{}\t{}"),
-                        c.chrom1->name,
+                        c.chrom1().name,
                         c.bin1_start,
-                        std::min(c.bin1_start + c.bin_size(), c.chrom1->size),
-                        c.chrom2->name,
+                        std::min(c.bin1_start + c.bin_size(), c.chrom1().size),
+                        c.chrom2().name,
                         c.bin2_start,
-                        std::min(c.bin2_start + c.bin_size(), c.chrom2->size));
+                        std::min(c.bin2_start + c.bin_size(), c.chrom2().size));
   // clang-format on
 }

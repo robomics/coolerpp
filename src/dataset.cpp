@@ -31,6 +31,10 @@ Dataset::Dataset(RootGroup root_group, std::string_view path_to_dataset,
     : Dataset(root_group, create_fixed_str_dataset(root_group, path_to_dataset, longest_str.size(),
                                                    max_dim, aprops, cprops)) {}
 
+HighFive::DataSet Dataset::operator()() { return this->_dataset; }
+
+const HighFive::DataSet &Dataset::operator()() const noexcept { return this->_dataset; }
+
 std::string Dataset::file_name() const { return this->_root_group().getFile().getName(); }
 
 std::string Dataset::hdf5_path() const { return this->_dataset.getPath(); }
@@ -192,6 +196,15 @@ internal::VariantBuffer Dataset::read_all(std::size_t offset) const {
 
 internal::GenericVariant Dataset::read_last() const {
   return this->read_last<internal::GenericVariant>();
+}
+
+auto Dataset::read_attribute(std::string_view key, bool missing_ok) const
+    -> Attribute::AttributeVar {
+  return Attribute::read(this->_dataset, key, missing_ok);
+}
+
+bool Dataset::has_attribute(std::string_view key) const {
+  return Attribute::exists(this->_dataset, key);
 }
 
 internal::GenericVariant Dataset::read(std::size_t offset) const {

@@ -246,6 +246,17 @@ inline BuffT Dataset::read_last() const {
 }
 
 template <class T>
+inline void Dataset::write_attribute(std::string_view key, const T &value,
+                                     bool overwrite_if_exists) {
+  Attribute::write(this->_dataset, key, value, overwrite_if_exists);
+}
+
+template <class T>
+inline T Dataset::read_attribute(std::string_view key) const {
+  return Attribute::read<T>(this->_dataset, key);
+}
+
+template <class T>
 inline auto Dataset::begin() const -> iterator<T> {
   return iterator<T>(*this);
 }
