@@ -50,22 +50,16 @@ jobs:
 
     steps:
       - uses: actions/checkout@v3
-      
+
       - name: Generate requirements.txt for pip
         run: |
-          echo 'conan>=1.54' > requirements.txt
+          echo 'conan>=1.58' > requirements.txt
+          echo 'cmake>=3.20' >> requirements.txt
 
       - uses: actions/setup-python@v4
         with:
           python-version: '3.11'
           cache: 'pip'
-
-      - name: Detect number available CPUs
-        run: |
-          ncpus=$(python -c 'import multiprocessing as mp; print(mp.cpu_count())')
-
-          echo "CMAKE_BUILD_PARALLEL_LEVEL=$ncpus" >> $GITHUB_ENV
-          echo "CTEST_PARALLEL_LEVEL=$ncpus" >> $GITHUB_ENV
 
       - name: Install deps with PIP
         run: |
@@ -87,6 +81,9 @@ jobs:
 
       - name: Configure project
         run: |
+          CMAKE_BUILD_PARALLEL_LEVEL=$(python -c 'import multiprocessing as mp; print(mp.cpu_count())')
+          export CMAKE_BUILD_PARALLEL_LEVEL
+
           cmake -DCMAKE_BUILD_TYPE=Debug     \
                 -DENABLE_DEVELOPER_MODE=OFF  \
                 -DCOOLERPP_ENABLE_TESTING=ON \
@@ -107,6 +104,9 @@ jobs:
 
       - name: Run unit tests
         run: |
+          CTEST_PARALLEL_LEVEL=$(python -c 'import multiprocessing as mp; print(mp.cpu_count())')
+          export CTEST_PARALLEL_LEVEL
+
           ctest --test-dir build    \
                 --schedule-random   \
                 --output-on-failure \
