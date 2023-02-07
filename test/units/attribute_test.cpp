@@ -255,7 +255,7 @@ TEST_CASE("Attribute: write", "[cooler][short]") {
 
 // NOLINTNEXTLINE(readability-function-cognitive-complexity)
 TEST_CASE("Attribute: read", "[cooler][short]") {
-  const auto path = datadir / "test_read_attrs.cool";
+  const auto path = datadir / "test_read_attrs.h5";
 
   auto f = HighFive::File(path.string(), HighFive::File::ReadOnly);
   REQUIRE(f.exist("grp"));
