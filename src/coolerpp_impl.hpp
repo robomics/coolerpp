@@ -151,6 +151,32 @@ inline void File::create(std::string_view uri, const coolerpp::ChromosomeSet &ch
   *this = File::create_new_cooler<PixelT>(uri, chroms, bin_size, overwrite_if_exists, attributes);
 }
 
+template <typename It>
+inline void File::add_weights(std::string_view uri, std::string_view name, It first_weight,
+                              It last_weight, bool overwrite_if_exists, bool divisive) {
+  auto f = File(uri, HighFive::File::ReadWrite);
+  const auto num_weights = std::distance(first_weight, last_weight);
+  const auto expected_num_weights(f.bins().size());
+  if (num_weights != expected_num_weights) {
+    throw std::runtime_error(
+        fmt::format(FMT_STRING("Invalid weight shape, expected {} values, found {}"),
+                    expected_num_weights, num_weights));
+  }
+
+  auto dset = [&]() {
+    auto &grp = f.group("bins").group;
+    if (overwrite_if_exists && grp.exist(std::string{name})) {
+      return Dataset(f._root_group, grp.getDataSet(std::string{name}));
+    }
+
+    const auto path = fmt::format(FMT_STRING("bins/{}"), name);
+    return Dataset(f._root_group, path, *first_weight, HighFive::DataSpace::UNLIMITED);
+  }();
+
+  dset.write(first_weight, last_weight, true);
+  dset.write_attribute("divisive_weights", std::uint8_t(divisive), overwrite_if_exists);
+}
+
 namespace internal {
 template <class Variant, std::size_t i = 0>
 [[nodiscard]] inline Variant read_pixel_variant(const HighFive::DataSet &dset) {

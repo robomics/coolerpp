@@ -56,8 +56,8 @@ Chromosome find_chromosome_with_longest_name(const ChromosomeSet &chroms) {
                            });
 }
 
-File::File(std::string_view uri, bool validate)
-    : _mode(HighFive::File::ReadOnly),  // NOLINT(modernize-use-default-member-init)
+File::File(std::string_view uri, unsigned mode, bool validate)
+    : _mode(mode),
       _fp(std::make_unique<HighFive::File>(open_file(uri, _mode, validate))),
       _root_group(open_root_group(*_fp, uri)),
       _groups(open_groups(_root_group)),
@@ -70,12 +70,15 @@ File::File(std::string_view uri, bool validate)
       _index(std::make_unique<Index>(import_indexes(_datasets.at("indexes/chrom_offset"),
                                                     _datasets.at("indexes/bin1_offset"),
                                                     chromosomes(), *_bins, *_attrs.nnz, false))) {
+  assert(mode == HighFive::File::ReadOnly || mode == HighFive::File::ReadWrite);
   if (validate) {
     this->validate_bins();
   }
 }
 
-File File::open_read_only(std::string_view uri, bool validate) { return File(uri, validate); }
+File File::open_read_only(std::string_view uri, bool validate) {
+  return File(uri, HighFive::File::ReadOnly, validate);
+}
 
 File::~File() noexcept {
   try {

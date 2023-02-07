@@ -101,7 +101,8 @@ class File {
   std::unique_ptr<Index> _index{};
 
   // Constructors are private. Cooler files are opened using factory methods
-  explicit File(std::string_view uri, bool validate = true);
+  explicit File(std::string_view uri, unsigned mode = HighFive::File::ReadOnly,
+                bool validate = true);
 
   template <class PixelT>
   explicit File(std::string_view uri, ChromosomeSet chroms, PixelT pixel,
@@ -193,6 +194,10 @@ class File {
                                        std::string_view chrom2_name, std::uint32_t pos2) const;
 
   void flush();
+
+  template <typename It>
+  static void add_weights(std::string_view uri, std::string_view name, It first_weight,
+                          It last_weight, bool overwrite_if_exists = false, bool divisive = false);
 
  private:
   [[nodiscard]] auto index() const noexcept -> const Index &;
