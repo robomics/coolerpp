@@ -344,7 +344,7 @@ TEST_CASE("Dataset: large read/write", "[dataset][long]") {
 
 TEST_CASE("Dataset: attributes", "[dataset][short]") {
   SECTION("read") {
-    const auto path = datadir / "test_read_attrs.cool";
+    const auto path = datadir / "test_read_attrs.h5";
 
     const RootGroup grp{HighFive::File(path.string()).getGroup("/")};
     const Dataset dset{grp, "dst"};
