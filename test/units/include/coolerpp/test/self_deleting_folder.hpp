@@ -8,6 +8,7 @@
 #include <unistd.h>
 #elif defined(_WIN32)
 #include <windows.h>
+#pragma comment(lib, "Rpcrt4.Lib")
 #else
 #error "Unsupported OS"
 #endif

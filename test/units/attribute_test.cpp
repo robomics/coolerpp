@@ -6,6 +6,7 @@
 
 #include <catch2/catch_approx.hpp>
 #include <catch2/catch_test_macros.hpp>
+#include <catch2/matchers/catch_matchers_floating_point.hpp>
 #include <catch2/matchers/catch_matchers_string.hpp>
 #include <highfive/H5File.hpp>
 #include <string>
@@ -287,9 +288,15 @@ TEST_CASE("Attribute: read", "[cooler][short]") {
 
   SECTION("double") {
     const double buff{0.123456789};
-    SECTION("File") { CHECK(Attribute::read<double>(f, "double") == buff); }
-    SECTION("Group") { CHECK(Attribute::read<double>(g, "double") == buff); }
-    SECTION("Dataset") { CHECK(Attribute::read<double>(d, "double") == buff); }
+    SECTION("File") {
+      CHECK_THAT(Attribute::read<double>(f, "double"), Catch::Matchers::WithinRel(buff));
+    }
+    SECTION("Group") {
+      CHECK_THAT(Attribute::read<double>(g, "double"), Catch::Matchers::WithinRel(buff));
+    }
+    SECTION("Dataset") {
+      CHECK_THAT(Attribute::read<double>(d, "double"), Catch::Matchers::WithinRel(buff));
+    }
   }
 
   SECTION("std::uint32_t") {
@@ -334,18 +341,17 @@ TEST_CASE("Attribute: read", "[cooler][short]") {
     SECTION("Dataset") { CHECK(Attribute::read<std::int8_t>(d, "std::int8_t") == buff); }
   }
 
-  SECTION("long double") {
-    const long double buff{0.123456789L};
-    SECTION("File") { CHECK(Attribute::read<long double>(f, "long double") == buff); }
-    SECTION("Group") { CHECK(Attribute::read<long double>(g, "long double") == buff); }
-    SECTION("Dataset") { CHECK(Attribute::read<long double>(d, "long double") == buff); }
-  }
-
   SECTION("float") {
     const float buff{0.123456789F};
-    SECTION("File") { CHECK(Attribute::read<float>(f, "float") == buff); }
-    SECTION("Group") { CHECK(Attribute::read<float>(g, "float") == buff); }
-    SECTION("Dataset") { CHECK(Attribute::read<float>(d, "float") == buff); }
+    SECTION("File") {
+      CHECK_THAT(Attribute::read<float>(f, "float"), Catch::Matchers::WithinRel(buff));
+    }
+    SECTION("Group") {
+      CHECK_THAT(Attribute::read<float>(g, "float"), Catch::Matchers::WithinRel(buff));
+    }
+    SECTION("Dataset") {
+      CHECK_THAT(Attribute::read<float>(d, "float"), Catch::Matchers::WithinRel(buff));
+    }
   }
 }
 

@@ -398,7 +398,7 @@ auto File::import_chroms(const Dataset &chrom_names, const Dataset &chrom_sizes,
 
     return ChromosomeSet{names.begin(), names.end(), sizes.begin()};
 
-  } catch (const HighFive::Exception &e) {
+  } catch ([[maybe_unused]] const HighFive::Exception &e) {
     if (missing_ok) {
       return {};
     }
@@ -610,14 +610,14 @@ void File::write_chromosomes() {
 auto File::group(std::string_view group_name) -> Group & {
   try {
     return this->_groups.at(std::string{group_name});
-  } catch (const std::exception &e) {
+  } catch ([[maybe_unused]] const std::exception &e) {
     throw std::runtime_error(fmt::format(FMT_STRING("Group \"{}\" does not exists!"), group_name));
   }
 }
 auto File::group(std::string_view group_name) const -> const Group & {
   try {
     return this->_groups.at(std::string{group_name});
-  } catch (const std::exception &e) {
+  } catch ([[maybe_unused]] const std::exception &e) {
     throw std::runtime_error(fmt::format(FMT_STRING("Group \"{}\" does not exists!"), group_name));
   }
 }
@@ -628,7 +628,7 @@ auto File::dataset(std::string_view dataset_name) -> Dataset & {
       dataset_name = dataset_name.substr(1);
     }
     return this->_datasets.at(std::string{dataset_name});
-  } catch (const std::exception &e) {
+  } catch ([[maybe_unused]] const std::exception &e) {
     throw std::runtime_error(
         fmt::format(FMT_STRING("Dataset \"{}\" does not exists!"), dataset_name));
   }
@@ -640,7 +640,7 @@ auto File::dataset(std::string_view dataset_name) const -> const Dataset & {
       dataset_name = dataset_name.substr(1);
     }
     return this->_datasets.at(std::string{dataset_name});
-  } catch (const std::exception &e) {
+  } catch ([[maybe_unused]] const std::exception &e) {
     throw std::runtime_error(
         fmt::format(FMT_STRING("Dataset \"{}\" does not exists!"), dataset_name));
   }

@@ -157,9 +157,9 @@ inline auto fmt::formatter<coolerpp::PixelCoordinates>::format(const coolerpp::P
                         FMT_STRING("{}\t{}\t{}\t{}\t{}\t{}"),
                         c.chrom1().name,
                         c.bin1_start,
-                        std::min(c.bin1_start + c.bin_size(), c.chrom1().size),
+                        (std::min)(c.bin1_start + c.bin_size(), c.chrom1().size),
                         c.chrom2().name,
                         c.bin2_start,
-                        std::min(c.bin2_start + c.bin_size(), c.chrom2().size));
+                        (std::min)(c.bin2_start + c.bin_size(), c.chrom2().size));
   // clang-format on
 }
