@@ -453,4 +453,45 @@ TEST_CASE("Coolerpp: read/write pixels", "[cooler][long]") {
   }
 }
 
+// NOLINTNEXTLINE(readability-function-cognitive-complexity)
+TEST_CASE("Coolerpp: write weights", "[cooler][short]") {
+  auto path1 = datadir / "cooler_test_file.cool";
+  auto path2 = testdir() / "cooler_test_write_weights.cool";
+
+  std::filesystem::remove(path2);
+  std::filesystem::copy(path1, path2);
+  REQUIRE_THROWS(File::open_read_only(path2.string()).dataset("bins/weight"));
+
+  const auto num_bins = File::open_read_only(path1.string()).bins().size();
+
+  SECTION("correct shape") {
+    const std::vector<double> weights(num_bins, 1.23);
+    File::write_weights(path2.string(), "weight", weights.begin(), weights.end());
+
+    auto f = File::open_read_only(path2.string());
+    CHECK(f.dataset("bins/weight").size() == num_bins);
+  }
+
+  SECTION("incorrect shape") {
+    std::vector<double> weights{};
+    CHECK_THROWS(File::write_weights(path2.string(), "weight", weights.begin(), weights.end()));
+
+    weights.resize(num_bins - 1);
+    CHECK_THROWS(File::write_weights(path2.string(), "weight", weights.begin(), weights.end()));
+
+    weights.resize(num_bins + 1);
+    CHECK_THROWS(File::write_weights(path2.string(), "weight", weights.begin(), weights.end()));
+  }
+
+  SECTION("overwriting") {
+    const std::vector<double> weights(num_bins, 1.23);
+    File::write_weights(path2.string(), "weight", weights.begin(), weights.end());
+
+    File::write_weights(path2.string(), "weight", weights.begin(), weights.end(), true);
+
+    CHECK_THROWS(
+        File::write_weights(path2.string(), "weight", weights.begin(), weights.end(), false));
+  }
+}
+
 }  // namespace coolerpp::test::coolerpp
