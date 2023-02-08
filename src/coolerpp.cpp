@@ -261,7 +261,7 @@ void File::write_standard_attributes(RootGroup &root_grp, const StandardAttribut
   std::visit([&](const auto sum) { Attribute::write(root_grp(), "sum", sum); }, attributes.sum);
 }
 
-auto File::open_datasets(const RootGroup &root_grp) -> DatasetMap {
+auto File::open_datasets(const RootGroup &root_grp, std::string_view weight_dataset) -> DatasetMap {
   DatasetMap datasets(MANDATORY_DATASET_NAMES.size() + 1);
 
   [[maybe_unused]] HighFive::SilenceHDF5 silencer{};
@@ -272,8 +272,9 @@ auto File::open_datasets(const RootGroup &root_grp) -> DatasetMap {
   std::transform(MANDATORY_DATASET_NAMES.begin(), MANDATORY_DATASET_NAMES.end(),
                  std::inserter(datasets, datasets.begin()), open_dataset);
 
-  if (root_grp().exist("pixels/weight")) {
-    datasets.emplace(open_dataset("pixels/weight"));
+  const auto path = fmt::format(FMT_STRING("bins/{}"), weight_dataset);
+  if (root_grp().exist(path)) {
+    datasets.emplace(open_dataset(path));
   }
 
   return datasets;
@@ -411,6 +412,7 @@ auto File::import_chroms(const Dataset &chrom_names, const Dataset &chrom_sizes,
 
 [[nodiscard]] static std::vector<std::uint64_t> import_chrom_offsets(const Dataset &dset,
                                                                      std::size_t expected_size) {
+  [[maybe_unused]] HighFive::SilenceHDF5 silencer{};
   auto offsets = dset.read_all<std::vector<std::uint64_t>>();
   try {
     if (offsets.size() != expected_size) {
@@ -705,7 +707,7 @@ void File::write_indexes(Dataset &chrom_offset_dset, Dataset &bin_offset_dset, c
 }
 
 void File::finalize() {
-  if (!_fp || _mode == HighFive::File::ReadOnly) {
+  if (!_fp || !_finalize) {
     assert(!_bins == !_fp);
     assert(!_index == !_fp);
     return;

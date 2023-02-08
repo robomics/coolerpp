@@ -78,7 +78,8 @@ inline File::File(std::string_view uri, ChromosomeSet chroms, [[maybe_unused]] P
       _attrs(std::move(attributes)),
       _pixel_variant(PixelT(0)),
       _bins(std::make_unique<BinTable>(std::move(chroms), this->bin_size())),
-      _index(std::make_unique<Index>(*_bins)) {
+      _index(std::make_unique<Index>(*_bins)),
+      _finalize(true) {
   assert(this->bin_size() != 0);
   assert(!_bins->empty());
   assert(!chromosomes().empty());
@@ -152,11 +153,11 @@ inline void File::create(std::string_view uri, const coolerpp::ChromosomeSet &ch
 }
 
 template <typename It>
-inline void File::add_weights(std::string_view uri, std::string_view name, It first_weight,
-                              It last_weight, bool overwrite_if_exists, bool divisive) {
+inline void File::write_weights(std::string_view uri, std::string_view name, It first_weight,
+                                It last_weight, bool overwrite_if_exists, bool divisive) {
   auto f = File(uri, HighFive::File::ReadWrite);
   const auto num_weights = std::distance(first_weight, last_weight);
-  const auto expected_num_weights(f.bins().size());
+  const auto expected_num_weights = static_cast<std::ptrdiff_t>(f.bins().size());
   if (num_weights != expected_num_weights) {
     throw std::runtime_error(
         fmt::format(FMT_STRING("Invalid weight shape, expected {} values, found {}"),
@@ -164,16 +165,18 @@ inline void File::add_weights(std::string_view uri, std::string_view name, It fi
   }
 
   auto dset = [&]() {
+    // Return existing dataset
     auto &grp = f.group("bins").group;
     if (overwrite_if_exists && grp.exist(std::string{name})) {
       return Dataset(f._root_group, grp.getDataSet(std::string{name}));
     }
 
+    // Create new dataset
     const auto path = fmt::format(FMT_STRING("bins/{}"), name);
     return Dataset(f._root_group, path, *first_weight, HighFive::DataSpace::UNLIMITED);
   }();
 
-  dset.write(first_weight, last_weight, true);
+  dset.write(first_weight, last_weight, 0, true);
   dset.write_attribute("divisive_weights", std::uint8_t(divisive), overwrite_if_exists);
 }
 

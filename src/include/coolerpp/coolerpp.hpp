@@ -99,6 +99,7 @@ class File {
   internal::NumericVariant _pixel_variant{};
   std::unique_ptr<BinTable> _bins{};
   std::unique_ptr<Index> _index{};
+  bool _finalize{false};
 
   // Constructors are private. Cooler files are opened using factory methods
   explicit File(std::string_view uri, unsigned mode = HighFive::File::ReadOnly,
@@ -196,8 +197,9 @@ class File {
   void flush();
 
   template <typename It>
-  static void add_weights(std::string_view uri, std::string_view name, It first_weight,
-                          It last_weight, bool overwrite_if_exists = false, bool divisive = false);
+  static void write_weights(std::string_view uri, std::string_view name, It first_weight,
+                            It last_weight, bool overwrite_if_exists = false,
+                            bool divisive = false);
 
  private:
   [[nodiscard]] auto index() const noexcept -> const Index &;
@@ -213,7 +215,8 @@ class File {
   [[nodiscard]] static auto open_root_group(const HighFive::File &f, std::string_view uri)
       -> RootGroup;
   [[nodiscard]] static auto open_groups(const RootGroup &root_grp) -> GroupMap;
-  [[nodiscard]] static auto open_datasets(const RootGroup &root_grp) -> DatasetMap;
+  [[nodiscard]] static auto open_datasets(const RootGroup &root_grp,
+                                          std::string_view weight_dataset = "weight") -> DatasetMap;
   [[nodiscard]] static auto read_standard_attributes(const RootGroup &root_grp,
                                                      bool initialize_missing = false)
       -> StandardAttributes;
