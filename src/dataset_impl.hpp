@@ -286,7 +286,7 @@ template <class T>
 inline Dataset::iterator<T>::iterator(const Dataset &dset, std::size_t h5_offset,
                                       std::size_t chunk_size, bool init)
     : _dset(&dset),
-      _buff_capacity(std::min(chunk_size, dset.size())),
+      _buff_capacity((std::min)(chunk_size, dset.size())),
       _h5_chunk_start(h5_offset),
       _h5_offset(h5_offset) {
   if (init) {
@@ -344,7 +344,8 @@ inline auto Dataset::iterator<T>::operator*() const -> value_type {
   } else if (this->_h5_offset - this->_h5_chunk_start >= this->_buff->size()) {
     // Iterator was decremented one or more times since the last dereference, thus we assume the
     // iterator is being used to traverse the dataset backward
-    this->_h5_chunk_start = this->_h5_offset - std::min(this->_buff->size() - 1, this->_h5_offset);
+    this->_h5_chunk_start =
+        this->_h5_offset - (std::min)(this->_buff->size() - 1, this->_h5_offset);
     this->read_chunk_at_offset(this->_h5_chunk_start);
   }
 
@@ -411,7 +412,7 @@ inline auto Dataset::iterator<T>::operator--(int) -> iterator {
   std::ignore = --(*this);
   if (this->_h5_offset < this->_h5_chunk_start) {
     this->read_chunk_at_offset(this->_h5_offset -
-                               std::min(this->_buff_capacity - 1, this->_h5_offset));
+                               (std::min)(this->_buff_capacity - 1, this->_h5_offset));
   }
   return it;
 }
@@ -467,7 +468,7 @@ inline void Dataset::iterator<T>::read_chunk_at_offset(std::size_t new_offset) c
     this->_buff = std::make_shared<std::vector<T>>(this->_buff_capacity);
   }
 
-  const auto buff_size = std::min(this->_buff_capacity, this->_dset->size() - new_offset);
+  const auto buff_size = (std::min)(this->_buff_capacity, this->_dset->size() - new_offset);
   this->_buff->resize(buff_size);
   this->_dset->read(*this->_buff, buff_size, new_offset);
 
@@ -479,7 +480,7 @@ constexpr auto Dataset::iterator<T>::make_end_iterator(const Dataset &dset, std:
     -> iterator {
   iterator it{};
   it._buff = nullptr;
-  it._buff_capacity = std::min(chunk_size, dset.size());
+  it._buff_capacity = (std::min)(chunk_size, dset.size());
   it._dset = &dset;
   it._h5_offset = dset.size();
   it._h5_chunk_start = it._h5_offset;

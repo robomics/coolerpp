@@ -67,7 +67,7 @@ inline auto from_chars(const char *first, const char *last, long double &value) 
   }
 
   // NOLINTNEXTLINE(clang-analyzer-core.NullDereference)
-  std::from_chars_result res{*str_end, std::errc{}};
+  std::from_chars_result res{*str_end, std::errc()};
   if (res.ptr == first) {
     res.ec = std::errc::invalid_argument;
   } else if (buff == HUGE_VALL) {
@@ -90,8 +90,10 @@ inline auto from_chars(const char *first, const char *last, N &value) noexcept {
 
 template <class N>
 inline void parse_numeric_or_throw(std::string_view tok, N &field) {
-  auto [ptr, err] = from_chars(tok.data(), tok.end(), field);
-  if (ptr != tok.end() || err != std::errc{}) {
+  const auto *first = tok.data();
+  const auto *last = first + tok.size();  // NOLINT
+  auto [ptr, err] = from_chars(first, last, field);
+  if (ptr != last || err != std::errc()) {
     throw_except_from_errc(tok, (std::numeric_limits<std::size_t>::max)(), field, ptr, err);
   }
 }
