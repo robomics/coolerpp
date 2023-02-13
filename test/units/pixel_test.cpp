@@ -17,7 +17,7 @@ TEST_CASE("Pixel", "[pixel][short]") {
                              Chromosome{"chr5", 181'538'259}, Chromosome{"chr6", 170'805'979},
                              Chromosome{"chr9", 138'394'717}, Chromosome{"chr11", 135'086'622},
                              Chromosome{"chr12", 133'275'309}};
-  constexpr std::uint32_t bin_size = 10;
+  constexpr std::uint32_t bin_size = 1;
   const BinTableLazy bins(chroms, bin_size);
 
   auto P = [&](std::string_view chrom1, std::string_view chrom2, std::uint32_t pos1,
@@ -26,7 +26,7 @@ TEST_CASE("Pixel", "[pixel][short]") {
   };
 
   SECTION("operator bool") {
-    CHECK(!PixelCoordinates{bins, (std::numeric_limits<std::uint32_t>::max)(), 0, 0});
+    CHECK(!PixelCoordinates{});
     CHECK(!!P("chr1", "chr1", 0, 10));
   }
 

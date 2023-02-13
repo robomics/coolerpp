@@ -5,6 +5,7 @@
 #pragma once
 
 #include <cstdint>
+#include <memory>
 #include <type_traits>
 
 #include "coolerpp/common.hpp"
@@ -26,19 +27,29 @@ class PixelSelector {
  private:
   static constexpr std::size_t chunk_size = 4096ULL << 10U;
 
-  PixelCoordinates _coords;
+  std::shared_ptr<PixelCoordinates> _coord1{};
+  std::shared_ptr<PixelCoordinates> _coord2{};
   const Index *_index{};
   const Dataset *_pixels_bin1_id{};
   const Dataset *_pixels_bin2_id{};
   const Dataset *_pixels_count{};
-  bool _empty{true};
+
+  PixelSelector(const Index &index, const Dataset &pixels_bin1_id, const Dataset &pixels_bin2_id,
+                const Dataset &pixels_count, std::shared_ptr<PixelCoordinates> coords) noexcept;
+  PixelSelector(const Index &index, const Dataset &pixels_bin1_id, const Dataset &pixels_bin2_id,
+                const Dataset &pixels_count, std::shared_ptr<PixelCoordinates> coord1,
+                std::shared_ptr<PixelCoordinates> coord2) noexcept;
 
  public:
   PixelSelector() = delete;
   PixelSelector(const Index &index, const Dataset &pixels_bin1_id, const Dataset &pixels_bin2_id,
-                const Dataset &pixels_count, PixelCoordinates coords);
+                const Dataset &pixels_count) noexcept;
+  PixelSelector(const Index &index, const Dataset &pixels_bin1_id, const Dataset &pixels_bin2_id,
+                const Dataset &pixels_count, PixelCoordinates coords) noexcept;
 
-  [[nodiscard]] bool constexpr empty() const noexcept;
+  PixelSelector(const Index &index, const Dataset &pixels_bin1_id, const Dataset &pixels_bin2_id,
+                const Dataset &pixels_count, PixelCoordinates coord1,
+                PixelCoordinates coord2) noexcept;
 
   [[nodiscard]] auto begin() const -> iterator;
   [[nodiscard]] auto end() const -> iterator;
@@ -46,26 +57,18 @@ class PixelSelector {
   [[nodiscard]] auto cbegin() const -> iterator;
   [[nodiscard]] auto cend() const -> iterator;
 
-  [[nodiscard]] constexpr const PixelCoordinates &coords() const noexcept;
+  [[nodiscard]] constexpr const PixelCoordinates &coord1() const noexcept;
+  [[nodiscard]] constexpr const PixelCoordinates &coord2() const noexcept;
 
   [[nodiscard]] static PixelCoordinates parse_query(const BinTableLazy &bins,
                                                     std::string_view query);
 
- private:
-  [[nodiscard]] static std::uint64_t compute_end_offset(const Index &index,
-                                                        const Dataset &bin2_id_dset,
-                                                        std::uint64_t last_bin2_id);
-
- public:
   class iterator {
     friend PixelSelector<N>;
     const Index *_index{};
 
-    std::uint32_t _first_chrom_id{};
-    std::uint32_t _last_chrom_id{};
-
-    std::uint64_t _first_bin_id{};
-    std::uint64_t _last_bin_id{};
+    std::shared_ptr<PixelCoordinates> _coord1{};
+    std::shared_ptr<PixelCoordinates> _coord2{};
 
     Dataset::iterator<std::uint64_t> _bin1_id_it{};
     Dataset::iterator<std::uint64_t> _bin2_id_it{};
@@ -73,11 +76,20 @@ class PixelSelector {
     Dataset::iterator<N> _count_it{};
 
     explicit iterator(const Index &index, const Dataset &pixels_bin1_id,
-                      const Dataset &pixels_bin2_id, const Dataset &pixels_count,
-                      const PixelCoordinates &coords) noexcept;
+                      const Dataset &pixels_bin2_id, const Dataset &pixels_count);
 
-    [[nodiscard]] static auto make_end_iterator(const Index &index, const Dataset &pixels_bin2_id,
-                                                const PixelCoordinates &coords) -> iterator;
+    explicit iterator(const Index &index, const Dataset &pixels_bin1_id,
+                      const Dataset &pixels_bin2_id, const Dataset &pixels_count,
+                      std::shared_ptr<PixelCoordinates> coord1,
+                      std::shared_ptr<PixelCoordinates> coord2);
+
+    static auto at_end(const Index &index, const Dataset &pixels_bin1_id,
+                       const Dataset &pixels_bin2_id, const Dataset &pixels_count) -> iterator;
+
+    static auto at_end(const Index &index, const Dataset &pixels_bin1_id,
+                       const Dataset &pixels_bin2_id, const Dataset &pixels_count,
+                       std::shared_ptr<PixelCoordinates> coord1,
+                       std::shared_ptr<PixelCoordinates> coord2) -> iterator;
 
    public:
     using difference_type = std::ptrdiff_t;
@@ -110,6 +122,10 @@ class PixelSelector {
     // auto operator-=(std::size_t i) -> iterator &;
     // [[nodiscard]] auto operator-(std::size_t i) const -> iterator;
     // [[nodiscard]] auto operator-(const iterator &other) const -> difference_type;
+   private:
+    void jump_to_row(std::uint64_t bin_id);
+    void jump_to_col(std::uint64_t bin_id);
+    void jump(std::uint64_t bin1_id, std::uint64_t bin2_id);
   };
 };
 

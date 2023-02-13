@@ -249,6 +249,8 @@ class Dataset {
     [[nodiscard]] constexpr std::uint64_t h5_offset() const noexcept;
     [[nodiscard]] constexpr std::size_t underlying_buff_capacity() const noexcept;
 
+    constexpr const Dataset &dataset() const noexcept;
+
    private:
     void read_chunk_at_offset(std::size_t new_offset) const;
 

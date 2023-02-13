@@ -54,8 +54,9 @@ TEST_CASE("Pixel selector: query", "[pixel_selector][short]") {
   REQUIRE(expected_pixels.size() == expected_nnz);
   SECTION("query overlaps chrom start") {
     auto selector = f.fetch<T>("chr1:0-20");
-    std::vector<Pixel<T>> pixels(selector.begin(), selector.end());
-    REQUIRE(std::distance(selector.begin(), selector.end()) == 3);
+    const std::vector<Pixel<T>> pixels(selector.begin(), selector.end());
+    REQUIRE(pixels.size() == 3);
+
     CHECK(pixels[0].count == 0);
     CHECK(pixels[1].count == 1);
     CHECK(pixels[2].count == 100);
@@ -63,9 +64,9 @@ TEST_CASE("Pixel selector: query", "[pixel_selector][short]") {
 
   SECTION("query overlaps chrom end") {
     auto selector = f.fetch<T>("chr1:980-1000");
-    std::vector<Pixel<T>> pixels(selector.begin(), selector.end());
-    REQUIRE(std::distance(selector.begin(), selector.end()) == 3);
-    pixels = std::vector<Pixel<T>>(selector.begin(), selector.end());
+    const std::vector<Pixel<T>> pixels(selector.begin(), selector.end());
+    REQUIRE(pixels.size() == 3);
+
     CHECK(pixels[0].count == 5047);
     CHECK(pixels[1].count == 5048);
     CHECK(pixels[2].count == 5049);
@@ -73,9 +74,9 @@ TEST_CASE("Pixel selector: query", "[pixel_selector][short]") {
 
   SECTION("query does not overlap chrom boundaries") {
     auto selector = f.fetch<T>("chr1:750-780");
-    std::vector<Pixel<T>> pixels(selector.begin(), selector.end());
-    REQUIRE(std::distance(selector.begin(), selector.end()) == 6);
-    pixels = std::vector<Pixel<T>>(selector.begin(), selector.end());
+    const std::vector<Pixel<T>> pixels(selector.begin(), selector.end());
+    REQUIRE(pixels.size() == 6);
+
     CHECK(pixels[0].count == 4725);
     CHECK(pixels[1].count == 4726);
     CHECK(pixels[2].count == 4727);
@@ -86,9 +87,9 @@ TEST_CASE("Pixel selector: query", "[pixel_selector][short]") {
 
   SECTION("query does not line up with bins") {
     auto selector = f.fetch<T>("chr1:901-927");
-    std::vector<Pixel<T>> pixels(selector.begin(), selector.end());
-    REQUIRE(std::distance(selector.begin(), selector.end()) == 6);
-    pixels = std::vector<Pixel<T>>(selector.begin(), selector.end());
+    const std::vector<Pixel<T>> pixels(selector.begin(), selector.end());
+    REQUIRE(pixels.size() == 6);
+
     CHECK(pixels[0].count == 4995);
     CHECK(pixels[1].count == 4996);
     CHECK(pixels[2].count == 4997);
@@ -106,17 +107,6 @@ TEST_CASE("Pixel selector: query", "[pixel_selector][short]") {
         [&](T accumulator, const Pixel<T> pixel) { return accumulator + pixel.count; });
 
     CHECK(sum == 11852659);
-  }
-
-  SECTION("empty query") {
-    auto selector = f.fetch<T>("chr1:0-0");
-    CHECK(selector.begin() == selector.end());
-
-    selector = f.fetch<T>("chr1:100-100");
-    CHECK(selector.begin() == selector.end());
-
-    selector = f.fetch<T>("chr1:1000-1000");
-    CHECK(selector.begin() == selector.end());
   }
 
   SECTION("query spans 1 bin") {
@@ -187,8 +177,12 @@ TEST_CASE("Pixel selector: query", "[pixel_selector][short]") {
     CHECK_THROWS_WITH(f.fetch<T>("chr1:0-4294967296"),
                       Catch::Matchers::ContainsSubstring("invalid end position"));
 
-    CHECK_THROWS_WITH(f.fetch<T>("chr1:10-5"), Catch::Matchers::ContainsSubstring(
-                                                   "start position is greater than end position"));
+    CHECK_THROWS_WITH(f.fetch<T>("chr1:0-0"),
+                      Catch::Matchers::ContainsSubstring(
+                          "end position should be greater than the start position"));
+    CHECK_THROWS_WITH(f.fetch<T>("chr1:10-5"),
+                      Catch::Matchers::ContainsSubstring(
+                          "end position should be greater than the start position"));
   }
 }
 

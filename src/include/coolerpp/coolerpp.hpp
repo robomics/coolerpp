@@ -191,6 +191,8 @@ class File {
   template <class N>
   [[nodiscard]] PixelSelector<N> fetch(std::string_view query) const;
   template <class N>
+  [[nodiscard]] PixelSelector<N> fetch(PixelCoordinates query) const;
+  template <class N>
   [[nodiscard]] PixelSelector<N> fetch(std::string_view chrom1_name, std::uint32_t pos1,
                                        std::string_view chrom2_name, std::uint32_t pos2) const;
 

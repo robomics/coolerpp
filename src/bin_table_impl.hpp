@@ -10,10 +10,9 @@
 
 namespace coolerpp {  // NOLINT
 
-constexpr Bin::Bin(const Chromosome &chrom_, std::uint32_t bin_start_,
-                   std::uint32_t bin_end_) noexcept
-    : chrom(chrom_), bin_start(bin_start_), bin_end(bin_end_) {
-  assert(bin_start <= bin_end);
+constexpr Bin::Bin(const Chromosome &chrom_, std::uint32_t start_, std::uint32_t end_) noexcept
+    : chrom(chrom_), start(start_), end(end_) {
+  assert(start <= end);
 }
 
 template <class ChromIt>
@@ -84,5 +83,5 @@ constexpr auto fmt::formatter<coolerpp::Bin>::parse(format_parse_context &ctx)
 template <class FormatContext>
 inline auto fmt::formatter<coolerpp::Bin>::format(const coolerpp::Bin &b, FormatContext &ctx) const
     -> decltype(ctx.out()) {
-  return fmt::format_to(ctx.out(), FMT_STRING("{}:{}-{}"), b.chrom.name, b.bin_start, b.bin_end);
+  return fmt::format_to(ctx.out(), FMT_STRING("{}:{}-{}"), b.chrom.name, b.start, b.end);
 }

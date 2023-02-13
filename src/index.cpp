@@ -89,7 +89,7 @@ std::uint64_t Index::get_offset_by_bin_id(std::uint64_t bin_id) const {
     return this->_idx.back().back();
   }
   const auto &coords = this->_bins->bin_id_to_coords(bin_id);
-  return this->get_offset_by_pos(coords.chrom, coords.bin_start);
+  return this->get_offset_by_pos(coords.chrom, coords.start);
 }
 
 std::uint64_t Index::get_offset_by_pos(const Chromosome &chrom, std::uint32_t pos) const {
@@ -118,7 +118,7 @@ std::uint64_t Index::get_offset_by_row_idx(std::uint32_t chrom_id, std::size_t r
 
 void Index::set_offset_by_bin_id(std::uint64_t bin_id, std::uint64_t offset) {
   const auto &coords = this->_bins->bin_id_to_coords(bin_id);
-  this->set_offset_by_pos(coords.chrom, coords.bin_start, offset);
+  this->set_offset_by_pos(coords.chrom, coords.start, offset);
 }
 
 void Index::set_offset_by_pos(const Chromosome &chrom, std::uint32_t pos, std::uint64_t offset) {

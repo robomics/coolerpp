@@ -518,12 +518,12 @@ void File::validate_bins() const {
             fmt::format(FMT_STRING("Expected {} bins, found {}"), this->bins().size(), i));
       }
 
-      if (this->chromosomes().at(*chrom_it).name != bin.chrom.name || *start_it != bin.bin_start ||
-          *end_it != bin.bin_end) {
+      if (this->chromosomes().at(*chrom_it).name != bin.chrom.name || *start_it != bin.start ||
+          *end_it != bin.end) {
         throw std::runtime_error(
             fmt::format(FMT_STRING("Bin #{}: expected {}:{}-{}, found {}:{}-{}"), i,
                         this->chromosomes().at(*chrom_it).name, *start_it, *end_it, bin.chrom.name,
-                        bin.bin_start, bin.bin_end));
+                        bin.start, bin.end));
       }
       ++chrom_it;
       ++start_it;
@@ -681,10 +681,10 @@ void File::write_bin_table(Dataset &chrom_dset, Dataset &start_dset, Dataset &en
                    [&](const Bin &bin) { return bin_table.chromosomes().get_id(bin.chrom); });
 
   start_dset.write(bin_table.begin(), bin_table.end(), 0, true,
-                   [&](const Bin &bin) { return bin.bin_start; });
+                   [&](const Bin &bin) { return bin.start; });
 
   end_dset.write(bin_table.begin(), bin_table.end(), 0, true,
-                 [&](const Bin &bin) { return bin.bin_end; });
+                 [&](const Bin &bin) { return bin.end; });
 
   assert(chrom_dset.size() == bin_table.size());
   assert(start_dset.size() == bin_table.size());

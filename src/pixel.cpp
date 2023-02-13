@@ -28,11 +28,8 @@ PixelCoordinates::PixelCoordinates(const BinTableLazy &bins, std::string_view ch
 PixelCoordinates::PixelCoordinates(const BinTableLazy &bins, std::uint32_t chrom1_id_,
                                    std::uint32_t chrom2_id_, std::uint32_t bin1_start_,
                                    std::uint32_t bin2_start_)
-    : _bins(&bins),
-      chrom1_id(chrom1_id_),
-      chrom2_id(chrom2_id_),
-      bin1_start(bin1_start_),
-      bin2_start(bin2_start_) {}
+    : PixelCoordinates(bins, bins.coord_to_bin_id(chrom1_id_, bin1_start_),
+                       bins.coord_to_bin_id(chrom2_id_, bin2_start_)) {}
 
 PixelCoordinates::PixelCoordinates(const BinTableLazy &bins, const Chromosome &chrom,
                                    std::uint32_t bin1_start_, std::uint32_t bin2_start_)
@@ -46,42 +43,41 @@ PixelCoordinates::PixelCoordinates(const BinTableLazy &bins, std::string_view ch
                                    std::uint32_t bin1_start_, std::uint32_t bin2_start_)
     : PixelCoordinates(bins, chrom_name, chrom_name, bin1_start_, bin2_start_) {}
 
-PixelCoordinates::PixelCoordinates(const BinTableLazy &bins, std::uint64_t bin1_id,
-                                   std::uint64_t bin2_id)
-    : _bins(&bins) {
-  auto coord1 = bins.bin_id_to_coords(bin1_id);
-  auto coord2 = bins.bin_id_to_coords(bin2_id);
-
-  chrom1_id = bins.chromosomes().get_id(coord1.chrom);
-  chrom2_id = bins.chromosomes().get_id(coord2.chrom);
-
-  bin1_start = coord1.bin_start;
-  bin2_start = coord2.bin_start;
+PixelCoordinates::PixelCoordinates(const BinTableLazy &bins, std::uint64_t bin1_id_,
+                                   std::uint64_t bin2_id_)
+    : _bins(&bins), _bin1_id(bin1_id_), _bin2_id(bin2_id_) {
+  assert(_bin1_id <= bins.size());
+  assert(_bin2_id <= bins.size());
 }
 
-const Chromosome &PixelCoordinates::chrom1() const {
+const Chromosome &PixelCoordinates::chrom1() const { return this->bin1().chrom; }
+
+const Chromosome &PixelCoordinates::chrom2() const { return this->bin2().chrom; }
+
+std::uint32_t PixelCoordinates::chrom1_id() const {
+  return this->_bins->chromosomes().get_id(this->chrom1());
+}
+
+std::uint32_t PixelCoordinates::chrom2_id() const {
+  return this->_bins->chromosomes().get_id(this->chrom2());
+}
+
+Bin PixelCoordinates::bin1() const {
   assert(this->_bins);
   assert(!!*this);
-  return this->_bins->chromosomes()[chrom1_id];
+
+  return this->_bins->bin_id_to_coords(_bin1_id);
 }
 
-const Chromosome &PixelCoordinates::chrom2() const {
+Bin PixelCoordinates::bin2() const {
   assert(this->_bins);
   assert(!!*this);
-  return this->_bins->chromosomes()[chrom2_id];
+
+  return this->_bins->bin_id_to_coords(_bin2_id);
 }
 
-std::uint64_t PixelCoordinates::bin1_id() const {
-  assert(this->_bins);
-  assert(!!*this);
-  return this->_bins->coord_to_bin_id(this->chrom1_id, this->bin1_start);
-}
-
-std::uint64_t PixelCoordinates::bin2_id() const {
-  assert(this->_bins);
-  assert(!!*this);
-  return this->_bins->coord_to_bin_id(this->chrom2_id, this->bin2_start);
-}
+std::uint64_t PixelCoordinates::bin1_id() const noexcept { return this->_bin1_id; }
+std::uint64_t PixelCoordinates::bin2_id() const noexcept { return this->_bin2_id; }
 
 std::uint32_t PixelCoordinates::bin_size() const noexcept {
   assert(this->_bins);
