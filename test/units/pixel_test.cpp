@@ -18,7 +18,7 @@ TEST_CASE("Pixel", "[pixel][short]") {
                              Chromosome{"chr9", 138'394'717}, Chromosome{"chr11", 135'086'622},
                              Chromosome{"chr12", 133'275'309}};
   constexpr std::uint32_t bin_size = 1;
-  const BinTableLazy bins(chroms, bin_size);
+  const auto bins = std::make_shared<const BinTableLazy>(chroms, bin_size);
 
   auto P = [&](std::string_view chrom1, std::string_view chrom2, std::uint32_t pos1,
                std::uint32_t pos2, std::uint32_t count = 0) {

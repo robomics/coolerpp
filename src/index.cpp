@@ -21,8 +21,10 @@
 
 namespace coolerpp {
 
-Index::Index(const BinTableLazy &bins, std::uint64_t nnz)
-    : _bins(&bins), _idx(Index::init(bins.chromosomes(), _bins->bin_size())), _nnz(nnz) {
+Index::Index(std::shared_ptr<const BinTableLazy> bins, std::uint64_t nnz)
+    : _bins(std::move(bins)),
+      _idx(Index::init(_bins->chromosomes(), _bins->bin_size())),
+      _nnz(nnz) {
   assert(this->bin_size() != 0);
   _size = std::accumulate(_idx.begin(), _idx.end(), std::size_t(0),
                           [&](std::size_t sum, const auto &it) { return sum + it.size(); });
@@ -37,6 +39,8 @@ const BinTableLazy &Index::bins() const noexcept {
   assert(this->_bins);
   return *this->_bins;
 }
+
+std::shared_ptr<const BinTableLazy> Index::bins_ptr() const noexcept { return this->_bins; }
 
 std::size_t Index::num_chromosomes() const noexcept {
   assert(this->_idx.size() == this->_bins->num_chromosomes());

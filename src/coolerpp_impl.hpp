@@ -77,8 +77,8 @@ inline File::File(std::string_view uri, ChromosomeSet chroms, [[maybe_unused]] P
       _datasets(create_datasets<PixelT>(_root_group, chroms)),
       _attrs(std::move(attributes)),
       _pixel_variant(PixelT(0)),
-      _bins(std::make_unique<BinTable>(std::move(chroms), this->bin_size())),
-      _index(std::make_unique<Index>(*_bins)),
+      _bins(std::make_shared<const BinTable>(std::move(chroms), this->bin_size())),
+      _index(std::make_shared<Index>(_bins)),
       _finalize(true) {
   assert(this->bin_size() != 0);
   assert(!_bins->empty());
@@ -360,7 +360,7 @@ inline void File::update_indexes(PixelIt first_pixel, PixelIt last_pixel) {
   const auto last_bin_written = this->get_last_bin_written();
 
   auto nnz = *this->_attrs.nnz;
-  PixelCoordinates first_pixel_in_row{this->bins(), last_bin_written.chrom.name,
+  PixelCoordinates first_pixel_in_row{this->_bins, last_bin_written.chrom.name,
                                       last_bin_written.start, last_bin_written.start};
 
   std::for_each(first_pixel, last_pixel, [&](const Pixel<T> &p) {
@@ -410,7 +410,7 @@ inline void File::append_pixels(PixelIt first_pixel, PixelIt last_pixel, bool va
 template <class N>
 inline typename PixelSelector<N>::iterator File::begin() const {
   // clang-format off
-  return PixelSelector<N>(this->index(),
+  return PixelSelector<N>(this->_index,
                           this->dataset("pixels/bin1_id"),
                           this->dataset("pixels/bin2_id"),
                           this->dataset("pixels/count"))
@@ -426,7 +426,7 @@ inline typename PixelSelector<N>::iterator File::cbegin() const {
 template <class N>
 inline typename PixelSelector<N>::iterator File::end() const {
   // clang-format off
-  return PixelSelector<N>(this->index(),
+  return PixelSelector<N>(this->_index,
                           this->dataset("pixels/bin1_id"),
                           this->dataset("pixels/bin2_id"),
                           this->dataset("pixels/count"))
@@ -441,13 +441,13 @@ inline typename PixelSelector<N>::iterator File::cend() const {
 
 template <class N>
 inline PixelSelector<N> File::fetch(std::string_view query) const {
-  return this->fetch<N>(PixelSelector<N>::parse_query(this->bins(), query));
+  return this->fetch<N>(PixelSelector<N>::parse_query(this->_bins, query));
 }
 
 template <class N>
 inline PixelSelector<N> File::fetch(PixelCoordinates query) const {
   // clang-format off
-  return PixelSelector<N>(this->index(),
+  return PixelSelector<N>(this->_index,
                           this->dataset("pixels/bin1_id"),
                           this->dataset("pixels/bin2_id"),
                           this->dataset("pixels/count"),
@@ -459,11 +459,11 @@ template <class N>
 inline PixelSelector<N> File::fetch(std::string_view chrom1_name, std::uint32_t pos1,
                                     std::string_view chrom2_name, std::uint32_t pos2) const {
   // clang-format off
-  return PixelSelector<N>(this->index(),
+  return PixelSelector<N>(this->_index,
                           this->dataset("pixels/bin1_id"),
                           this->dataset("pixels/bin2_id"),
                           this->dataset("pixels/count"),
-                          PixelCoordinates{this->bins(), chrom1_name, chrom2_name, pos1, pos2});
+                          PixelCoordinates{this->_bins, chrom1_name, chrom2_name, pos1, pos2});
   // clang-format on
 }
 

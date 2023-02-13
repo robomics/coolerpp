@@ -20,7 +20,8 @@ namespace coolerpp::test::index {
 // NOLINTNEXTLINE(readability-function-cognitive-complexity)
 TEST_CASE("Index: ctor", "[index][short]") {
   constexpr std::uint32_t bin_size = 100;
-  const BinTableLazy bins{{Chromosome{"chr1", 10001}, Chromosome{"chr2", 5000}}, bin_size};
+  const auto bins = std::make_shared<const BinTableLazy>(
+      ChromosomeSet{Chromosome{"chr1", 10001}, Chromosome{"chr2", 5000}}, bin_size);
 
   const Index idx(bins);
 
@@ -41,7 +42,8 @@ TEST_CASE("Index: ctor", "[index][short]") {
 // NOLINTNEXTLINE(readability-function-cognitive-complexity)
 TEST_CASE("Index: offset setters and getters", "[index][short]") {
   constexpr std::uint32_t bin_size = 10;
-  const BinTableLazy bins{{Chromosome{"chr1", 100}}, bin_size};
+  const auto bins =
+      std::make_shared<const BinTableLazy>(ChromosomeSet{Chromosome{"chr1", 100}}, bin_size);
 
   constexpr auto fill_value = std::numeric_limits<std::uint64_t>::max();
 
@@ -95,7 +97,8 @@ TEST_CASE("Index: offset setters and getters", "[index][short]") {
 // NOLINTNEXTLINE(readability-function-cognitive-complexity)
 TEST_CASE("Index: iterator", "[index][short]") {
   constexpr std::uint32_t bin_size = 1000;
-  const BinTableLazy bins{{Chromosome{"chr1", 10001}, Chromosome{"chr2", 5000}}, bin_size};
+  const auto bins = std::make_shared<const BinTableLazy>(
+      ChromosomeSet{Chromosome{"chr1", 10001}, Chromosome{"chr2", 5000}}, bin_size);
 
   // Assume there are 10 pixels per row
   constexpr std::array<std::size_t, 11> chr1_offsets{0, 10, 20, 30, 40, 50, 60, 70, 80, 90, 100};
@@ -128,7 +131,8 @@ TEST_CASE("Index: iterator", "[index][short]") {
 // NOLINTNEXTLINE(readability-function-cognitive-complexity)
 TEST_CASE("Index: validation", "[index][short]") {
   constexpr std::uint32_t bin_size = 1000;
-  const BinTableLazy bins{{Chromosome{"chr1", 10001}, Chromosome{"chr2", 5000}}, bin_size};
+  const auto bins = std::make_shared<const BinTableLazy>(
+      ChromosomeSet{Chromosome{"chr1", 10001}, Chromosome{"chr2", 5000}}, bin_size);
 
   // Assume there are 10 pixels per row
   constexpr std::array<std::size_t, 11> chr1_offsets{0, 10, 20, 30, 40, 50, 60, 70, 80, 90, 100};
@@ -165,7 +169,8 @@ TEST_CASE("Index: validation", "[index][short]") {
 // NOLINTNEXTLINE(readability-function-cognitive-complexity)
 TEST_CASE("Index: compute chromosome offsets", "[index][short]") {
   constexpr std::uint32_t bin_size = 1000;
-  const BinTableLazy bins{{Chromosome{"chr1", 10001}, Chromosome{"chr2", 5000}}, bin_size};
+  const auto bins = std::make_shared<const BinTableLazy>(
+      ChromosomeSet{Chromosome{"chr1", 10001}, Chromosome{"chr2", 5000}}, bin_size);
 
   // Assume there are 10 pixels per row
   constexpr std::array<std::size_t, 11> chr1_offsets{10, 20, 30, 40, 50, 60, 70, 80, 90, 100};
@@ -182,7 +187,7 @@ TEST_CASE("Index: compute chromosome offsets", "[index][short]") {
   }
 
   const auto chrom_offsets = idx.compute_chrom_offsets();
-  REQUIRE(chrom_offsets.size() == bins.num_chromosomes() + 1);
+  REQUIRE(chrom_offsets.size() == bins->num_chromosomes() + 1);
 
   CHECK(chrom_offsets[0] == 0);
   CHECK(chrom_offsets[1] == chr1_offsets.size());

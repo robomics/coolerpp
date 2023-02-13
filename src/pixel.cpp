@@ -13,41 +13,43 @@
 
 namespace coolerpp {
 
-PixelCoordinates::PixelCoordinates(const BinTableLazy &bins, const Chromosome &chrom1,
-                                   const Chromosome &chrom2, std::uint32_t bin1_start_,
-                                   std::uint32_t bin2_start_)
-    : PixelCoordinates(bins, bins.chromosomes().get_id(chrom1), bins.chromosomes().get_id(chrom2),
+PixelCoordinates::PixelCoordinates(std::shared_ptr<const BinTableLazy> bins,
+                                   const Chromosome &chrom1, const Chromosome &chrom2,
+                                   std::uint32_t bin1_start_, std::uint32_t bin2_start_)
+    : PixelCoordinates(bins, bins->chromosomes().get_id(chrom1), bins->chromosomes().get_id(chrom2),
                        bin1_start_, bin2_start_) {}
 
-PixelCoordinates::PixelCoordinates(const BinTableLazy &bins, std::string_view chrom1_name,
-                                   std::string_view chrom2_name, std::uint32_t bin1_start_,
+PixelCoordinates::PixelCoordinates(std::shared_ptr<const BinTableLazy> bins,
+                                   std::string_view chrom1_name, std::string_view chrom2_name,
+                                   std::uint32_t bin1_start_, std::uint32_t bin2_start_)
+    : PixelCoordinates(bins, bins->chromosomes().get_id(chrom1_name),
+                       bins->chromosomes().get_id(chrom2_name), bin1_start_, bin2_start_) {}
+
+PixelCoordinates::PixelCoordinates(std::shared_ptr<const BinTableLazy> bins,
+                                   std::uint32_t chrom1_id_, std::uint32_t chrom2_id_,
+                                   std::uint32_t bin1_start_, std::uint32_t bin2_start_)
+    : PixelCoordinates(bins, bins->coord_to_bin_id(chrom1_id_, bin1_start_),
+                       bins->coord_to_bin_id(chrom2_id_, bin2_start_)) {}
+
+PixelCoordinates::PixelCoordinates(std::shared_ptr<const BinTableLazy> bins,
+                                   const Chromosome &chrom, std::uint32_t bin1_start_,
                                    std::uint32_t bin2_start_)
-    : PixelCoordinates(bins, bins.chromosomes().get_id(chrom1_name),
-                       bins.chromosomes().get_id(chrom2_name), bin1_start_, bin2_start_) {}
+    : PixelCoordinates(std::move(bins), chrom, chrom, bin1_start_, bin2_start_) {}
 
-PixelCoordinates::PixelCoordinates(const BinTableLazy &bins, std::uint32_t chrom1_id_,
-                                   std::uint32_t chrom2_id_, std::uint32_t bin1_start_,
+PixelCoordinates::PixelCoordinates(std::shared_ptr<const BinTableLazy> bins, std::uint32_t chrom_id,
+                                   std::uint32_t bin1_start_, std::uint32_t bin2_start_)
+    : PixelCoordinates(std::move(bins), chrom_id, chrom_id, bin1_start_, bin2_start_) {}
+
+PixelCoordinates::PixelCoordinates(std::shared_ptr<const BinTableLazy> bins,
+                                   std::string_view chrom_name, std::uint32_t bin1_start_,
                                    std::uint32_t bin2_start_)
-    : PixelCoordinates(bins, bins.coord_to_bin_id(chrom1_id_, bin1_start_),
-                       bins.coord_to_bin_id(chrom2_id_, bin2_start_)) {}
+    : PixelCoordinates(std::move(bins), chrom_name, chrom_name, bin1_start_, bin2_start_) {}
 
-PixelCoordinates::PixelCoordinates(const BinTableLazy &bins, const Chromosome &chrom,
-                                   std::uint32_t bin1_start_, std::uint32_t bin2_start_)
-    : PixelCoordinates(bins, chrom, chrom, bin1_start_, bin2_start_) {}
-
-PixelCoordinates::PixelCoordinates(const BinTableLazy &bins, std::uint32_t chrom_id,
-                                   std::uint32_t bin1_start_, std::uint32_t bin2_start_)
-    : PixelCoordinates(bins, chrom_id, chrom_id, bin1_start_, bin2_start_) {}
-
-PixelCoordinates::PixelCoordinates(const BinTableLazy &bins, std::string_view chrom_name,
-                                   std::uint32_t bin1_start_, std::uint32_t bin2_start_)
-    : PixelCoordinates(bins, chrom_name, chrom_name, bin1_start_, bin2_start_) {}
-
-PixelCoordinates::PixelCoordinates(const BinTableLazy &bins, std::uint64_t bin1_id_,
+PixelCoordinates::PixelCoordinates(std::shared_ptr<const BinTableLazy> bins, std::uint64_t bin1_id_,
                                    std::uint64_t bin2_id_)
-    : _bins(&bins), _bin1_id(bin1_id_), _bin2_id(bin2_id_) {
-  assert(_bin1_id <= bins.size());
-  assert(_bin2_id <= bins.size());
+    : _bins(std::move(bins)), _bin1_id(bin1_id_), _bin2_id(bin2_id_) {
+  assert(_bin1_id <= _bins->size());
+  assert(_bin2_id <= _bins->size());
 }
 
 const Chromosome &PixelCoordinates::chrom1() const { return this->bin1().chrom; }

@@ -18,28 +18,29 @@ class BinTableLazy;
 struct Bin;
 
 class PixelCoordinates {
-  const BinTableLazy *_bins{};
+  std::shared_ptr<const BinTableLazy> _bins{};
   std::uint64_t _bin1_id{(std::numeric_limits<std::uint64_t>::max)()};  // NOLINT
   std::uint64_t _bin2_id{(std::numeric_limits<std::uint64_t>::max)()};  // NOLINT
 
  public:
   PixelCoordinates() = default;
-  PixelCoordinates(const BinTableLazy &bins, const Chromosome &chrom1, const Chromosome &chrom2,
-                   std::uint32_t bin1_start_, std::uint32_t bin2_start_);
-  PixelCoordinates(const BinTableLazy &bins, std::string_view chrom1_name,
+  PixelCoordinates(std::shared_ptr<const BinTableLazy> bins, const Chromosome &chrom1,
+                   const Chromosome &chrom2, std::uint32_t bin1_start_, std::uint32_t bin2_start_);
+  PixelCoordinates(std::shared_ptr<const BinTableLazy> bins, std::string_view chrom1_name,
                    std::string_view chrom2_name, std::uint32_t bin1_start_,
                    std::uint32_t bin2_start_);
-  PixelCoordinates(const BinTableLazy &bins, std::uint32_t chrom1_id_, std::uint32_t chrom2_id_,
+  PixelCoordinates(std::shared_ptr<const BinTableLazy> bins, std::uint32_t chrom1_id_,
+                   std::uint32_t chrom2_id_, std::uint32_t bin1_start_, std::uint32_t bin2_start_);
+
+  PixelCoordinates(std::shared_ptr<const BinTableLazy> bins, const Chromosome &chrom,
+                   std::uint32_t bin1_start_, std::uint32_t bin2_start_);
+  PixelCoordinates(std::shared_ptr<const BinTableLazy> bins, std::string_view chrom_name,
+                   std::uint32_t bin1_start_, std::uint32_t bin2_start_);
+  PixelCoordinates(std::shared_ptr<const BinTableLazy> bins, std::uint32_t chrom_id_,
                    std::uint32_t bin1_start_, std::uint32_t bin2_start_);
 
-  PixelCoordinates(const BinTableLazy &bins, const Chromosome &chrom, std::uint32_t bin1_start_,
-                   std::uint32_t bin2_start_);
-  PixelCoordinates(const BinTableLazy &bins, std::string_view chrom_name, std::uint32_t bin1_start_,
-                   std::uint32_t bin2_start_);
-  PixelCoordinates(const BinTableLazy &bins, std::uint32_t chrom_id_, std::uint32_t bin1_start_,
-                   std::uint32_t bin2_start_);
-
-  PixelCoordinates(const BinTableLazy &bins, std::uint64_t bin1_id, std::uint64_t bin2_id);
+  PixelCoordinates(std::shared_ptr<const BinTableLazy> bins, std::uint64_t bin1_id,
+                   std::uint64_t bin2_id);
 
   [[nodiscard]] constexpr explicit operator bool() const noexcept;
   [[nodiscard]] constexpr bool operator==(const PixelCoordinates &other) const noexcept;

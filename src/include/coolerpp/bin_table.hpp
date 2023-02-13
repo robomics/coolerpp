@@ -23,8 +23,7 @@ struct Bin {
   std::uint32_t end;
 
   Bin() = delete;
-  constexpr Bin(const Chromosome &chrom_, std::uint32_t start_,
-                std::uint32_t end_) noexcept;
+  constexpr Bin(const Chromosome &chrom_, std::uint32_t start_, std::uint32_t end_) noexcept;
   [[nodiscard]] bool operator==(const Bin &other) const noexcept;
   [[nodiscard]] bool operator!=(const Bin &other) const noexcept;
 

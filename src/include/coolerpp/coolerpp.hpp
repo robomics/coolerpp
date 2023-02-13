@@ -97,8 +97,8 @@ class File {
   DatasetMap _datasets{};
   StandardAttributes _attrs{};
   internal::NumericVariant _pixel_variant{};
-  std::unique_ptr<BinTable> _bins{};
-  std::unique_ptr<Index> _index{};
+  std::shared_ptr<const BinTable> _bins{};
+  std::shared_ptr<Index> _index{};
   bool _finalize{false};
 
   // Constructors are private. Cooler files are opened using factory methods
@@ -158,6 +158,7 @@ class File {
   [[nodiscard]] std::uint32_t bin_size() const noexcept;
   [[nodiscard]] auto chromosomes() const noexcept -> const ChromosomeSet &;
   [[nodiscard]] auto bins() const noexcept -> const BinTable &;
+  [[nodiscard]] auto bins_ptr() const noexcept -> std::shared_ptr<const BinTable>;
 
   [[nodiscard]] auto attributes() const noexcept -> const StandardAttributes &;
   [[nodiscard]] auto group(std::string_view group_name) -> Group &;
@@ -195,6 +196,8 @@ class File {
   template <class N>
   [[nodiscard]] PixelSelector<N> fetch(std::string_view chrom1_name, std::uint32_t pos1,
                                        std::string_view chrom2_name, std::uint32_t pos2) const;
+  template <class N>
+  [[nodiscard]] PixelSelector<N> fetch(PixelCoordinates coord1, PixelCoordinates coord2) const;
 
   void flush();
 
@@ -239,7 +242,7 @@ class File {
   [[nodiscard]] static Index import_indexes(const Dataset &chrom_offset_dset,
                                             const Dataset &bin_offset_dset,
                                             const ChromosomeSet &chroms,
-                                            const BinTableLazy &bin_table,
+                                            std::shared_ptr<const BinTableLazy> bin_table,
                                             std::uint64_t expected_nnz, bool missing_ok);
 
   void validate_bins() const;

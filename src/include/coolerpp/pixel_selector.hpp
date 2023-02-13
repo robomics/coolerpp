@@ -29,26 +29,29 @@ class PixelSelector {
 
   std::shared_ptr<PixelCoordinates> _coord1{};
   std::shared_ptr<PixelCoordinates> _coord2{};
-  const Index *_index{};
+  std::shared_ptr<const Index> _index{};
   const Dataset *_pixels_bin1_id{};
   const Dataset *_pixels_bin2_id{};
   const Dataset *_pixels_count{};
 
-  PixelSelector(const Index &index, const Dataset &pixels_bin1_id, const Dataset &pixels_bin2_id,
-                const Dataset &pixels_count, std::shared_ptr<PixelCoordinates> coords) noexcept;
-  PixelSelector(const Index &index, const Dataset &pixels_bin1_id, const Dataset &pixels_bin2_id,
-                const Dataset &pixels_count, std::shared_ptr<PixelCoordinates> coord1,
+  PixelSelector(std::shared_ptr<const Index> index, const Dataset &pixels_bin1_id,
+                const Dataset &pixels_bin2_id, const Dataset &pixels_count,
+                std::shared_ptr<PixelCoordinates> coords) noexcept;
+  PixelSelector(std::shared_ptr<const Index> index, const Dataset &pixels_bin1_id,
+                const Dataset &pixels_bin2_id, const Dataset &pixels_count,
+                std::shared_ptr<PixelCoordinates> coord1,
                 std::shared_ptr<PixelCoordinates> coord2) noexcept;
 
  public:
   PixelSelector() = delete;
-  PixelSelector(const Index &index, const Dataset &pixels_bin1_id, const Dataset &pixels_bin2_id,
-                const Dataset &pixels_count) noexcept;
-  PixelSelector(const Index &index, const Dataset &pixels_bin1_id, const Dataset &pixels_bin2_id,
-                const Dataset &pixels_count, PixelCoordinates coords) noexcept;
+  PixelSelector(std::shared_ptr<const Index> index, const Dataset &pixels_bin1_id,
+                const Dataset &pixels_bin2_id, const Dataset &pixels_count) noexcept;
+  PixelSelector(std::shared_ptr<const Index> index, const Dataset &pixels_bin1_id,
+                const Dataset &pixels_bin2_id, const Dataset &pixels_count,
+                PixelCoordinates coords) noexcept;
 
-  PixelSelector(const Index &index, const Dataset &pixels_bin1_id, const Dataset &pixels_bin2_id,
-                const Dataset &pixels_count, PixelCoordinates coord1,
+  PixelSelector(std::shared_ptr<const Index> index, const Dataset &pixels_bin1_id,
+                const Dataset &pixels_bin2_id, const Dataset &pixels_count, PixelCoordinates coord1,
                 PixelCoordinates coord2) noexcept;
 
   [[nodiscard]] auto begin() const -> iterator;
@@ -60,7 +63,7 @@ class PixelSelector {
   [[nodiscard]] constexpr const PixelCoordinates &coord1() const noexcept;
   [[nodiscard]] constexpr const PixelCoordinates &coord2() const noexcept;
 
-  [[nodiscard]] static PixelCoordinates parse_query(const BinTableLazy &bins,
+  [[nodiscard]] static PixelCoordinates parse_query(const std::shared_ptr<const BinTableLazy> bins,
                                                     std::string_view query);
 
   class iterator {

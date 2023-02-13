@@ -32,7 +32,7 @@ static std::size_t generate_test_data(const std::filesystem::path& path,
   N n = 0;
   for (std::uint64_t i = 0; i < num_bins; ++i) {
     for (std::uint64_t j = i; j < num_bins; ++j) {
-      pixels.emplace_back(Pixel<N>{PixelCoordinates{f.bins(), i, j}, n++});
+      pixels.emplace_back(Pixel<N>{PixelCoordinates{f.bins_ptr(), i, j}, n++});
     }
   }
   f.append_pixels(pixels.begin(), pixels.end());

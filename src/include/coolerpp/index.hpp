@@ -23,7 +23,7 @@ class Index {
   using ChromID = std::uint32_t;
   using OffsetVect = std::vector<std::uint64_t>;
 
-  const BinTableLazy* _bins{};
+  std::shared_ptr<const BinTableLazy> _bins{};
   std::vector<OffsetVect> _idx{};
   std::size_t _size{};
   std::uint64_t _nnz{};
@@ -49,10 +49,11 @@ class Index {
   using const_iterator = iterator;
 
   Index() = default;
-  explicit Index(const BinTableLazy& bins, std::uint64_t nnz = 0);
+  explicit Index(std::shared_ptr<const BinTableLazy> bins, std::uint64_t nnz = 0);
 
   [[nodiscard]] const ChromosomeSet& chromosomes() const noexcept;
   [[nodiscard]] const BinTableLazy& bins() const noexcept;
+  [[nodiscard]] std::shared_ptr<const BinTableLazy> bins_ptr() const noexcept;
 
   [[nodiscard]] std::size_t num_chromosomes() const noexcept;
   [[nodiscard]] constexpr std::size_t size() const noexcept { return this->_size; }

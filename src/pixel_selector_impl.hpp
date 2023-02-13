@@ -15,42 +15,49 @@
 namespace coolerpp {
 
 template <class N>
-inline PixelSelector<N>::PixelSelector(const Index &index, const Dataset &pixels_bin1_id,
-                                       const Dataset &pixels_bin2_id, const Dataset &pixels_count,
+inline PixelSelector<N>::PixelSelector(std::shared_ptr<const Index> index,
+                                       const Dataset &pixels_bin1_id, const Dataset &pixels_bin2_id,
+                                       const Dataset &pixels_count,
                                        std::shared_ptr<PixelCoordinates> coords) noexcept
-    : PixelSelector(index, pixels_bin1_id, pixels_bin2_id, pixels_count, coords,
+    : PixelSelector(std::move(index), pixels_bin1_id, pixels_bin2_id, pixels_count, coords,
                     std::move(coords)) {}
 
 template <class N>
-inline PixelSelector<N>::PixelSelector(const Index &index, const Dataset &pixels_bin1_id,
-                                       const Dataset &pixels_bin2_id, const Dataset &pixels_count,
+inline PixelSelector<N>::PixelSelector(std::shared_ptr<const Index> index,
+                                       const Dataset &pixels_bin1_id, const Dataset &pixels_bin2_id,
+                                       const Dataset &pixels_count,
                                        std::shared_ptr<PixelCoordinates> coord1,
                                        std::shared_ptr<PixelCoordinates> coord2) noexcept
     : _coord1(std::move(coord1)),
       _coord2(std::move(coord2)),
-      _index(&index),
+      _index(std::move(index)),
       _pixels_bin1_id(&pixels_bin1_id),
       _pixels_bin2_id(&pixels_bin2_id),
-      _pixels_count(&pixels_count) {}
+      _pixels_count(&pixels_count) {
+  assert(_index);
+}
 
 template <class N>
-inline PixelSelector<N>::PixelSelector(const Index &index, const Dataset &pixels_bin1_id,
-                                       const Dataset &pixels_bin2_id, const Dataset &pixels_count,
+inline PixelSelector<N>::PixelSelector(std::shared_ptr<const Index> index,
+                                       const Dataset &pixels_bin1_id, const Dataset &pixels_bin2_id,
+                                       const Dataset &pixels_count,
                                        PixelCoordinates coords) noexcept
-    : PixelSelector<N>(index, pixels_bin1_id, pixels_bin2_id, pixels_count,
+    : PixelSelector<N>(std::move(index), pixels_bin1_id, pixels_bin2_id, pixels_count,
                        std::make_shared<PixelCoordinates>(std::move(coords))) {}
 
 template <class N>
-inline PixelSelector<N>::PixelSelector(const Index &index, const Dataset &pixels_bin1_id,
-                                       const Dataset &pixels_bin2_id,
+inline PixelSelector<N>::PixelSelector(std::shared_ptr<const Index> index,
+                                       const Dataset &pixels_bin1_id, const Dataset &pixels_bin2_id,
                                        const Dataset &pixels_count) noexcept
-    : PixelSelector<N>(index, pixels_bin1_id, pixels_bin2_id, pixels_count, nullptr, nullptr) {}
+    : PixelSelector<N>(std::move(index), pixels_bin1_id, pixels_bin2_id, pixels_count, nullptr,
+                       nullptr) {}
 
 template <class N>
-inline PixelSelector<N>::PixelSelector(const Index &index, const Dataset &pixels_bin1_id,
-                                       const Dataset &pixels_bin2_id, const Dataset &pixels_count,
-                                       PixelCoordinates coord1, PixelCoordinates coord2) noexcept
-    : PixelSelector(index, pixels_bin1_id, pixels_bin2_id, pixels_count,
+inline PixelSelector<N>::PixelSelector(std::shared_ptr<const Index> index,
+                                       const Dataset &pixels_bin1_id, const Dataset &pixels_bin2_id,
+                                       const Dataset &pixels_count, PixelCoordinates coord1,
+                                       PixelCoordinates coord2) noexcept
+    : PixelSelector(std::move(index), pixels_bin1_id, pixels_bin2_id, pixels_count,
                     std::make_shared<PixelCoordinates>(std::move(coord1)),
                     std::make_shared<PixelCoordinates>(std::move(coord2))) {}
 
@@ -84,19 +91,23 @@ inline auto PixelSelector<N>::cend() const -> iterator {
 
 template <class N>
 constexpr const PixelCoordinates &PixelSelector<N>::coord1() const noexcept {
-  return this->_coord1;
+  assert(this->_coord1);
+  return *this->_coord1;
 }
 
 template <class N>
 constexpr const PixelCoordinates &PixelSelector<N>::coord2() const noexcept {
-  return this->_coord2;
+  assert(this->_coord1);
+  return *this->_coord2;
 }
 
 template <class N>
-inline PixelCoordinates PixelSelector<N>::parse_query(const BinTableLazy &bins,
+inline PixelCoordinates PixelSelector<N>::parse_query(std::shared_ptr<const BinTableLazy> bins,
                                                       std::string_view query) {
-  if (bins.chromosomes().contains(query)) {
-    const auto &chrom = bins.chromosomes().at(query);
+  assert(bins);
+  const auto &chroms = bins->chromosomes();
+  if (chroms.contains(query)) {
+    const auto &chrom = chroms.at(query);
     return {bins, chrom, 0, chrom.size};
   }
 
@@ -111,7 +122,7 @@ inline PixelCoordinates PixelSelector<N>::parse_query(const BinTableLazy &bins,
   const auto start_pos_str = query.substr(p1 + 1, p2 - (p1 + 1));
   const auto end_pos_str = query.substr(p2 + 1);
 
-  if (!bins.chromosomes().contains(chrom_name)) {
+  if (!chroms.contains(chrom_name)) {
     throw std::runtime_error(
         fmt::format(FMT_STRING("invalid chromosome \"{}\" in query \"{}\""), chrom_name, query));
   }
@@ -126,7 +137,7 @@ inline PixelCoordinates PixelSelector<N>::parse_query(const BinTableLazy &bins,
         fmt::format(FMT_STRING("query \"{}\" is malformed: missing end position"), query));
   }
 
-  const auto &chrom = bins.chromosomes().at(chrom_name);
+  const auto &chrom = chroms.at(chrom_name);
   std::uint32_t start_pos{};
   std::uint32_t end_pos{};
 
@@ -283,7 +294,7 @@ inline auto PixelSelector<N>::iterator::operator*() const -> value_type {
   assert(this->_index);
   assert(this->_bin2_id_it < this->_bin2_id_last);
   // clang-format off
-  return {PixelCoordinates{this->_index->bins(),
+  return {PixelCoordinates{this->_index->bins_ptr(),
                            *this->_bin1_id_it,
                            *this->_bin2_id_it},
           *this->_count_it};
