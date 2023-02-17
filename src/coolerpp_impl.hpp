@@ -445,6 +445,12 @@ inline PixelSelector<N> File::fetch(std::string_view query) const {
 }
 
 template <class N>
+inline PixelSelector<N> File::fetch(std::string_view chrom, std::uint32_t start,
+                                    std::uint32_t end) const {
+  return this->fetch<N>(PixelCoordinates{this->_bins, chrom, start, end - std::min(1U, end)});
+}
+
+template <class N>
 inline PixelSelector<N> File::fetch(PixelCoordinates query) const {
   // clang-format off
   return PixelSelector<N>(this->_index,
@@ -456,14 +462,37 @@ inline PixelSelector<N> File::fetch(PixelCoordinates query) const {
 }
 
 template <class N>
-inline PixelSelector<N> File::fetch(std::string_view chrom1_name, std::uint32_t pos1,
-                                    std::string_view chrom2_name, std::uint32_t pos2) const {
+inline PixelSelector<N> File::fetch(std::string_view range1, std::string_view range2) const {
+  if (range1 == range2) {
+    return this->fetch<N>(range1);
+  }
+
+  return this->fetch<N>(PixelSelector<N>::parse_query(this->_bins, range1),
+                        PixelSelector<N>::parse_query(this->_bins, range2));
+}
+
+template <class N>
+inline PixelSelector<N> File::fetch(std::string_view chrom1, std::uint32_t start1,
+                                    std::uint32_t end1, std::string_view chrom2,
+                                    std::uint32_t start2, std::uint32_t end2) const {
   // clang-format off
   return PixelSelector<N>(this->_index,
                           this->dataset("pixels/bin1_id"),
                           this->dataset("pixels/bin2_id"),
                           this->dataset("pixels/count"),
-                          PixelCoordinates{this->_bins, chrom1_name, chrom2_name, pos1, pos2});
+                          PixelCoordinates{this->_bins, chrom1, start1, end1},
+                          PixelCoordinates{this->_bins, chrom2, start2, end2});
+  // clang-format on
+}
+
+template <class N>
+inline PixelSelector<N> File::fetch(PixelCoordinates coord1, PixelCoordinates coord2) const {
+  // clang-format off
+  return PixelSelector<N>(this->_index,
+                          this->dataset("pixels/bin1_id"),
+                          this->dataset("pixels/bin2_id"),
+                          this->dataset("pixels/count"),
+                          std::move(coord1), std::move(coord2));
   // clang-format on
 }
 

@@ -192,10 +192,17 @@ class File {
   template <class N>
   [[nodiscard]] PixelSelector<N> fetch(std::string_view query) const;
   template <class N>
-  [[nodiscard]] PixelSelector<N> fetch(PixelCoordinates query) const;
+  [[nodiscard]] PixelSelector<N> fetch(std::string_view chrom, std::uint32_t start,
+                                       std::uint32_t end) const;
   template <class N>
-  [[nodiscard]] PixelSelector<N> fetch(std::string_view chrom1_name, std::uint32_t pos1,
-                                       std::string_view chrom2_name, std::uint32_t pos2) const;
+  [[nodiscard]] PixelSelector<N> fetch(PixelCoordinates query) const;
+
+  template <class N>
+  [[nodiscard]] PixelSelector<N> fetch(std::string_view range1, std::string_view range2) const;
+  template <class N>
+  [[nodiscard]] PixelSelector<N> fetch(std::string_view chrom1, std::uint32_t start1,
+                                       std::uint32_t end1, std::string_view chrom2,
+                                       std::uint32_t start2, std::uint32_t end2) const;
   template <class N>
   [[nodiscard]] PixelSelector<N> fetch(PixelCoordinates coord1, PixelCoordinates coord2) const;
 

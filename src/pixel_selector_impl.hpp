@@ -198,17 +198,25 @@ inline PixelSelector<N>::iterator::iterator(const Index &index, const Dataset &p
   assert(_coord1->bin1_id() <= _coord1->bin2_id());
   assert(_coord2->bin1_id() <= _coord2->bin2_id());
 
+  // Set iterator to the first row overlapping the query (i.e. the first bin overlapping coord1)
   auto offset = _index->get_offset_by_bin_id(_coord1->bin1_id());
   _bin1_id_it = pixels_bin1_id.make_iterator_at_offset<std::uint64_t>(offset);
   _bin2_id_it = pixels_bin2_id.make_iterator_at_offset<std::uint64_t>(offset);
-  _bin2_id_last = pixels_bin2_id.end<std::uint64_t>();
   _count_it = pixels_count.make_iterator_at_offset<N>(offset);
 
-  this->jump(_coord1->bin1_id(), _coord2->bin1_id());
-
+  // Init last iterator. at_end will return an iterator pointing to the pixel past the last pixel
+  // overlapping the query
   auto it = iterator::at_end(index, pixels_bin1_id, pixels_bin2_id, pixels_count, _coord1, _coord2);
-  _bin2_id_last = it._bin2_id_it;
+  _bin2_id_last = it._bin2_id_last;
   assert(_bin2_id_it <= _bin2_id_last);
+
+  // Now that last it is set, we can call jump_to_col() to seek to the first pixel actually overlapping the
+  // query. Calling jump_to_next_overlap() is required to deal with rows that are not empty, but
+  // that have no pixels overlapping the query
+  this->jump_to_col(_coord2->bin1_id());
+  if (this->discard()) {
+    this->jump_to_next_overlap();
+  }
 }
 
 template <class N>
@@ -238,21 +246,50 @@ inline auto PixelSelector<N>::iterator::at_end(const Index &index, const Dataset
   assert(!!coord1);
   assert(!!coord2);
 
+  assert(coord1->bin2_id() <= coord2->bin2_id());
+
   iterator it{};
 
   it._index = &index;
   it._coord1 = std::move(coord1);
   it._coord2 = std::move(coord2);
 
-  const auto offset = index.get_offset_by_bin_id(it._coord1->bin2_id());
-  it._bin1_id_it = pixels_bin1_id.make_iterator_at_offset<std::uint64_t>(offset);
-  it._bin2_id_it = pixels_bin2_id.make_iterator_at_offset<std::uint64_t>(offset);
-  it._bin2_id_last = pixels_bin2_id.end<std::uint64_t>();
-  it._count_it = pixels_count.make_iterator_at_offset<N>(offset);
+  // Get the bin id for the last row overlapping the query
+  auto bin1_id = it._coord1->bin2_id();
 
-  it.jump(it._coord1->bin2_id(), std::max(it._coord1->bin2_id(), it._coord2->bin2_id()));
+  do {
+    // Get the offset to the last row overlapping the query
+    auto offset = index.get_offset_by_bin_id(bin1_id);
+    it._bin1_id_it = pixels_bin1_id.make_iterator_at_offset<std::uint64_t>(offset);
+    it._bin2_id_it = pixels_bin2_id.make_iterator_at_offset<std::uint64_t>(offset);
+    // Even though we do not yet know where the last iterator actually is, the jump methods expect
+    // the last iterator to be set to something.
+    it._bin2_id_last = pixels_bin2_id.end<std::uint64_t>();
 
-  it._bin2_id_last = ++it._bin2_id_it;
+    it._count_it = pixels_count.make_iterator_at_offset<N>(offset);
+
+    // Jump to the first column overlapping the query
+    it.jump_to_col(it._coord2->bin1_id());
+
+    // If discard() returns true, it means that the row corresponding to bin1_id does not contain
+    // any pixel overlapping the query, so we keep looking backwards
+  } while (bin1_id-- != 0 && it.discard());
+
+  // Now that we know the row pointed by it contains at least one pixel overlapping the query, jump
+  // to the last column overlapping the query
+  it.jump_to_col(it._coord2->bin2_id());
+
+  // IMPORTANT! Do not try to set _bin2_id_last before calling it.discard(), otherwise discard will
+  // always return true!
+  if (it.discard()) {
+    // Pixel pointed to by it does not overlap the query (i.e. matrix has 0 interactions for the
+    // current row and col bin2_id()
+    it._bin2_id_last = it._bin2_id_it;
+  } else {
+    // it points to the last pixel overlapping the query, so increment last_it and it
+    it._bin2_id_last = it._bin2_id_it + 1;
+    std::ignore = ++it;
+  }
 
   return it;
 }
@@ -303,26 +340,14 @@ inline auto PixelSelector<N>::iterator::operator*() const -> value_type {
 
 template <class N>
 inline auto PixelSelector<N>::iterator::operator++() -> iterator & {
-  if (!this->_coord1) {
-    assert(!this->_coord2);
-    std::ignore = ++this->_bin1_id_it;
-    std::ignore = ++this->_bin2_id_it;
-    std::ignore = ++this->_count_it;
-    return *this;
-  }
-
-  if (this->_bin2_id_it < this->_bin2_id_last && *this->_bin2_id_it >= this->_coord2->bin2_id()) {
-    const auto row = *this->_bin1_id_it + 1;
-    if (row <= this->_coord1->bin2_id()) {
-      const auto col = std::max(row, this->_coord2->bin1_id());
-      this->jump(row, col);
-      return *this;
-    }
-  }
-
+  assert(this->_bin2_id_it < this->_bin2_id_last);
   std::ignore = ++this->_bin1_id_it;
   std::ignore = ++this->_bin2_id_it;
   std::ignore = ++this->_count_it;
+
+  if (this->discard()) {
+    this->jump_to_next_overlap();
+  }
 
   return *this;
 }
@@ -339,17 +364,17 @@ inline void PixelSelector<N>::iterator::jump_to_row(std::uint64_t bin_id) {
   assert(this->_index);
   assert(bin_id <= this->_index->bins().size());
 
-  auto offset = this->_index->get_offset_by_bin_id(bin_id);
+  const auto end_offset = this->_bin2_id_last.h5_offset();
+  const auto row_offset = this->_index->get_offset_by_bin_id(bin_id);
+  const auto current_offset = this->h5_offset();
 
-  const auto &bin2_id_dset = _bin2_id_it.dataset();
-  const auto &bin1_id_dset = _bin1_id_it.dataset();
-  const auto &count_dset = _count_it.dataset();
+  assert(row_offset >= current_offset);
+  assert(end_offset >= current_offset);
+  const auto offset = std::min(end_offset, row_offset) - current_offset;
 
-  this->_bin1_id_it = bin1_id_dset.make_iterator_at_offset<std::uint64_t>(offset);
-  this->_bin2_id_it = bin2_id_dset.make_iterator_at_offset<std::uint64_t>(offset);
-  this->_count_it = count_dset.template make_iterator_at_offset<N>(offset);
-
-  assert(this->_bin2_id_it <= this->_bin2_id_last);
+  this->_bin1_id_it += offset;
+  this->_bin2_id_it += offset;
+  this->_count_it += offset;
 }
 
 template <class N>
@@ -360,31 +385,31 @@ inline void PixelSelector<N>::iterator::jump_to_col(std::uint64_t bin_id) {
   const auto current_row = *this->_bin1_id_it;
   const auto next_row = current_row + 1;
 
-  const auto offset1 = this->_index->get_offset_by_bin_id(current_row);
-  const auto offset2 = [&]() {
-    const auto offset = this->_index->get_offset_by_bin_id(next_row);
-    if (offset == 0) {
-      return offset;
-    }
-    return std::max(offset1, offset - 1);
-  }();
+  const auto current_offset = this->h5_offset();
+  const auto current_row_offset = this->_index->get_offset_by_bin_id(current_row);
+  const auto next_row_offset = this->_index->get_offset_by_bin_id(next_row);
+  const auto end_offset = this->_bin2_id_last.h5_offset();
 
-  assert(offset1 <= offset2);
-  if (offset1 == offset2) {
-    return;
+  if (current_offset == next_row_offset) {
+    return;  // Row is empty
   }
 
-  const auto &bin2_id_dset = this->_bin2_id_it.dataset();
-  this->_bin2_id_it = std::lower_bound(
-      bin2_id_dset.template make_iterator_at_offset<std::uint64_t>(offset1),
-      bin2_id_dset.template make_iterator_at_offset<std::uint64_t>(offset2), bin_id);
+  assert(next_row_offset != 0);
+  const auto row_start_offset = std::min(current_offset, current_row_offset);
+  const auto row_end_offset = std::min(end_offset, next_row_offset - 1);
 
-  const auto &bin1_id_dset = this->_bin1_id_it.dataset();
-  const auto &count_dset = this->_count_it.dataset();
-  const auto offset = this->_bin2_id_it.h5_offset();
+  if (row_start_offset == row_end_offset) {
+    return;  // Row is empty
+  }
 
-  this->_bin1_id_it = bin1_id_dset.template make_iterator_at_offset<std::uint64_t>(offset);
-  this->_count_it = count_dset.template make_iterator_at_offset<N>(offset);
+  auto first = this->_bin2_id_it + (row_start_offset - current_offset);
+  auto last = first + (row_end_offset - row_start_offset);
+  this->_bin2_id_it = std::lower_bound(first, last, bin_id);
+
+  const auto offset = this->_bin2_id_it.h5_offset() - current_offset;
+
+  this->_bin1_id_it += offset;
+  this->_count_it += offset;
 
   assert(*this->_bin1_id_it == current_row);
   assert(this->_bin2_id_it <= this->_bin2_id_last);
@@ -398,6 +423,94 @@ inline void PixelSelector<N>::iterator::jump(std::uint64_t bin1_id, std::uint64_
   if (bin2_id != bin1_id) {
     this->jump_to_col(bin2_id);
   }
+}
+
+template <class N>
+inline void PixelSelector<N>::iterator::jump_to_next_overlap() {
+  assert(this->_coord1);
+  assert(this->_coord2);
+  while (this->discard()) {
+    // We're at/past end: return immediately
+    if (this->_bin2_id_it >= this->_bin2_id_last) {
+      this->jump_at_end();
+      return;
+    }
+
+    const auto row = *this->_bin1_id_it;
+    const auto col = *this->_bin2_id_it;
+    const auto next_row = row + 1;
+    const auto next_col = std::max(next_row, this->_coord2->bin1_id());
+
+    // We may have some data left to read from the current row
+    if (col < this->_coord2->bin1_id()) {
+      this->jump_to_col(this->_coord2->bin1_id());
+      if (!this->discard()) {
+        return;
+      }
+    }
+
+    // There's no more data to be read, as we're past the last column overlapping the query,
+    // and the next row does not overlap the query
+    if (this->_bin2_id_it >= this->_bin2_id_last || next_row > this->_coord1->bin2_id()) {
+      assert(col > this->_coord2->bin2_id());
+      this->jump_at_end();
+      return;
+    }
+
+    this->jump(next_row, next_col);
+  }
+}
+
+template <class N>
+inline bool PixelSelector<N>::iterator::discard() const {
+  if (!this->_coord1) {
+    // Iterator is traversing the entire matrix:
+    // no pixel should be discarded
+    assert(!this->_coord2);
+    return false;
+  }
+
+  if (this->_bin2_id_it == this->_bin2_id_last) {
+    return false;
+  }
+
+  const auto overlaps_range1 = *this->_bin1_id_it >= this->_coord1->bin1_id() &&
+                               *this->_bin1_id_it <= this->_coord1->bin2_id();
+
+  const auto overlaps_range2 = *this->_bin2_id_it >= this->_coord2->bin1_id() &&
+                               *this->_bin2_id_it <= this->_coord2->bin2_id();
+
+  return !overlaps_range1 || !overlaps_range2;
+}
+
+template <class N>
+inline std::size_t PixelSelector<N>::iterator::h5_offset() const noexcept {
+  assert(this->_bin1_id_it.h5_offset() == this->_bin2_id_it.h5_offset());
+  assert(this->_count_it.h5_offset() == this->_bin2_id_it.h5_offset());
+
+  return this->_bin2_id_it.h5_offset();
+}
+
+template <class N>
+inline void PixelSelector<N>::iterator::jump_at_end() {
+  if (this->_bin2_id_it == this->_bin2_id_last) {
+    return;
+  }
+
+  // Deal with iterators upstream of last
+  if (this->_bin2_id_it < this->_bin2_id_last) {
+    const auto offset = this->_bin2_id_last.h5_offset() - this->_bin2_id_it.h5_offset();
+    this->_bin1_id_it += offset;
+    this->_bin2_id_it += offset;
+    this->_count_it += offset;
+    return;
+  }
+
+  // Deal with iterators downstream of last
+  const auto offset = this->_bin2_id_it.h5_offset() - this->_bin2_id_last.h5_offset();
+  this->_bin1_id_it -= offset;
+  this->_bin2_id_it -= offset;
+  this->_count_it -= offset;
 }
 
 }  // namespace coolerpp
