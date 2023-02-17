@@ -32,6 +32,20 @@ static std::size_t print_pixels(It first_pixel, It last_pixel) {
   return nnz;
 }
 
+static std::size_t dump(const File& cooler, const std::string& coord1, const std::string& coord2) {
+  if (cooler.has_integral_pixels()) {
+    auto selector = cooler.fetch<std::int64_t>(coord1, coord2);
+    return print_pixels(selector.begin(), selector.end());
+  }
+
+  auto selector = cooler.fetch<double>(coord1, coord2);
+  return print_pixels(selector.begin(), selector.end());
+}
+
+static std::size_t dump(const File& cooler, const std::string& coords) {
+  return dump(cooler, coords, coords);
+}
+
 static std::size_t dump(const File& cooler) {
   if (cooler.has_integral_pixels()) {
     return print_pixels(cooler.begin<std::int64_t>(), cooler.end<std::int64_t>());
@@ -39,24 +53,16 @@ static std::size_t dump(const File& cooler) {
   return print_pixels(cooler.begin<double>(), cooler.end<double>());
 }
 
-static std::size_t dump(const File& cooler, const std::string& coords) {
-  if (cooler.has_integral_pixels()) {
-    auto selector = cooler.fetch<std::int64_t>(coords);
-    return print_pixels(selector.begin(), selector.end());
-  }
-
-  auto selector = cooler.fetch<double>(coords);
-  return print_pixels(selector.begin(), selector.end());
-}
-
 int main(int argc, char** argv) {
   if (argc < 2) {
     fmt::print(stderr,
-               FMT_STRING("Usage:   {0} my_cooler.cool [region]\n"
+               FMT_STRING("Usage:   {0} my_cooler.cool [region1] [region2]\n"
                           "Example: {0} my_cooler.cool\n"
                           "Example: {0} my_cooler.mcool::/resolutions/10000\n"
                           "Example: {0} my_cooler.cool chr1\n"
-                          "Example: {0} my_cooler.cool chr1:50000-100000\n"),
+                          "Example: {0} my_cooler.cool chr1 chr2\n"
+                          "Example: {0} my_cooler.cool chr1:50000-100000\n"
+                          "Example: {0} my_cooler.cool chr1:50000-100000 chr2\n"),
                argv[0]);  // NOLINT(cppcoreguidelines-pro-bounds-pointer-arithmetic)
     return 1;
   }
@@ -71,8 +77,11 @@ int main(int argc, char** argv) {
 
     if (argc == 2) {
       nnz = dump(cooler);
-    } else {
+    } else if (argc == 3) {
       nnz = dump(cooler, argv[2]);
+    } else {
+      assert(argc == 4);
+      nnz = dump(cooler, argv[2], argv[3]);
     }
 
     const auto t1 = std::chrono::steady_clock::now();
