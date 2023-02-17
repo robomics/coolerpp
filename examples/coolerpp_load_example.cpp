@@ -55,7 +55,7 @@ void parse_bedpe_record(std::string_view line, std::array<std::string, 7>& buff,
   }
 }
 
-[[nodiscard]] Pixel<std::uint32_t> construct_pixel(const BinTableLazy& bins,
+[[nodiscard]] Pixel<std::uint32_t> construct_pixel(std::shared_ptr<const BinTableLazy> bins,
                                                    const std::array<std::string, 7>& bedpe_tokens) {
   const auto& chrom1_name = bedpe_tokens[0];
   const auto& chrom2_name = bedpe_tokens[3];
@@ -73,7 +73,7 @@ void ingest_pixels(const std::string& path_to_chrom_sizes, const std::string& pa
                    std::uint32_t bin_size, std::size_t batch_size = 100'000) {
   auto chromosomes = import_chromosomes(path_to_chrom_sizes);
   auto cooler = File::create_new_cooler<ContactT>(path_to_output_cooler, chromosomes, bin_size);
-  const auto& bins = cooler.bins();
+  const auto& bins = cooler.bins_ptr();
 
   std::vector<Pixel<ContactT>> write_buffer;
   write_buffer.reserve(batch_size);
