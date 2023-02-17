@@ -42,7 +42,7 @@ class PixelCoordinates {
   PixelCoordinates(std::shared_ptr<const BinTableLazy> bins, std::uint64_t bin1_id,
                    std::uint64_t bin2_id);
 
-  [[nodiscard]] constexpr explicit operator bool() const noexcept;
+  [[nodiscard]] explicit operator bool() const noexcept;
   [[nodiscard]] constexpr bool operator==(const PixelCoordinates &other) const noexcept;
   [[nodiscard]] constexpr bool operator!=(const PixelCoordinates &other) const noexcept;
   [[nodiscard]] constexpr bool operator<(const PixelCoordinates &other) const noexcept;
@@ -73,7 +73,7 @@ struct Pixel {
   Coordinates coords;
   N count;
 
-  [[nodiscard]] constexpr explicit operator bool() const noexcept;
+  [[nodiscard]] explicit operator bool() const noexcept;
   [[nodiscard]] constexpr bool operator==(const Pixel<N> &other) const noexcept;
   [[nodiscard]] constexpr bool operator!=(const Pixel<N> &other) const noexcept;
   [[nodiscard]] constexpr bool operator<(const Pixel<N> &other) const noexcept;

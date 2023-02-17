@@ -10,8 +10,6 @@
 
 namespace coolerpp {
 
-constexpr PixelCoordinates::operator bool() const noexcept { return !!this->_bins; }
-
 constexpr bool PixelCoordinates::operator==(const PixelCoordinates &other) const noexcept {
   return this->_bin1_id == other._bin1_id && this->_bin2_id == other._bin2_id;
 }
@@ -49,7 +47,7 @@ constexpr bool PixelCoordinates::operator>=(const PixelCoordinates &other) const
 }
 
 template <typename N>
-constexpr Pixel<N>::operator bool() const noexcept {
+inline Pixel<N>::operator bool() const noexcept {
   return !!this->coords;
 }
 template <typename N>

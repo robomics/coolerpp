@@ -390,10 +390,10 @@ inline void PixelSelector<N>::iterator::jump_to_col(std::uint64_t bin_id) {
   const auto current_row = *this->_bin1_id_it;
   const auto next_row = current_row + 1;
 
-  const auto current_offset = this->h5_offset();
+  const auto current_offset = conditional_static_cast<std::uint64_t>(this->h5_offset());
   const auto current_row_offset = this->_index->get_offset_by_bin_id(current_row);
   const auto next_row_offset = this->_index->get_offset_by_bin_id(next_row);
-  const auto end_offset = this->_bin2_id_last.h5_offset();
+  const auto end_offset = conditional_static_cast<std::uint64_t>(this->_bin2_id_last.h5_offset());
 
   if (current_offset == next_row_offset) {
     return;  // Row is empty

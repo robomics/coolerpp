@@ -52,6 +52,8 @@ PixelCoordinates::PixelCoordinates(std::shared_ptr<const BinTableLazy> bins, std
   assert(_bin2_id <= _bins->size());
 }
 
+PixelCoordinates::operator bool() const noexcept { return !!this->_bins; }
+
 const Chromosome &PixelCoordinates::chrom1() const { return this->bin1().chrom; }
 
 const Chromosome &PixelCoordinates::chrom2() const { return this->bin2().chrom; }
