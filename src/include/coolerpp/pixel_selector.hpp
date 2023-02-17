@@ -68,7 +68,7 @@ class PixelSelector {
 
   class iterator {
     friend PixelSelector<N>;
-    const Index *_index{};
+    std::shared_ptr<const Index> _index{};
 
     std::shared_ptr<PixelCoordinates> _coord1{};
     std::shared_ptr<PixelCoordinates> _coord2{};
@@ -78,18 +78,18 @@ class PixelSelector {
     Dataset::iterator<std::uint64_t> _bin2_id_last{};
     Dataset::iterator<N> _count_it{};
 
-    explicit iterator(const Index &index, const Dataset &pixels_bin1_id,
+    explicit iterator(std::shared_ptr<const Index> index, const Dataset &pixels_bin1_id,
                       const Dataset &pixels_bin2_id, const Dataset &pixels_count);
 
-    explicit iterator(const Index &index, const Dataset &pixels_bin1_id,
+    explicit iterator(std::shared_ptr<const Index> index, const Dataset &pixels_bin1_id,
                       const Dataset &pixels_bin2_id, const Dataset &pixels_count,
                       std::shared_ptr<PixelCoordinates> coord1,
                       std::shared_ptr<PixelCoordinates> coord2);
 
-    static auto at_end(const Index &index, const Dataset &pixels_bin1_id,
+    static auto at_end(std::shared_ptr<const Index> index, const Dataset &pixels_bin1_id,
                        const Dataset &pixels_bin2_id, const Dataset &pixels_count) -> iterator;
 
-    static auto at_end(const Index &index, const Dataset &pixels_bin1_id,
+    static auto at_end(std::shared_ptr<const Index> index, const Dataset &pixels_bin1_id,
                        const Dataset &pixels_bin2_id, const Dataset &pixels_count,
                        std::shared_ptr<PixelCoordinates> coord1,
                        std::shared_ptr<PixelCoordinates> coord2) -> iterator;
@@ -130,7 +130,7 @@ class PixelSelector {
     void jump_to_col(std::uint64_t bin_id);
     void jump(std::uint64_t bin1_id, std::uint64_t bin2_id);
     void jump_to_next_overlap();
-    [[nodiscard]] bool discard() const; // TODO rename
+    [[nodiscard]] bool discard() const;
     [[nodiscard]] std::size_t h5_offset() const noexcept;
     void jump_at_end();
   };

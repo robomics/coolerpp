@@ -75,17 +75,17 @@ template <class N>
 inline auto PixelSelector<N>::cbegin() const -> iterator {
   if (!this->_coord1) {
     assert(!this->_coord2);
-    return iterator{*this->_index, *this->_pixels_bin1_id, *this->_pixels_bin2_id,
+    return iterator{this->_index, *this->_pixels_bin1_id, *this->_pixels_bin2_id,
                     *this->_pixels_count};
   }
 
-  return iterator{*this->_index,        *this->_pixels_bin1_id, *this->_pixels_bin2_id,
+  return iterator{this->_index,         *this->_pixels_bin1_id, *this->_pixels_bin2_id,
                   *this->_pixels_count, this->_coord1,          this->_coord2};
 }
 
 template <class N>
 inline auto PixelSelector<N>::cend() const -> iterator {
-  return iterator::at_end(*this->_index, *this->_pixels_bin1_id, *this->_pixels_bin2_id,
+  return iterator::at_end(this->_index, *this->_pixels_bin1_id, *this->_pixels_bin2_id,
                           *this->_pixels_count, this->_coord1, this->_coord2);
 }
 
@@ -175,10 +175,11 @@ inline PixelCoordinates PixelSelector<N>::parse_query(std::shared_ptr<const BinT
 }
 
 template <class N>
-inline PixelSelector<N>::iterator::iterator(const Index &index, const Dataset &pixels_bin1_id,
+inline PixelSelector<N>::iterator::iterator(std::shared_ptr<const Index> index,
+                                            const Dataset &pixels_bin1_id,
                                             const Dataset &pixels_bin2_id,
                                             const Dataset &pixels_count)
-    : _index(&index),
+    : _index(std::move(index)),
       _coord1(nullptr),
       _coord2(nullptr),
       _bin1_id_it(pixels_bin1_id.begin<std::uint64_t>()),
@@ -187,12 +188,13 @@ inline PixelSelector<N>::iterator::iterator(const Index &index, const Dataset &p
       _count_it(pixels_count.begin<N>()) {}
 
 template <class N>
-inline PixelSelector<N>::iterator::iterator(const Index &index, const Dataset &pixels_bin1_id,
+inline PixelSelector<N>::iterator::iterator(std::shared_ptr<const Index> index,
+                                            const Dataset &pixels_bin1_id,
                                             const Dataset &pixels_bin2_id,
                                             const Dataset &pixels_count,
                                             std::shared_ptr<PixelCoordinates> coord1,
                                             std::shared_ptr<PixelCoordinates> coord2)
-    : _index(&index), _coord1(std::move(coord1)), _coord2(std::move(coord2)) {
+    : _index(std::move(index)), _coord1(std::move(coord1)), _coord2(std::move(coord2)) {
   assert(_coord1);
   assert(_coord2);
   assert(_coord1->bin1_id() <= _coord1->bin2_id());
@@ -206,13 +208,14 @@ inline PixelSelector<N>::iterator::iterator(const Index &index, const Dataset &p
 
   // Init last iterator. at_end will return an iterator pointing to the pixel past the last pixel
   // overlapping the query
-  auto it = iterator::at_end(index, pixels_bin1_id, pixels_bin2_id, pixels_count, _coord1, _coord2);
+  auto it = iterator::at_end(this->_index, pixels_bin1_id, pixels_bin2_id, pixels_count, _coord1,
+                             _coord2);
   _bin2_id_last = it._bin2_id_last;
   assert(_bin2_id_it <= _bin2_id_last);
 
-  // Now that last it is set, we can call jump_to_col() to seek to the first pixel actually overlapping the
-  // query. Calling jump_to_next_overlap() is required to deal with rows that are not empty, but
-  // that have no pixels overlapping the query
+  // Now that last it is set, we can call jump_to_col() to seek to the first pixel actually
+  // overlapping the query. Calling jump_to_next_overlap() is required to deal with rows that are
+  // not empty, but that have no pixels overlapping the query
   this->jump_to_col(_coord2->bin1_id());
   if (this->discard()) {
     this->jump_to_next_overlap();
@@ -220,11 +223,12 @@ inline PixelSelector<N>::iterator::iterator(const Index &index, const Dataset &p
 }
 
 template <class N>
-inline auto PixelSelector<N>::iterator::at_end(const Index &index, const Dataset &pixels_bin1_id,
+inline auto PixelSelector<N>::iterator::at_end(std::shared_ptr<const Index> index,
+                                               const Dataset &pixels_bin1_id,
                                                const Dataset &pixels_bin2_id,
                                                const Dataset &pixels_count) -> iterator {
   iterator it{};
-  it._index = &index;
+  it._index = std::move(index);
   it._bin1_id_it = pixels_bin1_id.end<std::uint64_t>();
   it._bin2_id_it = pixels_bin2_id.end<std::uint64_t>();
   it._bin2_id_last = it._bin2_id_it;
@@ -234,14 +238,15 @@ inline auto PixelSelector<N>::iterator::at_end(const Index &index, const Dataset
 }
 
 template <class N>
-inline auto PixelSelector<N>::iterator::at_end(const Index &index, const Dataset &pixels_bin1_id,
+inline auto PixelSelector<N>::iterator::at_end(std::shared_ptr<const Index> index,
+                                               const Dataset &pixels_bin1_id,
                                                const Dataset &pixels_bin2_id,
                                                const Dataset &pixels_count,
                                                std::shared_ptr<PixelCoordinates> coord1,
                                                std::shared_ptr<PixelCoordinates> coord2)
     -> iterator {
   if (!coord1 && !coord2) {
-    return at_end(index, pixels_bin1_id, pixels_bin2_id, pixels_count);
+    return at_end(std::move(index), pixels_bin1_id, pixels_bin2_id, pixels_count);
   }
   assert(!!coord1);
   assert(!!coord2);
@@ -250,7 +255,7 @@ inline auto PixelSelector<N>::iterator::at_end(const Index &index, const Dataset
 
   iterator it{};
 
-  it._index = &index;
+  it._index = std::move(index);
   it._coord1 = std::move(coord1);
   it._coord2 = std::move(coord2);
 
@@ -259,7 +264,7 @@ inline auto PixelSelector<N>::iterator::at_end(const Index &index, const Dataset
 
   do {
     // Get the offset to the last row overlapping the query
-    auto offset = index.get_offset_by_bin_id(bin1_id);
+    auto offset = it._index->get_offset_by_bin_id(bin1_id);
     it._bin1_id_it = pixels_bin1_id.make_iterator_at_offset<std::uint64_t>(offset);
     it._bin2_id_it = pixels_bin2_id.make_iterator_at_offset<std::uint64_t>(offset);
     // Even though we do not yet know where the last iterator actually is, the jump methods expect
