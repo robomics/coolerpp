@@ -24,19 +24,19 @@ class PixelCoordinates {
 
  public:
   PixelCoordinates() = default;
-  PixelCoordinates(std::shared_ptr<const BinTableLazy> bins, const Chromosome &chrom1,
+  PixelCoordinates(const std::shared_ptr<const BinTableLazy> &bins, const Chromosome &chrom1,
                    const Chromosome &chrom2, std::uint32_t bin1_start_, std::uint32_t bin2_start_);
-  PixelCoordinates(std::shared_ptr<const BinTableLazy> bins, std::string_view chrom1_name,
+  PixelCoordinates(const std::shared_ptr<const BinTableLazy> &bins, std::string_view chrom1_name,
                    std::string_view chrom2_name, std::uint32_t bin1_start_,
                    std::uint32_t bin2_start_);
-  PixelCoordinates(std::shared_ptr<const BinTableLazy> bins, std::uint32_t chrom1_id_,
+  PixelCoordinates(const std::shared_ptr<const BinTableLazy> &bins, std::uint32_t chrom1_id_,
                    std::uint32_t chrom2_id_, std::uint32_t bin1_start_, std::uint32_t bin2_start_);
 
-  PixelCoordinates(std::shared_ptr<const BinTableLazy> bins, const Chromosome &chrom,
+  PixelCoordinates(const std::shared_ptr<const BinTableLazy> &bins, const Chromosome &chrom,
                    std::uint32_t bin1_start_, std::uint32_t bin2_start_);
-  PixelCoordinates(std::shared_ptr<const BinTableLazy> bins, std::string_view chrom_name,
+  PixelCoordinates(const std::shared_ptr<const BinTableLazy> &bins, std::string_view chrom_name,
                    std::uint32_t bin1_start_, std::uint32_t bin2_start_);
-  PixelCoordinates(std::shared_ptr<const BinTableLazy> bins, std::uint32_t chrom_id_,
+  PixelCoordinates(const std::shared_ptr<const BinTableLazy> &bins, std::uint32_t chrom_id_,
                    std::uint32_t bin1_start_, std::uint32_t bin2_start_);
 
   PixelCoordinates(std::shared_ptr<const BinTableLazy> bins, std::uint64_t bin1_id,

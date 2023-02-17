@@ -18,9 +18,9 @@ template <class N>
 inline PixelSelector<N>::PixelSelector(std::shared_ptr<const Index> index,
                                        const Dataset &pixels_bin1_id, const Dataset &pixels_bin2_id,
                                        const Dataset &pixels_count,
-                                       std::shared_ptr<PixelCoordinates> coords) noexcept
+                                       const std::shared_ptr<PixelCoordinates> &coords) noexcept
     : PixelSelector(std::move(index), pixels_bin1_id, pixels_bin2_id, pixels_count, coords,
-                    std::move(coords)) {}
+                    coords) {}
 
 template <class N>
 inline PixelSelector<N>::PixelSelector(std::shared_ptr<const Index> index,
