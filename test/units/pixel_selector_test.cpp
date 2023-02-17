@@ -103,7 +103,7 @@ TEST_CASE("Pixel selector: 1D queries", "[pixel_selector][short]") {
 
     const auto sum = std::accumulate(
         selector.begin(), selector.end(), T(0),
-        [&](T accumulator, const Pixel<T> pixel) { return accumulator + pixel.count; });
+        [&](T accumulator, const Pixel<T>& pixel) { return accumulator + pixel.count; });
 
     CHECK(sum == 11852659);
   }
@@ -142,7 +142,7 @@ TEST_CASE("Pixel selector: 1D queries", "[pixel_selector][short]") {
     CHECK(std::distance(selector.begin(), selector.end()) == 5050);
     const auto sum = std::accumulate(
         selector.begin(), selector.end(), T(0),
-        [&](T accumulator, const Pixel<T> pixel) { return accumulator + pixel.count; });
+        [&](T accumulator, const Pixel<T>& pixel) { return accumulator + pixel.count; });
     CHECK(sum == 12748725);
   }
 
