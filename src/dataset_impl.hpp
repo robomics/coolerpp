@@ -296,10 +296,8 @@ inline Dataset::iterator<T>::iterator(const Dataset &dset, std::size_t h5_offset
 
 template <class T>
 constexpr bool Dataset::iterator<T>::operator==(const iterator &other) const noexcept {
-  // clang-format off
-  return this->_dset == other._dset &&
-         this->_h5_offset == other._h5_offset;
-  // clang-format on
+  assert(this->_dset == other._dset);
+  return this->_h5_offset == other._h5_offset;
 }
 template <class T>
 constexpr bool Dataset::iterator<T>::operator!=(const iterator &other) const noexcept {
@@ -308,32 +306,24 @@ constexpr bool Dataset::iterator<T>::operator!=(const iterator &other) const noe
 
 template <class T>
 constexpr bool Dataset::iterator<T>::operator<(const iterator &other) const noexcept {
-  // clang-format off
-  return this->_dset <= other._dset &&
-         this->_h5_offset < other._h5_offset;
-  // clang-format on
+  assert(this->_dset == other._dset);
+  return this->_h5_offset < other._h5_offset;
 }
 template <class T>
 constexpr bool Dataset::iterator<T>::operator<=(const iterator &other) const noexcept {
-  // clang-format off
-  return this->_dset <= other._dset &&
-         this->_h5_offset <= other._h5_offset;
-  // clang-format on
+  assert(this->_dset == other._dset);
+  return this->_h5_offset <= other._h5_offset;
 }
 
 template <class T>
 constexpr bool Dataset::iterator<T>::operator>(const iterator &other) const noexcept {
-  // clang-format off
-  return this->_dset >= other._dset &&
-         this->_h5_offset > other._h5_offset;
-  // clang-format on
+  assert(this->_dset == other._dset);
+  return this->_h5_offset > other._h5_offset;
 }
 template <class T>
 constexpr bool Dataset::iterator<T>::operator>=(const iterator &other) const noexcept {
-  // clang-format off
-  return this->_dset >= other._dset &&
-         this->_h5_offset >= other._h5_offset;
-  // clang-format on
+  assert(this->_dset == other._dset);
+  return this->_h5_offset >= other._h5_offset;
 }
 
 template <class T>
@@ -451,6 +441,11 @@ constexpr std::uint64_t Dataset::iterator<T>::h5_offset() const noexcept {
 template <class T>
 constexpr std::size_t Dataset::iterator<T>::underlying_buff_capacity() const noexcept {
   return this->_buff_capacity;
+}
+
+template <class T>
+constexpr const Dataset &Dataset::iterator<T>::dataset() const noexcept {
+  return *this->_dset;
 }
 
 template <class T>

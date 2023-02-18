@@ -21,8 +21,10 @@
 
 namespace coolerpp {
 
-Index::Index(const BinTableLazy &bins, std::uint64_t nnz)
-    : _bins(&bins), _idx(Index::init(bins.chromosomes(), _bins->bin_size())), _nnz(nnz) {
+Index::Index(std::shared_ptr<const BinTableLazy> bins, std::uint64_t nnz)
+    : _bins(std::move(bins)),
+      _idx(Index::init(_bins->chromosomes(), _bins->bin_size())),
+      _nnz(nnz) {
   assert(this->bin_size() != 0);
   _size = std::accumulate(_idx.begin(), _idx.end(), std::size_t(0),
                           [&](std::size_t sum, const auto &it) { return sum + it.size(); });
@@ -37,6 +39,8 @@ const BinTableLazy &Index::bins() const noexcept {
   assert(this->_bins);
   return *this->_bins;
 }
+
+std::shared_ptr<const BinTableLazy> Index::bins_ptr() const noexcept { return this->_bins; }
 
 std::size_t Index::num_chromosomes() const noexcept {
   assert(this->_idx.size() == this->_bins->num_chromosomes());
@@ -89,7 +93,7 @@ std::uint64_t Index::get_offset_by_bin_id(std::uint64_t bin_id) const {
     return this->_idx.back().back();
   }
   const auto &coords = this->_bins->bin_id_to_coords(bin_id);
-  return this->get_offset_by_pos(coords.chrom, coords.bin_start);
+  return this->get_offset_by_pos(coords.chrom, coords.start);
 }
 
 std::uint64_t Index::get_offset_by_pos(const Chromosome &chrom, std::uint32_t pos) const {
@@ -118,7 +122,7 @@ std::uint64_t Index::get_offset_by_row_idx(std::uint32_t chrom_id, std::size_t r
 
 void Index::set_offset_by_bin_id(std::uint64_t bin_id, std::uint64_t offset) {
   const auto &coords = this->_bins->bin_id_to_coords(bin_id);
-  this->set_offset_by_pos(coords.chrom, coords.bin_start, offset);
+  this->set_offset_by_pos(coords.chrom, coords.start, offset);
 }
 
 void Index::set_offset_by_pos(const Chromosome &chrom, std::uint32_t pos, std::uint64_t offset) {

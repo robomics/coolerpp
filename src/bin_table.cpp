@@ -21,8 +21,7 @@
 namespace coolerpp {
 
 bool Bin::operator==(const Bin &other) const noexcept {
-  return this->chrom == other.chrom && this->bin_start == other.bin_start &&
-         this->bin_end == other.bin_end;
+  return this->chrom == other.chrom && this->start == other.start && this->end == other.end;
 }
 bool Bin::operator!=(const Bin &other) const noexcept { return !(*this == other); }
 
@@ -31,11 +30,11 @@ bool Bin::operator<(const Bin &other) const noexcept {
     return this->chrom < other.chrom;
   }
 
-  if (this->bin_start != other.bin_start) {
-    return this->bin_start < other.bin_start;
+  if (this->start != other.start) {
+    return this->start < other.start;
   }
 
-  return this->bin_end < other.bin_end;
+  return this->end < other.end;
 }
 
 bool Bin::operator<=(const Bin &other) const noexcept {
@@ -43,11 +42,11 @@ bool Bin::operator<=(const Bin &other) const noexcept {
     return this->chrom <= other.chrom;
   }
 
-  if (this->bin_start != other.bin_start) {
-    return this->bin_start <= other.bin_start;
+  if (this->start != other.start) {
+    return this->start <= other.start;
   }
 
-  return this->bin_end <= other.bin_end;
+  return this->end <= other.end;
 }
 
 bool Bin::operator>(const Bin &other) const noexcept {
@@ -55,11 +54,11 @@ bool Bin::operator>(const Bin &other) const noexcept {
     return this->chrom > other.chrom;
   }
 
-  if (this->bin_start != other.bin_start) {
-    return this->bin_start > other.bin_start;
+  if (this->start != other.start) {
+    return this->start > other.start;
   }
 
-  return this->bin_end > other.bin_end;
+  return this->end > other.end;
 }
 
 bool Bin::operator>=(const Bin &other) const noexcept {
@@ -67,11 +66,11 @@ bool Bin::operator>=(const Bin &other) const noexcept {
     return this->chrom >= other.chrom;
   }
 
-  if (this->bin_start != other.bin_start) {
-    return this->bin_start >= other.bin_start;
+  if (this->start != other.start) {
+    return this->start >= other.start;
   }
 
-  return this->bin_end >= other.bin_end;
+  return this->end >= other.end;
 }
 
 BinTableLazy::BinTableLazy(ChromosomeSet chroms, std::uint32_t bin_size)
@@ -94,18 +93,18 @@ std::size_t BinTableLazy::num_chromosomes() const { return this->_chroms.size();
 
 BinTable BinTableLazy::concretize() const {
   std::vector<const Chromosome *> chroms(this->size());
-  std::vector<std::uint32_t> bin_starts(this->size());
-  std::vector<std::uint32_t> bin_ends(this->size());
+  std::vector<std::uint32_t> starts(this->size());
+  std::vector<std::uint32_t> ends(this->size());
 
   std::size_t i = 0;
-  for (const auto [chrom, bin_start, bin_end] : *this) {
+  for (const auto [chrom, start, end] : *this) {
     chroms[i] = &chrom;
-    bin_starts[i] = bin_start;
-    bin_ends[i++] = bin_end;
+    starts[i] = start;
+    ends[i++] = end;
   }
   assert(i == chroms.size());
 
-  return BinTable{chroms, bin_starts, bin_ends};
+  return BinTable{chroms, starts, ends};
 }
 
 bool BinTableLazy::operator==(const BinTableLazy &other) const {
@@ -149,11 +148,11 @@ Bin BinTableLazy::bin_id_to_coords(std::uint64_t bin_id) const {
   const auto &chrom = this->_chroms.at(chrom_id);
 
   const auto relative_bin_id = bin_id - *match;
-  const auto bin_start = static_cast<uint32_t>(relative_bin_id * this->bin_size());
-  assert(bin_start < chrom.size);
-  const auto bin_end = (std::min)(bin_start + this->bin_size(), chrom.size);
+  const auto start = static_cast<uint32_t>(relative_bin_id * this->bin_size());
+  assert(start < chrom.size);
+  const auto end = (std::min)(start + this->bin_size(), chrom.size);
 
-  return {chrom, bin_start, bin_end};
+  return {chrom, start, end};
 }
 
 std::uint64_t BinTableLazy::coord_to_bin_id(const Bin &bin) const {
@@ -162,17 +161,16 @@ std::uint64_t BinTableLazy::coord_to_bin_id(const Bin &bin) const {
     throw std::out_of_range(fmt::format(FMT_STRING("chromosome \"{}\" not found"), bin.chrom));
   }
 
-  if (bin.bin_end < bin.bin_start) {
+  if (bin.end < bin.start) {
     throw std::logic_error(
-        fmt::format(FMT_STRING("invalid coordinate: bin_start > bin_end: {} > {}"), bin.bin_start,
-                    bin.bin_end));
+        fmt::format(FMT_STRING("invalid coordinate: start > end: {} > {}"), bin.start, bin.end));
   }
 
   const auto chrom_id =
       conditional_static_cast<std::size_t>(std::distance(this->_chroms.begin(), match));
   const auto bin_offset = this->_num_bins_prefix_sum[chrom_id] - this->_num_bins_prefix_sum.front();
 
-  return bin_offset + static_cast<std::uint64_t>(bin.bin_start / this->bin_size());
+  return bin_offset + static_cast<std::uint64_t>(bin.start / this->bin_size());
 }
 
 std::uint64_t BinTableLazy::coord_to_bin_id(const Chromosome &chrom, std::uint32_t pos) const {

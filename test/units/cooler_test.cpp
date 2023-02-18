@@ -148,8 +148,8 @@ TEST_CASE("Coolerpp: file ctors", "[cooler][short]") {
       f = File::create_new_cooler(path.string(), chroms, bin_size, true);
       for (std::uint32_t pos1 = 0; pos1 < chroms.at("chr1").size; pos1 += bin_size) {
         for (std::uint32_t pos2 = pos1; pos2 < chroms.at("chr1").size; pos2 += bin_size) {
-          pixels.emplace_back(
-              PixelT{{f.bins(), "chr1", pos1, pos2}, static_cast<std::int32_t>(pixels.size() + 1)});
+          pixels.emplace_back(PixelT{{f.bins_ptr(), "chr1", pos1, pos2},
+                                     static_cast<std::int32_t>(pixels.size() + 1)});
         }
       }
       f.append_pixels(pixels.begin(), pixels.end(), true);

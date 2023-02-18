@@ -10,14 +10,8 @@
 
 namespace coolerpp {
 
-constexpr PixelCoordinates::operator bool() const noexcept {
-  return this->chrom1_id != (std::numeric_limits<std::uint32_t>::max)() &&
-         this->chrom2_id != (std::numeric_limits<std::uint32_t>::max)();
-}
-
 constexpr bool PixelCoordinates::operator==(const PixelCoordinates &other) const noexcept {
-  return this->chrom1_id == other.chrom1_id && this->chrom2_id == other.chrom2_id &&
-         this->bin1_start == other.bin1_start && this->bin2_start == other.bin2_start;
+  return this->_bin1_id == other._bin1_id && this->_bin2_id == other._bin2_id;
 }
 
 constexpr bool PixelCoordinates::operator!=(const PixelCoordinates &other) const noexcept {
@@ -25,68 +19,40 @@ constexpr bool PixelCoordinates::operator!=(const PixelCoordinates &other) const
 }
 
 constexpr bool PixelCoordinates::operator<(const PixelCoordinates &other) const noexcept {
-  if (this->chrom1_id != other.chrom1_id) {
-    return this->chrom1_id < other.chrom1_id;
+  if (this->_bin1_id == other._bin1_id) {
+    return this->_bin2_id < other._bin2_id;
   }
-  if (this->bin1_start != other.bin1_start) {
-    return this->bin1_start < other.bin1_start;
-  }
-
-  if (this->chrom2_id != other.chrom2_id) {
-    return this->chrom2_id < other.chrom2_id;
-  }
-  return this->bin2_start < other.bin2_start;
+  return this->_bin1_id < other._bin1_id;
 }
 
 constexpr bool PixelCoordinates::operator<=(const PixelCoordinates &other) const noexcept {
-  if (this->chrom1_id != other.chrom1_id) {
-    return this->chrom1_id <= other.chrom1_id;
+  if (this->_bin1_id == other._bin1_id) {
+    return this->_bin2_id <= other._bin2_id;
   }
-  if (this->bin1_start != other.bin1_start) {
-    return this->bin1_start <= other.bin1_start;
-  }
-
-  if (this->chrom2_id != other.chrom2_id) {
-    return this->chrom2_id <= other.chrom2_id;
-  }
-  return this->bin2_start <= other.bin2_start;
+  return this->_bin1_id <= other._bin1_id;
 }
 
 constexpr bool PixelCoordinates::operator>(const PixelCoordinates &other) const noexcept {
-  if (this->chrom1_id != other.chrom1_id) {
-    return this->chrom1_id > other.chrom1_id;
+  if (this->_bin1_id == other._bin1_id) {
+    return this->_bin2_id > other._bin2_id;
   }
-  if (this->bin1_start != other.bin1_start) {
-    return this->bin1_start > other.bin1_start;
-  }
-
-  if (this->chrom2_id != other.chrom2_id) {
-    return this->chrom2_id > other.chrom2_id;
-  }
-  return this->bin2_start > other.bin2_start;
+  return this->_bin1_id > other._bin1_id;
 }
 
 constexpr bool PixelCoordinates::operator>=(const PixelCoordinates &other) const noexcept {
-  if (this->chrom1_id != other.chrom1_id) {
-    return this->chrom1_id >= other.chrom1_id;
+  if (this->_bin1_id == other._bin1_id) {
+    return this->_bin2_id >= other._bin2_id;
   }
-  if (this->bin1_start != other.bin1_start) {
-    return this->bin1_start >= other.bin1_start;
-  }
-
-  if (this->chrom2_id != other.chrom2_id) {
-    return this->chrom2_id >= other.chrom2_id;
-  }
-  return this->bin2_start >= other.bin2_start;
+  return this->_bin1_id >= other._bin1_id;
 }
 
 template <typename N>
-constexpr Pixel<N>::operator bool() const noexcept {
+inline Pixel<N>::operator bool() const noexcept {
   return !!this->coords;
 }
 template <typename N>
 constexpr bool Pixel<N>::operator==(const Pixel<N> &other) const noexcept {
-  return this->coords == other.coords;
+  return this->coords == other.coords && this->count == other.count;
 }
 template <typename N>
 constexpr bool Pixel<N>::operator!=(const Pixel<N> &other) const noexcept {
@@ -128,17 +94,13 @@ constexpr auto fmt::formatter<coolerpp::PixelCoordinates>::parse(format_parse_co
     }
   }
 
-  // Check if reached the end of the range:
   if (it != end && *it != '}') {
     throw fmt::format_error("invalid format");
   }
 
-  // Return an iterator past the end of the parsed range:
   return it;
 }
 
-// Formats the point p using the parsed format specification (presentation)
-// stored in this formatter.
 template <typename FormatContext>
 inline auto fmt::formatter<coolerpp::PixelCoordinates>::format(const coolerpp::PixelCoordinates &c,
                                                                FormatContext &ctx) const
@@ -152,14 +114,41 @@ inline auto fmt::formatter<coolerpp::PixelCoordinates>::format(const coolerpp::P
   }
 
   assert(this->presentation == Presentation::bedpe);
+  const auto bin1 = c.bin1();
+  const auto bin2 = c.bin2();
   // clang-format off
   return fmt::format_to(ctx.out(),
                         FMT_STRING("{}\t{}\t{}\t{}\t{}\t{}"),
-                        c.chrom1().name,
-                        c.bin1_start,
-                        (std::min)(c.bin1_start + c.bin_size(), c.chrom1().size),
-                        c.chrom2().name,
-                        c.bin2_start,
-                        (std::min)(c.bin2_start + c.bin_size(), c.chrom2().size));
+                        bin1.chrom.name,
+                        bin1.start,
+                        (std::min)(bin1.start + c.bin_size(), bin1.chrom.size),
+                        bin2.chrom.name,
+                        bin2.start,
+                        (std::min)(bin2.start + c.bin_size(), bin2.chrom.size));
   // clang-format on
+}
+
+template <typename N>
+constexpr auto fmt::formatter<coolerpp::Pixel<N>>::parse(format_parse_context &ctx)
+    -> decltype(ctx.begin()) {
+  this->coord_formatter.parse(ctx);
+  return ctx.end();
+}
+
+template <typename N>
+constexpr auto fmt::formatter<coolerpp::Pixel<N>>::presentation() const noexcept -> Presentation {
+  return this->coord_formatter.presentation;
+}
+
+template <typename N>
+template <typename FormatContext>
+inline auto fmt::formatter<coolerpp::Pixel<N>>::format(const coolerpp::Pixel<N> &p,
+                                                       FormatContext &ctx) const
+    -> decltype(ctx.out()) {
+  if (this->presentation() == Presentation::raw) {
+    return fmt::format_to(ctx.out(), FMT_STRING("{:raw}\t{}"), p.coords, p.count);
+  }
+
+  assert(this->presentation() == Presentation::bedpe);
+  return fmt::format_to(ctx.out(), FMT_STRING("{:bedpe}\t{}"), p.coords, p.count);
 }

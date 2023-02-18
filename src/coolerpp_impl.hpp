@@ -77,8 +77,8 @@ inline File::File(std::string_view uri, ChromosomeSet chroms, [[maybe_unused]] P
       _datasets(create_datasets<PixelT>(_root_group, chroms)),
       _attrs(std::move(attributes)),
       _pixel_variant(PixelT(0)),
-      _bins(std::make_unique<BinTable>(std::move(chroms), this->bin_size())),
-      _index(std::make_unique<Index>(*_bins)),
+      _bins(std::make_shared<const BinTable>(std::move(chroms), this->bin_size())),
+      _index(std::make_shared<Index>(_bins)),
       _finalize(true) {
   assert(this->bin_size() != 0);
   assert(!_bins->empty());
@@ -246,15 +246,15 @@ inline void File::validate_pixels_before_append(PixelIt first_pixel, PixelIt las
         throw std::runtime_error("found a pixel of value 0");
       }
 
-      if (!this->chromosomes().contains(pixel.coords.chrom1_id)) {
+      if (!this->chromosomes().contains(pixel.coords.chrom1_id())) {
         throw std::runtime_error(
-            fmt::format(FMT_STRING("invalid chromosome id {}"), pixel.coords.chrom1_id));
+            fmt::format(FMT_STRING("invalid chromosome id {}"), pixel.coords.chrom1_id()));
       }
 
-      if (pixel.coords.chrom1_id != pixel.coords.chrom2_id &&
-          !this->chromosomes().contains(pixel.coords.chrom2_id)) {
+      if (pixel.coords.chrom1_id() != pixel.coords.chrom2_id() &&
+          !this->chromosomes().contains(pixel.coords.chrom2_id())) {
         throw std::runtime_error(
-            fmt::format(FMT_STRING("invalid chromosome id {}"), pixel.coords.chrom2_id));
+            fmt::format(FMT_STRING("invalid chromosome id {}"), pixel.coords.chrom2_id()));
       }
 
       if (const auto bin_id = pixel.coords.bin1_id(); bin_id > this->bins().size()) {
@@ -360,11 +360,11 @@ inline void File::update_indexes(PixelIt first_pixel, PixelIt last_pixel) {
   const auto last_bin_written = this->get_last_bin_written();
 
   auto nnz = *this->_attrs.nnz;
-  PixelCoordinates first_pixel_in_row{this->bins(), last_bin_written.chrom.name,
-                                      last_bin_written.bin_start, last_bin_written.bin_start};
+  PixelCoordinates first_pixel_in_row{this->_bins, last_bin_written.chrom.name,
+                                      last_bin_written.start, last_bin_written.start};
 
   std::for_each(first_pixel, last_pixel, [&](const Pixel<T> &p) {
-    if (first_pixel_in_row.bin1_start != p.coords.bin1_start) {
+    if (first_pixel_in_row.bin1().start != p.coords.bin1().start) {
       first_pixel_in_row = p.coords;
       this->index().set_offset_by_bin_id(first_pixel_in_row.bin1_id(), nnz);
     }
@@ -409,10 +409,13 @@ inline void File::append_pixels(PixelIt first_pixel, PixelIt last_pixel, bool va
 
 template <class N>
 inline typename PixelSelector<N>::iterator File::begin() const {
-  return this
-      ->fetch<N>(this->chromosomes().begin()->name, 0, this->chromosomes().rbegin()->name,
-                 this->chromosomes().rbegin()->size - 1)
+  // clang-format off
+  return PixelSelector<N>(this->_index,
+                          this->dataset("pixels/bin1_id"),
+                          this->dataset("pixels/bin2_id"),
+                          this->dataset("pixels/count"))
       .begin();
+  // clang-format on
 }
 
 template <class N>
@@ -422,10 +425,13 @@ inline typename PixelSelector<N>::iterator File::cbegin() const {
 
 template <class N>
 inline typename PixelSelector<N>::iterator File::end() const {
-  return this
-      ->fetch<N>(this->chromosomes().begin()->name, 0, this->chromosomes().rbegin()->name,
-                 this->chromosomes().rbegin()->size - 1)
+  // clang-format off
+  return PixelSelector<N>(this->_index,
+                          this->dataset("pixels/bin1_id"),
+                          this->dataset("pixels/bin2_id"),
+                          this->dataset("pixels/count"))
       .end();
+  // clang-format on
 }
 
 template <class N>
@@ -435,24 +441,58 @@ inline typename PixelSelector<N>::iterator File::cend() const {
 
 template <class N>
 inline PixelSelector<N> File::fetch(std::string_view query) const {
+  return this->fetch<N>(PixelSelector<N>::parse_query(this->_bins, query));
+}
+
+template <class N>
+inline PixelSelector<N> File::fetch(std::string_view chrom, std::uint32_t start,
+                                    std::uint32_t end) const {
+  return this->fetch<N>(PixelCoordinates{this->_bins, chrom, start, end - std::min(1U, end)});
+}
+
+template <class N>
+inline PixelSelector<N> File::fetch(PixelCoordinates query) const {
   // clang-format off
-  return PixelSelector<N>(this->index(),
+  return PixelSelector<N>(this->_index,
                           this->dataset("pixels/bin1_id"),
                           this->dataset("pixels/bin2_id"),
                           this->dataset("pixels/count"),
-                          PixelSelector<N>::parse_query(this->bins(), query));
+                          std::move(query));
   // clang-format on
 }
 
 template <class N>
-inline PixelSelector<N> File::fetch(std::string_view chrom1_name, std::uint32_t pos1,
-                                    std::string_view chrom2_name, std::uint32_t pos2) const {
+inline PixelSelector<N> File::fetch(std::string_view range1, std::string_view range2) const {
+  if (range1 == range2) {
+    return this->fetch<N>(range1);
+  }
+
+  return this->fetch<N>(PixelSelector<N>::parse_query(this->_bins, range1),
+                        PixelSelector<N>::parse_query(this->_bins, range2));
+}
+
+template <class N>
+inline PixelSelector<N> File::fetch(std::string_view chrom1, std::uint32_t start1,
+                                    std::uint32_t end1, std::string_view chrom2,
+                                    std::uint32_t start2, std::uint32_t end2) const {
   // clang-format off
-  return PixelSelector<N>(this->index(),
+  return PixelSelector<N>(this->_index,
                           this->dataset("pixels/bin1_id"),
                           this->dataset("pixels/bin2_id"),
                           this->dataset("pixels/count"),
-                          PixelCoordinates{this->bins(), chrom1_name, chrom2_name, pos1, pos2});
+                          PixelCoordinates{this->_bins, chrom1, start1, end1},
+                          PixelCoordinates{this->_bins, chrom2, start2, end2});
+  // clang-format on
+}
+
+template <class N>
+inline PixelSelector<N> File::fetch(PixelCoordinates coord1, PixelCoordinates coord2) const {
+  // clang-format off
+  return PixelSelector<N>(this->_index,
+                          this->dataset("pixels/bin1_id"),
+                          this->dataset("pixels/bin2_id"),
+                          this->dataset("pixels/count"),
+                          std::move(coord1), std::move(coord2));
   // clang-format on
 }
 

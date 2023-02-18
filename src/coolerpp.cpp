@@ -64,12 +64,12 @@ File::File(std::string_view uri, unsigned mode, bool validate)
       _datasets(open_datasets(_root_group)),
       _attrs(read_standard_attributes(_root_group)),
       _pixel_variant(detect_pixel_type(_root_group)),
-      _bins(std::make_unique<BinTable>(
+      _bins(std::make_shared<BinTable>(
           import_chroms(_datasets.at("chroms/name"), _datasets.at("chroms/length"), false),
           this->bin_size())),
-      _index(std::make_unique<Index>(import_indexes(_datasets.at("indexes/chrom_offset"),
+      _index(std::make_shared<Index>(import_indexes(_datasets.at("indexes/chrom_offset"),
                                                     _datasets.at("indexes/bin1_offset"),
-                                                    chromosomes(), *_bins, *_attrs.nnz, false))) {
+                                                    chromosomes(), _bins, *_attrs.nnz, false))) {
   assert(mode == HighFive::File::ReadOnly || mode == HighFive::File::ReadWrite);
   if (validate) {
     this->validate_bins();
@@ -129,6 +129,8 @@ auto File::bins() const noexcept -> const BinTable & {
   assert(this->_bins);
   return *this->_bins;
 }
+
+auto File::bins_ptr() const noexcept -> std::shared_ptr<const BinTable> { return this->_bins; }
 
 internal::NumericVariant File::detect_pixel_type(const RootGroup &root_grp, std::string_view path) {
   [[maybe_unused]] HighFive::SilenceHDF5 silencer{};
@@ -435,8 +437,10 @@ auto File::import_chroms(const Dataset &chrom_names, const Dataset &chrom_sizes,
 }
 
 Index File::import_indexes(const Dataset &chrom_offset_dset, const Dataset &bin_offset_dset,
-                           const ChromosomeSet &chroms, const BinTableLazy &bin_table,
+                           const ChromosomeSet &chroms,
+                           std::shared_ptr<const BinTableLazy> bin_table,
                            std::uint64_t expected_nnz, bool missing_ok) {
+  assert(bin_table);
   try {
     if (bin_offset_dset.empty()) {
       assert(chrom_offset_dset.empty());
@@ -446,10 +450,10 @@ Index File::import_indexes(const Dataset &chrom_offset_dset, const Dataset &bin_
       throw std::runtime_error("index datasets are empty");
     }
 
-    if (bin_offset_dset.size() != bin_table.size() + 1) {
+    if (bin_offset_dset.size() != bin_table->size() + 1) {
       throw std::runtime_error(
           fmt::format(FMT_STRING("failed to import offsets from {}: expected {} offsets, found {}"),
-                      bin_offset_dset.hdf5_path(), bin_table.size() + 1, bin_offset_dset.size()));
+                      bin_offset_dset.hdf5_path(), bin_table->size() + 1, bin_offset_dset.size()));
     }
 
     const auto chrom_offsets = import_chrom_offsets(chrom_offset_dset, chroms.size() + 1);
@@ -459,11 +463,11 @@ Index File::import_indexes(const Dataset &chrom_offset_dset, const Dataset &bin_
     std::size_t bin_id = 0;
     std::for_each(bin_offset_dset.begin<std::uint64_t>(), bin_offset_dset.end<std::uint64_t>(),
                   [&](std::uint64_t offset) {
-                    if (bin_id < bin_table.size()) {
+                    if (bin_id < bin_table->size()) {
                       idx.set_offset_by_bin_id(bin_id++, offset);
                     } else {
                       // Last bin
-                      assert(bin_id == bin_table.size());
+                      assert(bin_id == bin_table->size());
                     }
                   });
 
@@ -518,12 +522,12 @@ void File::validate_bins() const {
             fmt::format(FMT_STRING("Expected {} bins, found {}"), this->bins().size(), i));
       }
 
-      if (this->chromosomes().at(*chrom_it).name != bin.chrom.name || *start_it != bin.bin_start ||
-          *end_it != bin.bin_end) {
+      if (this->chromosomes().at(*chrom_it).name != bin.chrom.name || *start_it != bin.start ||
+          *end_it != bin.end) {
         throw std::runtime_error(
             fmt::format(FMT_STRING("Bin #{}: expected {}:{}-{}, found {}:{}-{}"), i,
                         this->chromosomes().at(*chrom_it).name, *start_it, *end_it, bin.chrom.name,
-                        bin.bin_start, bin.bin_end));
+                        bin.start, bin.end));
       }
       ++chrom_it;
       ++start_it;
@@ -681,10 +685,10 @@ void File::write_bin_table(Dataset &chrom_dset, Dataset &start_dset, Dataset &en
                    [&](const Bin &bin) { return bin_table.chromosomes().get_id(bin.chrom); });
 
   start_dset.write(bin_table.begin(), bin_table.end(), 0, true,
-                   [&](const Bin &bin) { return bin.bin_start; });
+                   [&](const Bin &bin) { return bin.start; });
 
   end_dset.write(bin_table.begin(), bin_table.end(), 0, true,
-                 [&](const Bin &bin) { return bin.bin_end; });
+                 [&](const Bin &bin) { return bin.end; });
 
   assert(chrom_dset.size() == bin_table.size());
   assert(start_dset.size() == bin_table.size());

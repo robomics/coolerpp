@@ -19,12 +19,11 @@ namespace coolerpp {
 
 struct Bin {
   const Chromosome &chrom;
-  std::uint32_t bin_start;
-  std::uint32_t bin_end;
+  std::uint32_t start;
+  std::uint32_t end;
 
   Bin() = delete;
-  constexpr Bin(const Chromosome &chrom_, std::uint32_t bin_start_,
-                std::uint32_t bin_end_) noexcept;
+  constexpr Bin(const Chromosome &chrom_, std::uint32_t start_, std::uint32_t end_) noexcept;
   [[nodiscard]] bool operator==(const Bin &other) const noexcept;
   [[nodiscard]] bool operator!=(const Bin &other) const noexcept;
 
