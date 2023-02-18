@@ -55,7 +55,7 @@ void parse_bedpe_record(std::string_view line, std::array<std::string, 7>& buff,
   }
 }
 
-[[nodiscard]] Pixel<std::uint32_t> construct_pixel(std::shared_ptr<const BinTableLazy> bins,
+[[nodiscard]] Pixel<std::uint32_t> construct_pixel(const std::shared_ptr<const BinTableLazy>& bins,
                                                    const std::array<std::string, 7>& bedpe_tokens) {
   const auto& chrom1_name = bedpe_tokens[0];
   const auto& chrom2_name = bedpe_tokens[3];

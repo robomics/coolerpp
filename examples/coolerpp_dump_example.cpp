@@ -78,9 +78,11 @@ int main(int argc, char** argv) {
     if (argc == 2) {
       nnz = dump(cooler);
     } else if (argc == 3) {
+      // NOLINTNEXTLINE(cppcoreguidelines-pro-bounds-pointer-arithmetic)
       nnz = dump(cooler, argv[2]);
     } else {
       assert(argc == 4);
+      // NOLINTNEXTLINE(cppcoreguidelines-pro-bounds-pointer-arithmetic)
       nnz = dump(cooler, argv[2], argv[3]);
     }
 
