@@ -213,6 +213,10 @@ inline PixelSelector<N>::iterator::iterator(std::shared_ptr<const Index> index,
   _bin2_id_last = it._bin2_id_last;
   assert(_bin2_id_it <= _bin2_id_last);
 
+  if (_bin2_id_it.h5_offset() == pixels_bin2_id.size()) {
+    return;
+  }
+
   // Now that last it is set, we can call jump_to_col() to seek to the first pixel actually
   // overlapping the query. Calling jump_to_next_overlap() is required to deal with rows that are
   // not empty, but that have no pixels overlapping the query
@@ -273,12 +277,16 @@ inline auto PixelSelector<N>::iterator::at_end(std::shared_ptr<const Index> inde
 
     it._count_it = pixels_count.make_iterator_at_offset<N>(offset);
 
+    if (offset == pixels_bin2_id.size()) {
+      return it;
+    }
+
     // Jump to the first column overlapping the query
     it.jump_to_col(it._coord2->bin1_id());
 
     // If discard() returns true, it means that the row corresponding to bin1_id does not contain
     // any pixel overlapping the query, so we keep looking backwards
-  } while (bin1_id-- != 0 && it.discard());
+  } while (bin1_id-- > it._coord1->bin1_id() && it.discard());
 
   // Now that we know the row pointed by it contains at least one pixel overlapping the query, jump
   // to the last column overlapping the query
