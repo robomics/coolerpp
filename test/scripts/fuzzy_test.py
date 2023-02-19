@@ -114,11 +114,17 @@ def generate_query_2d(
     q1 = generate_query_1d(chroms, weights, mean_length, stddev_length)
     q2 = generate_query_1d(chroms, weights, mean_length, stddev_length)
 
-    chrom1, _, _ = q1.partition(":")
-    chrom2, _, _ = q2.partition(":")
+    chrom1, _, coord1 = q1.partition(":")
+    chrom2, _, coord2 = q2.partition(":")
 
     if ranks[chrom1] > ranks[chrom2]:
         q1, q2 = q2, q1
+
+    if chrom1 == chrom2:
+        start1, _, _ = coord1.partition("-")
+        start2, _, _ = coord2.partition("-")
+        if int(start1) > int(start2):
+            q1, q2 = q2, q1
 
     return q1, q2
 
