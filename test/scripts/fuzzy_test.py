@@ -36,6 +36,12 @@ def make_cli():
 
         raise ValueError("Not a number between 0 and 1")
 
+    def valid_executable(arg):
+        if (cmd := shutil.which(arg)) is not None:
+            return pathlib.Path(cmd)
+
+        raise FileNotFoundError(f'Unable to find executable "{arg}"')
+
     cli = argparse.ArgumentParser()
 
     cli.add_argument(
@@ -53,10 +59,10 @@ def make_cli():
 
     cli.add_argument("--duration", type=positive_int, default=60, help="Duration in seconds.")
     cli.add_argument(
-        "--path-to-coolerpp-dump", type=pathlib.Path, default="coolerpp_dump", help="Path to coolerpp_dump binary."
+        "--path-to-coolerpp-dump", type=valid_executable, default="coolerpp_dump", help="Path to coolerpp_dump binary."
     )
-    cli.add_argument("--query-length-avg", type=float, default=500_000, help="Average query size.")
-    cli.add_argument("--query-length-std", type=float, default=10_000, help="Standard deviation for query size.")
+    cli.add_argument("--query-length-avg", type=float, default=5_000_000, help="Average query size.")
+    cli.add_argument("--query-length-std", type=float, default=1_000_000, help="Standard deviation for query size.")
     cli.add_argument("--seed", type=int, default=2074288341)
     cli.add_argument(
         "--nproc",
@@ -96,7 +102,7 @@ def read_chrom_sizes(path_to_cooler_file: pathlib.Path) -> Dict[str, int]:
     return cooler.Cooler(str(path_to_cooler_file)).chromsizes.to_dict()
 
 
-def generate_query_1d(chroms, weights: np.ndarray, mean_length: float = 500_000, stddev_length: float = 100_000) -> str:
+def generate_query_1d(chroms, weights: np.ndarray, mean_length: float, stddev_length: float) -> str:
     chrom_name, chrom_size = random.choices(chroms, weights=weights, k=1)[0]
 
     query_length = max(2.0, random.gauss(mu=mean_length, sigma=stddev_length))
@@ -109,7 +115,7 @@ def generate_query_1d(chroms, weights: np.ndarray, mean_length: float = 500_000,
 
 
 def generate_query_2d(
-    chroms, weights: np.ndarray, ranks: Dict[str, int], mean_length: float = 500_000, stddev_length: float = 100_000
+    chroms, weights: np.ndarray, ranks: Dict[str, int], mean_length: float, stddev_length: float
 ) -> Tuple[str, str]:
     q1 = generate_query_1d(chroms, weights, mean_length, stddev_length)
     q2 = generate_query_1d(chroms, weights, mean_length, stddev_length)
@@ -222,7 +228,6 @@ def worker(
 def main():
     args = vars(make_cli().parse_args())
 
-    random.seed(args["seed"])
     chroms = read_chrom_sizes(args["cooler"])
     chrom_ranks = {chrom: i for i, chrom in enumerate(chroms.keys())}
     chroms_flat = list(chroms.items())
