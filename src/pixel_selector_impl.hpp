@@ -377,6 +377,10 @@ inline void PixelSelector<N>::iterator::jump_to_row(std::uint64_t bin_id) {
   assert(this->_index);
   assert(bin_id <= this->_index->bins().size());
 
+  if (this->_bin2_id_it >= this->_bin2_id_last) {
+    return;
+  }
+
   const auto end_offset = this->_bin2_id_last.h5_offset();
   const auto row_offset = this->_index->get_offset_by_bin_id(bin_id);
   const auto current_offset = this->h5_offset();
@@ -394,6 +398,10 @@ template <class N>
 inline void PixelSelector<N>::iterator::jump_to_col(std::uint64_t bin_id) {
   assert(this->_index);
   assert(bin_id <= this->_index->bins().size());
+
+  if (this->_bin2_id_it >= this->_bin2_id_last) {
+    return;
+  }
 
   const auto current_row = *this->_bin1_id_it;
   const auto next_row = current_row + 1;
