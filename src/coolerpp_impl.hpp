@@ -509,12 +509,13 @@ inline void File::update_pixel_sum(N partial_sum) {
   static_assert(std::is_arithmetic_v<N>);
 
   auto &buff = cis ? this->_attrs.cis : this->_attrs.sum;
+  assert(buff.has_value());
   if constexpr (std::is_floating_point_v<N>) {
-    std::get<double>(buff) += conditional_static_cast<double>(partial_sum);
+    std::get<double>(*buff) += conditional_static_cast<double>(partial_sum);
   } else if constexpr (std::is_signed_v<N>) {
-    std::get<std::int64_t>(buff) += conditional_static_cast<std::int64_t>(partial_sum);
+    std::get<std::int64_t>(*buff) += conditional_static_cast<std::int64_t>(partial_sum);
   } else {
-    std::get<std::uint64_t>(buff) += conditional_static_cast<std::uint64_t>(partial_sum);
+    std::get<std::uint64_t>(*buff) += conditional_static_cast<std::uint64_t>(partial_sum);
   }
 }
 
@@ -522,15 +523,25 @@ template <class PixelT>
 inline void File::validate_pixel_type() const noexcept {
   static_assert(std::is_arithmetic_v<PixelT>);
 
+  auto assert_holds_alternative = [](const auto &buff, [[maybe_unused]] auto alt) {
+    using T = decltype(alt);
+    if (buff.has_value()) {
+      assert(std::holds_alternative<T>(*buff));
+    }
+  };
+
   if constexpr (std::is_floating_point_v<PixelT>) {
     assert(this->has_float_pixels());
-    assert(std::holds_alternative<double>(this->_attrs.sum));
+    assert_holds_alternative(this->_attrs.sum, double{});
+    assert_holds_alternative(this->_attrs.cis, double{});
   } else if constexpr (std::is_signed_v<PixelT>) {
     assert(this->has_signed_pixels());
-    assert(std::holds_alternative<std::int64_t>(this->_attrs.sum));
+    assert_holds_alternative(this->_attrs.sum, std::int64_t{});
+    assert_holds_alternative(this->_attrs.cis, std::int64_t{});
   } else {
     assert(this->has_unsigned_pixels());
-    assert(std::holds_alternative<std::uint64_t>(this->_attrs.sum));
+    assert_holds_alternative(this->_attrs.sum, std::uint64_t{});
+    assert_holds_alternative(this->_attrs.cis, std::uint64_t{});
   }
 }
 

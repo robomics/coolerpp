@@ -260,8 +260,10 @@ void File::write_standard_attributes(RootGroup &root_grp, const StandardAttribut
   Attribute::write(root_grp(), "nchroms", *attributes.nchroms);
   Attribute::write(root_grp(), "nnz", *attributes.nnz);
   Attribute::write(root_grp(), "storage-mode", *attributes.storage_mode);
-  std::visit([&](const auto sum) { Attribute::write(root_grp(), "sum", sum); }, attributes.sum);
-  std::visit([&](const auto cis) { Attribute::write(root_grp(), "cis", cis); }, attributes.cis);
+  assert(attributes.sum.has_value());
+  assert(attributes.cis.has_value());
+  std::visit([&](const auto sum) { Attribute::write(root_grp(), "sum", sum); }, *attributes.sum);
+  std::visit([&](const auto cis) { Attribute::write(root_grp(), "cis", cis); }, *attributes.cis);
 }
 
 auto File::open_datasets(const RootGroup &root_grp, std::string_view weight_dataset) -> DatasetMap {
@@ -315,7 +317,7 @@ auto File::read_standard_attributes(const RootGroup &root_grp, bool initialize_m
     }
   };
 
-  auto read_sum_optional = [&](bool missing_ok, std::string_view key, StandardAttributes::SumVar& buff) {
+  auto read_sum_optional = [&](bool missing_ok, std::string_view key, auto& buff) {
     if (!Attribute::exists(root_grp(), key) && missing_ok) {
       return false;
     }
@@ -667,6 +669,8 @@ StandardAttributes StandardAttributes::init_empty() noexcept {
   attrs.nchroms.reset();
   attrs.metadata.reset();
   attrs.storage_mode.reset();
+  attrs.sum.reset();
+  attrs.cis.reset();
 
   return attrs;
 }

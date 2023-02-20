@@ -332,7 +332,11 @@ TEST_CASE("Coolerpp: read attributes", "[cooler][short]") {
     CHECK(attrs.nchroms == 20);
     CHECK(attrs.nnz == 107041);
     CHECK(attrs.storage_mode == "symmetric-upper");
-    std::visit([](auto& sum) { CHECK(sum == 395465); }, attrs.sum);
+    CHECK(attrs.sum.has_value());
+    if (attrs.sum.has_value()) {
+      std::visit([](auto& sum) { CHECK(sum == 395465); }, *attrs.sum);
+    }
+    CHECK(!attrs.cis.has_value());
   }
 }
 
@@ -464,7 +468,7 @@ TEST_CASE("Coolerpp: read/write pixels", "[cooler][long]") {
     CHECK(f1.attributes().nbins == f2.attributes().nbins);
     CHECK(f1.attributes().nnz == f2.attributes().nnz);
     CHECK(f1.attributes().sum == f2.attributes().sum);
-    CHECK(f2.attributes().cis == StandardAttributes::SumVar(329276));
+    CHECK(f2.attributes().cis == StandardAttributes::SumVar(std::int64_t(329276)));
   }
 }
 
