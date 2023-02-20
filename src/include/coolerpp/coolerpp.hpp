@@ -59,6 +59,7 @@ struct StandardAttributes {
   std::optional<std::uint64_t> nnz{0};
   using SumVar = std::variant<double, std::int64_t, std::uint64_t>;
   SumVar sum{std::int64_t(0)};
+  SumVar cis{std::int64_t(0)};
 
   template <class PixelT = DefaultPixelT, class = std::enable_if_t<std::is_arithmetic_v<PixelT>>>
   [[nodiscard]] static StandardAttributes init(std::uint32_t bin_size_);
@@ -285,7 +286,7 @@ class File {
 
   [[nodiscard]] auto get_last_bin_written() const -> Bin;
 
-  template <class N>
+  template <class N, bool cis = false>
   void update_pixel_sum(N partial_sum);
 
   template <class PixelT>
