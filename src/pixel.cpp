@@ -46,8 +46,8 @@ PixelCoordinates::PixelCoordinates(const std::shared_ptr<const BinTableLazy> &bi
                                    std::uint32_t bin2_start_)
     : PixelCoordinates(bins, chrom_name, chrom_name, bin1_start_, bin2_start_) {}
 
-PixelCoordinates::PixelCoordinates(std::shared_ptr<const BinTableLazy> bins,
-                                   std::uint64_t bin1_id_, std::uint64_t bin2_id_)
+PixelCoordinates::PixelCoordinates(std::shared_ptr<const BinTableLazy> bins, std::uint64_t bin1_id_,
+                                   std::uint64_t bin2_id_)
     : _bins(std::move(bins)), _bin1_id(bin1_id_), _bin2_id(bin2_id_) {
   assert(_bin1_id <= _bins->size());
   assert(_bin2_id <= _bins->size());
