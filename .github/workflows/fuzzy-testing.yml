@@ -108,7 +108,7 @@ jobs:
   build-project:
     runs-on: ubuntu-latest
     container:
-      image: conanio/clang14-ubuntu18.04:1.59.0
+      image: conanio/clang14-ubuntu16.04:1.59.0
       options: "-v ${{ github.workspace }}:${{ github.workspace }} --user root"
 
     steps:
