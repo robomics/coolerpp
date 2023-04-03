@@ -213,6 +213,9 @@ class File {
   static void write_weights(std::string_view uri, std::string_view name, It first_weight,
                             It last_weight, bool overwrite_if_exists = false,
                             bool divisive = false);
+  template <typename It>
+  void write_weights(std::string_view name, It first_weight, It last_weight,
+                     bool overwrite_if_exists = false, bool divisive = false);
 
  private:
   [[nodiscard]] auto index() const noexcept -> const Index &;

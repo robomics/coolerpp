@@ -123,7 +123,7 @@ jobs:
       matrix: ${{ fromJSON(needs.matrix-factory.outputs.matrix) }}
 
     container:
-      image: ${{ matrix.image }}:latest
+      image: ${{ matrix.image }}:1.59.0
       options: "-v ${{ github.workspace }}:${{ github.workspace }} --user=root"
 
     steps:

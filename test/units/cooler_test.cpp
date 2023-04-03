@@ -475,9 +475,11 @@ TEST_CASE("Coolerpp: read/write pixels", "[cooler][long]") {
 // NOLINTNEXTLINE(readability-function-cognitive-complexity)
 TEST_CASE("Coolerpp: write weights", "[cooler][short]") {
   auto path1 = datadir / "cooler_test_file.cool";
-  auto path2 = testdir() / "cooler_test_write_weights.cool";
+  auto path2 = testdir() / "cooler_test_write_weights1.cool";
+  auto path3 = testdir() / "cooler_test_write_weights2.cool";
 
   std::filesystem::remove(path2);
+  std::filesystem::remove(path3);
   std::filesystem::copy(path1, path2);
   REQUIRE_THROWS(File::open_read_only(path2.string()).dataset("bins/weight"));
 
@@ -510,6 +512,16 @@ TEST_CASE("Coolerpp: write weights", "[cooler][short]") {
 
     CHECK_THROWS(
         File::write_weights(path2.string(), "weight", weights.begin(), weights.end(), false));
+  }
+
+  SECTION("write on file creation") {
+    const auto chroms = File::open_read_only(path1.string()).chromosomes();
+    const auto bin_size = File::open_read_only(path1.string()).bin_size();
+    auto f = File::create_new_cooler(path3.string(), chroms, bin_size);
+
+    const std::vector<double> weights(num_bins, 1.23);
+    f.write_weights("weight", weights.begin(), weights.end());
+    f.write_weights("weight2", weights.begin(), weights.end());
   }
 }
 
