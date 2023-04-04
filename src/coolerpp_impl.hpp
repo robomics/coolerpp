@@ -157,6 +157,10 @@ inline void File::write_weights(std::string_view name, It first_weight, It last_
                                 bool overwrite_if_exists, bool divisive) {
   assert(!name.empty());
 
+  if (this->_mode == HighFive::File::ReadOnly) {
+    throw std::runtime_error("File::write_weights() was called on a file open in read-only mode");
+  }
+
   const auto num_weights = std::distance(first_weight, last_weight);
   const auto expected_num_weights = static_cast<std::ptrdiff_t>(this->bins().size());
   if (num_weights != expected_num_weights) {
