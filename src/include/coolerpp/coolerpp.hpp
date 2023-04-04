@@ -96,7 +96,7 @@ class File {
   RootGroup _root_group{};
   GroupMap _groups{};
   DatasetMap _datasets{};
-  StandardAttributes _attrs{};
+  StandardAttributes _attrs{StandardAttributes::init(0)};
   internal::NumericVariant _pixel_variant{};
   std::shared_ptr<const BinTable> _bins{};
   std::shared_ptr<Index> _index{};
