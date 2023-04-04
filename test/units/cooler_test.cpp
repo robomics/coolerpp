@@ -525,7 +525,7 @@ TEST_CASE("Coolerpp: write weights", "[cooler][short]") {
   }
 
   SECTION("attempt write on read-only file") {
-    const std::array<double, 1> w{};
+    constexpr std::array<double, 1> w{};
     CHECK_THROWS(File::open_read_only(path2.string()).write_weights("weights", w.begin(), w.end()));
   }
 }

@@ -129,6 +129,18 @@ TEST_CASE("Dataset: write", "[dataset][short]") {
       }
     }
 
+    SECTION("pointer") {
+      const std::array<std::string, 3> expected{"a", "b", "c"};
+      Dataset{grp, "str", "a"}.write(expected.begin(), expected.end(), 0, true);
+      const auto buff = Dataset{grp, "str"}.read_all<std::vector<std::string>>();
+
+      REQUIRE(buff.size() == 3);
+
+      for (std::size_t i = 0; i < buff.size(); ++i) {
+        CHECK(buff[i] == expected[i]);
+      }
+    }
+
     SECTION("atomic") {
       const std::string buff = "test";
       Dataset{grp, "str", buff}.write(buff, 3, true);
