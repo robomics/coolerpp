@@ -37,7 +37,7 @@ inline void init_mcool(std::string_view file_path, InputIt first_resolution,
   using I = remove_cvref_t<decltype(*first_resolution)>;
   static_assert(std::is_integral_v<I>,
                 "InputIt should be an iterator over a collection of integral numbers.");
-  [[maybe_unused]] HighFive::SilenceHDF5 silencer{};
+  [[maybe_unused]] HighFive::SilenceHDF5 silencer{};  // NOLINT
   const auto mode = force_overwrite ? HighFive::File::Truncate : HighFive::File::Create;
   HighFive::File fp(std::string{file_path}, mode);
   Attribute::write(fp, "format", std::string{MCOOL_MAGIC});
@@ -55,7 +55,7 @@ inline void init_mcool(std::string_view file_path, InputIt first_resolution,
 //                        ChromSizeInputIt last_chrom, CellIDInputIt first_cell_id,
 //                        CellIDInputIt last_cell_id, std::uint32_t bin_size, bool force_overwrite)
 //                        {
-//   [[maybe_unused]] HighFive::SilenceHDF5 silencer{};
+//   [[maybe_unused]] HighFive::SilenceHDF5 silencer{};  // NOLINT
 //   const auto mode = force_overwrite ? IO_MODE::Truncate : IO_MODE::Create;
 //   HighFive::File fp(std::string{file_path}, static_cast<unsigned>(mode));
 //   fp.createAttribute("format", std::string{SCOOL_MAGIC});
@@ -156,6 +156,10 @@ template <typename It>
 inline void File::write_weights(std::string_view name, It first_weight, It last_weight,
                                 bool overwrite_if_exists, bool divisive) {
   assert(!name.empty());
+
+  if (this->_mode == HighFive::File::ReadOnly) {
+    throw std::runtime_error("File::write_weights() was called on a file open in read-only mode");
+  }
 
   const auto num_weights = std::distance(first_weight, last_weight);
   const auto expected_num_weights = static_cast<std::ptrdiff_t>(this->bins().size());
@@ -532,7 +536,7 @@ inline void File::validate_pixel_type() const noexcept {
   static_assert(std::is_arithmetic_v<PixelT>);
 
   auto assert_holds_alternative = [](const auto &buff, [[maybe_unused]] auto alt) {
-   using T [[maybe_unused]] = decltype(alt);
+    using T [[maybe_unused]] = decltype(alt);
     if (buff.has_value()) {
       assert(std::holds_alternative<T>(*buff));
     }

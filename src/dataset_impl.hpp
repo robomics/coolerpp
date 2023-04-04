@@ -31,7 +31,7 @@ inline Dataset::Dataset(RootGroup root_group, std::string_view path_to_dataset,
 
 template <class N, class>
 inline std::size_t Dataset::read(std::vector<N> &buff, std::size_t num, std::size_t offset) const {
-  [[maybe_unused]] HighFive::SilenceHDF5 silencer{};
+  [[maybe_unused]] HighFive::SilenceHDF5 silencer{};  // NOLINT
   if (offset + num > this->size()) {
     this->throw_out_of_range_excp(offset, num);
   }
@@ -97,7 +97,7 @@ inline BuffT Dataset::read_all(std::size_t offset) const {
 template <class N, class>
 inline std::size_t Dataset::write(const std::vector<N> &buff, std::size_t offset,
                                   bool allow_dataset_resize) {
-  [[maybe_unused]] HighFive::SilenceHDF5 silencer{};
+  [[maybe_unused]] HighFive::SilenceHDF5 silencer{};  // NOLINT
   if (offset + buff.size() > this->size()) {
     if (allow_dataset_resize) {
       this->resize(offset + buff.size());
@@ -112,7 +112,7 @@ inline std::size_t Dataset::write(const std::vector<N> &buff, std::size_t offset
 
 template <class N, class>
 inline std::size_t Dataset::read(N &buff, std::size_t offset) const {
-  [[maybe_unused]] HighFive::SilenceHDF5 silencer{};
+  [[maybe_unused]] HighFive::SilenceHDF5 silencer{};  // NOLINT
   if (offset >= this->size()) {
     this->throw_out_of_range_excp(offset);
   }
@@ -163,7 +163,7 @@ inline std::size_t Dataset::read(internal::VariantBuffer &vbuff, std::size_t num
 
 template <class N, class>
 inline std::size_t Dataset::write(N buff, std::size_t offset, bool allow_dataset_resize) {
-  [[maybe_unused]] HighFive::SilenceHDF5 silencer{};
+  [[maybe_unused]] HighFive::SilenceHDF5 silencer{};  // NOLINT
   if (offset >= this->size()) {
     if (allow_dataset_resize) {
       this->resize(offset + 1);

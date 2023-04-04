@@ -35,7 +35,7 @@ inline bool Attribute::exists(ParentObj& h5obj, std::string_view key) {
 template <class T, class ParentObj>
 inline void Attribute::write(ParentObj& h5obj, std::string_view key, const T& value,
                              bool overwrite_if_exists) {
-  [[maybe_unused]] HighFive::SilenceHDF5 silencer{};
+  [[maybe_unused]] HighFive::SilenceHDF5 silencer{};  // NOLINT
   const std::string key_{key};
   if (overwrite_if_exists && Attribute::exists(h5obj, key)) {
     h5obj.deleteAttribute(key_);
@@ -72,7 +72,7 @@ inline T Attribute::read(const ParentObj& h5obj, std::string_view key) {
 template <class ParentObj>
 inline auto Attribute::read(const ParentObj& h5obj, std::string_view key, bool missing_ok)
     -> AttributeVar {
-  [[maybe_unused]] HighFive::SilenceHDF5 silencer{};
+  [[maybe_unused]] HighFive::SilenceHDF5 silencer{};  // NOLINT
 
   if (missing_ok && !Attribute::exists(h5obj, key)) {
     return std::monostate();
