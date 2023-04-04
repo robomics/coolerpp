@@ -317,7 +317,7 @@ auto File::read_standard_attributes(const RootGroup &root_grp, bool initialize_m
     }
   };
 
-  auto read_sum_optional = [&](bool missing_ok, std::string_view key, auto& buff) {
+  auto read_sum_optional = [&](bool missing_ok, std::string_view key, auto &buff) {
     if (!Attribute::exists(root_grp(), key) && missing_ok) {
       return false;
     }

@@ -536,7 +536,7 @@ inline void File::validate_pixel_type() const noexcept {
   static_assert(std::is_arithmetic_v<PixelT>);
 
   auto assert_holds_alternative = [](const auto &buff, [[maybe_unused]] auto alt) {
-   using T [[maybe_unused]] = decltype(alt);
+    using T [[maybe_unused]] = decltype(alt);
     if (buff.has_value()) {
       assert(std::holds_alternative<T>(*buff));
     }
