@@ -148,14 +148,33 @@ struct is_unary_operation : public std::is_invocable<Operation, Operand> {};
 template <class Operation, class Operand>
 constexpr bool is_unary_operation_v = is_unary_operation<Operation, Operand>::value;
 
-template <class T, class = void>
-struct is_iterator : std::false_type {};
+namespace internal {
+// Adapted from https://stackoverflow.com/a/29634934
+// clang-format off
+template <class T>
+auto is_iterable_impl(int)
+    -> decltype(std::begin(std::declval<T &>()) != std::end(std::declval<T &>()),  // begin/end and operator !=
+                void(),                                                            // Handle evil operator ,
+                ++std::declval<decltype(std::begin(std::declval<T &>())) &>(),     // operator ++
+                void(*std::begin(std::declval<T &>())),                            // operator*
+                std::true_type{});
+// clang-format on
 
 template <class T>
-struct is_iterator<T, std::void_t<typename std::iterator_traits<T>::iterator_category>>
+std::false_type is_iterable_impl(...);
+}  // namespace internal
+
+template <class T, class = void>
+struct is_iterable : std::false_type {};
+
+// clang-format off
+template <class T>
+struct is_iterable<T, std::void_t<decltype(internal::is_iterable_impl<T>(0))>>
     : std::true_type {};
+// clang-format on
+
 template <typename T>
-constexpr bool is_iterator_v = is_iterator<T>::value;
+constexpr bool is_iterable_v = is_iterable<T>::value;
 
 template <class Operation, class It, typename = void>
 constexpr bool is_unary_operation_on_iterator = false;
@@ -163,6 +182,6 @@ constexpr bool is_unary_operation_on_iterator = false;
 template <class Operation, class It>
 constexpr bool is_unary_operation_on_iterator<
     Operation, It,
-    std::void_t<is_iterator<It>,
-                is_unary_operation<Operation, decltype(std::declval<It>().operator*())>>> = true;
+    std::void_t<std::disjunction<is_iterable<It>, std::is_pointer<It>>,
+                is_unary_operation<Operation, decltype(*std::declval<It>())>>> = true;
 }  // namespace coolerpp
