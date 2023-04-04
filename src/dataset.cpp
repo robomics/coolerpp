@@ -97,7 +97,7 @@ std::size_t Dataset::read(std::vector<std::string> &buff, std::size_t num,
 
 std::size_t Dataset::write(const std::vector<std::string> &buff, std::size_t offset,
                            bool allow_dataset_resize) {
-  [[maybe_unused]] HighFive::SilenceHDF5 silencer{};
+  [[maybe_unused]] HighFive::SilenceHDF5 silencer{};  // NOLINT
   if (offset + buff.size() > this->size()) {
     if (allow_dataset_resize) {
       this->resize(offset + buff.size());
@@ -128,7 +128,7 @@ std::size_t Dataset::write(const internal::VariantBuffer &vbuff, std::size_t off
 }
 
 std::size_t Dataset::read(std::string &buff, std::size_t offset) const {
-  [[maybe_unused]] HighFive::SilenceHDF5 silencer{};
+  [[maybe_unused]] HighFive::SilenceHDF5 silencer{};  // NOLINT
   if (offset >= this->size()) {
     this->throw_out_of_range_excp(offset);
   }
@@ -145,7 +145,7 @@ std::size_t Dataset::read(std::string &buff, std::size_t offset) const {
 }
 
 std::size_t Dataset::write(std::string buff, std::size_t offset, bool allow_dataset_resize) {
-  [[maybe_unused]] HighFive::SilenceHDF5 silencer{};
+  [[maybe_unused]] HighFive::SilenceHDF5 silencer{};  // NOLINT
   if (offset >= this->size()) {
     if (allow_dataset_resize) {
       this->resize(offset + 1);

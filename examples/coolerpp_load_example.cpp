@@ -41,8 +41,8 @@ void parse_bedpe_record(std::string_view line, std::array<std::string, 7>& buff,
     while (std::getline(f, line)) {
       const auto delim_pos = line.find(delim);
 
-      std::string chrom_name = line.substr(0, delim_pos);
-      std::string chrom_size_str = line.substr(delim_pos + 1);
+      const std::string chrom_name = line.substr(0, delim_pos);
+      const std::string chrom_size_str = line.substr(delim_pos + 1);
 
       chroms.emplace_back(chrom_name, std::stoull(chrom_size_str));
     }
@@ -62,6 +62,7 @@ void parse_bedpe_record(std::string_view line, std::array<std::string, 7>& buff,
   const auto bin1_start = static_cast<std::uint32_t>(std::stoul(bedpe_tokens[1]));
   const auto bin2_start = static_cast<std::uint32_t>(std::stoul(bedpe_tokens[4]));
 
+  // NOLINTNEXTLINE(misc-const-correctness)
   PixelCoordinates coords{bins, chrom1_name, chrom2_name, bin1_start, bin2_start};
   const auto count = static_cast<std::uint32_t>(std::stoul(bedpe_tokens[6]));
 
@@ -137,8 +138,9 @@ int main(int argc, char** argv) {
     const auto elapsed_time_ms =
         std::chrono::duration_cast<std::chrono::milliseconds>(t1 - t0).count();
 
-    auto cooler = File::open_read_only(path_to_output_cooler);
-    fmt::print(stderr, FMT_STRING("Written {} pixels in {}s!\n"), *cooler.attributes().nnz,
+    const auto nnz = File::open_read_only(path_to_output_cooler).attributes().nnz;
+    assert(nnz.has_value());
+    fmt::print(stderr, FMT_STRING("Written {} pixels in {}s!\n"), *nnz,
                static_cast<double>(elapsed_time_ms) / 1000.0);
   } catch (const std::exception& e) {
     fmt::print(stderr, FMT_STRING("The following error occurred while running coolerpp_load: {}\n"),

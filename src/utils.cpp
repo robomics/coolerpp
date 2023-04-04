@@ -20,27 +20,27 @@
 namespace coolerpp::utils {
 
 ValidationStatusCooler is_cooler(std::string_view uri) {
-  [[maybe_unused]] const HighFive::SilenceHDF5 silencer{};
+  [[maybe_unused]] const HighFive::SilenceHDF5 silencer{};  // NOLINT
   const auto [file_path, root_path] = parse_cooler_uri(uri);
 
-  HighFive::File fp(file_path, HighFive::File::ReadOnly);
+  const HighFive::File fp(file_path, HighFive::File::ReadOnly);
   return is_cooler(fp, root_path);
 }
 
 ValidationStatusMultiresCooler is_multires_file(std::string_view uri, bool validate_resolutions,
                                                 std::int64_t min_version) {
-  [[maybe_unused]] const HighFive::SilenceHDF5 silencer{};
+  [[maybe_unused]] const HighFive::SilenceHDF5 silencer{};  // NOLINT
   const auto file_path = parse_cooler_uri(uri).file_path;
 
-  HighFive::File fp(file_path, HighFive::File::ReadOnly);
+  const HighFive::File fp(file_path, HighFive::File::ReadOnly);
   return is_multires_file(fp, validate_resolutions, min_version);
 }
 
 ValidationStatusScool is_scool_file(std::string_view uri, bool validate_cells) {
-  [[maybe_unused]] const HighFive::SilenceHDF5 silencer{};
+  [[maybe_unused]] const HighFive::SilenceHDF5 silencer{};  // NOLINT
   const auto file_path = parse_cooler_uri(uri).file_path;
 
-  HighFive::File fp(file_path, HighFive::File::ReadOnly);
+  const HighFive::File fp(file_path, HighFive::File::ReadOnly);
   return is_scool_file(fp, validate_cells);
 }
 
@@ -49,7 +49,7 @@ ValidationStatusCooler is_cooler(const HighFive::File &fp, std::string_view root
 }
 
 ValidationStatusCooler is_cooler(const HighFive::Group &root_group) {
-  [[maybe_unused]] HighFive::SilenceHDF5 silencer{};
+  [[maybe_unused]] HighFive::SilenceHDF5 silencer{};  // NOLINT
   ValidationStatusCooler status{};
   status.uri = root_group.getFile().getName();
   const auto root_path = root_group.getPath();
@@ -104,7 +104,7 @@ ValidationStatusCooler is_cooler(const HighFive::Group &root_group) {
 
 ValidationStatusMultiresCooler is_multires_file(const HighFive::File &fp, bool validate_resolutions,
                                                 std::int64_t min_version) {
-  [[maybe_unused]] HighFive::SilenceHDF5 silencer{};
+  [[maybe_unused]] HighFive::SilenceHDF5 silencer{};  // NOLINT
   ValidationStatusMultiresCooler status{};
   status.uri = fp.getName();
 
@@ -189,7 +189,7 @@ ValidationStatusMultiresCooler is_multires_file(const HighFive::File &fp, bool v
 }
 
 ValidationStatusScool is_scool_file(const HighFive::File &fp, bool validate_cells) {
-  [[maybe_unused]] HighFive::SilenceHDF5 silencer{};
+  [[maybe_unused]] HighFive::SilenceHDF5 silencer{};  // NOLINT
   ValidationStatusScool status{};
   status.uri = fp.getName();
 

@@ -69,6 +69,7 @@ File::File(std::string_view uri, unsigned mode, bool validate)
           this->bin_size())),
       _index(std::make_shared<Index>(import_indexes(_datasets.at("indexes/chrom_offset"),
                                                     _datasets.at("indexes/bin1_offset"),
+                                                    // NOLINTNEXTLINE
                                                     chromosomes(), _bins, *_attrs.nnz, false))) {
   assert(mode == HighFive::File::ReadOnly || mode == HighFive::File::ReadWrite);
   if (validate) {
@@ -133,7 +134,7 @@ auto File::bins() const noexcept -> const BinTable & {
 auto File::bins_ptr() const noexcept -> std::shared_ptr<const BinTable> { return this->_bins; }
 
 internal::NumericVariant File::detect_pixel_type(const RootGroup &root_grp, std::string_view path) {
-  [[maybe_unused]] HighFive::SilenceHDF5 silencer{};
+  [[maybe_unused]] HighFive::SilenceHDF5 silencer{};  // NOLINT
   auto dset = root_grp().getDataSet(std::string{path});
   return internal::read_pixel_variant<internal::NumericVariant>(dset);
 }
@@ -164,7 +165,7 @@ void File::write_sentinel_attr() { File::write_sentinel_attr(this->_root_group()
 bool File::check_sentinel_attr() { return File::check_sentinel_attr(this->_root_group()); }
 
 HighFive::File File::open_file(std::string_view uri, unsigned int mode, bool validate) {
-  [[maybe_unused]] const HighFive::SilenceHDF5 silencer{};
+  [[maybe_unused]] const HighFive::SilenceHDF5 silencer{};  // NOLINT
   const auto [file_path, root_grp] = parse_cooler_uri(uri);
 
   const auto new_file = !std::filesystem::exists(file_path);
@@ -192,13 +193,13 @@ auto File::open_or_create_root_group(HighFive::File &f, std::string_view uri) ->
 }
 
 auto File::open_root_group(const HighFive::File &f, std::string_view uri) -> RootGroup {
-  [[maybe_unused]] HighFive::SilenceHDF5 silencer{};
+  [[maybe_unused]] HighFive::SilenceHDF5 silencer{};  // NOLINT
   return {f.getGroup(parse_cooler_uri(uri).group_path)};
 }
 
 auto File::create_root_group(HighFive::File &f, std::string_view uri, bool write_sentinel_attr)
     -> RootGroup {
-  [[maybe_unused]] HighFive::SilenceHDF5 silencer{};
+  [[maybe_unused]] HighFive::SilenceHDF5 silencer{};  // NOLINT
   auto grp = f.createGroup(parse_cooler_uri(uri).group_path);
   if (write_sentinel_attr) {
     Attribute::write(grp, internal::SENTINEL_ATTR_NAME, internal::SENTINEL_ATTR_VALUE);
@@ -209,7 +210,7 @@ auto File::create_root_group(HighFive::File &f, std::string_view uri, bool write
 }
 
 auto File::open_groups(const RootGroup &root_grp) -> GroupMap {
-  [[maybe_unused]] HighFive::SilenceHDF5 silencer{};
+  [[maybe_unused]] HighFive::SilenceHDF5 silencer{};  // NOLINT
   GroupMap groups(MANDATORY_GROUP_NAMES.size() + 1);
   groups.emplace(root_grp.hdf5_path(), Group{root_grp, root_grp()});
 
@@ -224,7 +225,7 @@ auto File::open_groups(const RootGroup &root_grp) -> GroupMap {
 }
 
 auto File::create_groups(RootGroup &root_grp) -> GroupMap {
-  [[maybe_unused]] HighFive::SilenceHDF5 silencer{};
+  [[maybe_unused]] HighFive::SilenceHDF5 silencer{};  // NOLINT
   GroupMap groups(MANDATORY_GROUP_NAMES.size() + 1);
   groups.emplace(root_grp.hdf5_path(), Group{root_grp, root_grp()});
 
@@ -241,25 +242,25 @@ auto File::create_groups(RootGroup &root_grp) -> GroupMap {
 void File::write_standard_attributes(RootGroup &root_grp, const StandardAttributes &attributes,
                                      bool skip_sentinel_attr) {
   assert(attributes.bin_size != 0);
-  [[maybe_unused]] HighFive::SilenceHDF5 silencer{};
+  [[maybe_unused]] HighFive::SilenceHDF5 silencer{};  // NOLINT
   if (attributes.assembly) {
     Attribute::write(root_grp(), "assembly", *attributes.assembly);
   }
   Attribute::write(root_grp(), "bin-size", attributes.bin_size);
-  Attribute::write(root_grp(), "bin-type", *attributes.bin_type);
-  Attribute::write(root_grp(), "creation-date", *attributes.creation_date);
+  Attribute::write(root_grp(), "bin-type", *attributes.bin_type);            // NOLINT
+  Attribute::write(root_grp(), "creation-date", *attributes.creation_date);  // NOLINT
   Attribute::write(root_grp(), "format", std::string{COOL_MAGIC});
-  Attribute::write(root_grp(), "format-url", *attributes.format_url);
+  Attribute::write(root_grp(), "format-url", *attributes.format_url);  // NOLINT
   if (!skip_sentinel_attr) {
     static_assert(internal::SENTINEL_ATTR_NAME == "format-version");
     Attribute::write(root_grp(), "format-version", attributes.format_version);
   }
-  Attribute::write(root_grp(), "generated-by", *attributes.generated_by);
-  Attribute::write(root_grp(), "metadata", *attributes.metadata);
-  Attribute::write(root_grp(), "nbins", *attributes.nbins);
-  Attribute::write(root_grp(), "nchroms", *attributes.nchroms);
-  Attribute::write(root_grp(), "nnz", *attributes.nnz);
-  Attribute::write(root_grp(), "storage-mode", *attributes.storage_mode);
+  Attribute::write(root_grp(), "generated-by", *attributes.generated_by);  // NOLINT
+  Attribute::write(root_grp(), "metadata", *attributes.metadata);          // NOLINT
+  Attribute::write(root_grp(), "nbins", *attributes.nbins);                // NOLINT
+  Attribute::write(root_grp(), "nchroms", *attributes.nchroms);            // NOLINT
+  Attribute::write(root_grp(), "nnz", *attributes.nnz);                    // NOLINT
+  Attribute::write(root_grp(), "storage-mode", *attributes.storage_mode);  // NOLINT
   assert(attributes.sum.has_value());
   assert(attributes.cis.has_value());
   std::visit([&](const auto sum) { Attribute::write(root_grp(), "sum", sum); }, *attributes.sum);
@@ -269,7 +270,7 @@ void File::write_standard_attributes(RootGroup &root_grp, const StandardAttribut
 auto File::open_datasets(const RootGroup &root_grp, std::string_view weight_dataset) -> DatasetMap {
   DatasetMap datasets(MANDATORY_DATASET_NAMES.size() + 1);
 
-  [[maybe_unused]] HighFive::SilenceHDF5 silencer{};
+  [[maybe_unused]] HighFive::SilenceHDF5 silencer{};  // NOLINT
   auto open_dataset = [&](const auto dataset_uri) {
     return std::make_pair(std::string{dataset_uri}, Dataset{root_grp, dataset_uri});
   };
@@ -288,7 +289,7 @@ auto File::open_datasets(const RootGroup &root_grp, std::string_view weight_data
 auto File::read_standard_attributes(const RootGroup &root_grp, bool initialize_missing)
     -> StandardAttributes {
   auto attrs = initialize_missing ? StandardAttributes::init(0) : StandardAttributes::init_empty();
-  [[maybe_unused]] HighFive::SilenceHDF5 silencer{};
+  [[maybe_unused]] HighFive::SilenceHDF5 silencer{};  // NOLINT
 
   auto read_or_throw = [&](const auto &key, auto &buff) {
     using T = remove_cvref_t<decltype(buff)>;
@@ -390,7 +391,7 @@ auto File::read_standard_attributes(const RootGroup &root_grp, bool initialize_m
 auto File::import_chroms(const Dataset &chrom_names, const Dataset &chrom_sizes, bool missing_ok)
     -> ChromosomeSet {
   try {
-    [[maybe_unused]] HighFive::SilenceHDF5 silencer{};
+    [[maybe_unused]] HighFive::SilenceHDF5 silencer{};  // NOLINT
     std::vector<std::string> names;
     std::vector<std::uint32_t> sizes;
     chrom_names.read_all(names);
@@ -416,7 +417,7 @@ auto File::import_chroms(const Dataset &chrom_names, const Dataset &chrom_sizes,
 
 [[nodiscard]] static std::vector<std::uint64_t> import_chrom_offsets(const Dataset &dset,
                                                                      std::size_t expected_size) {
-  [[maybe_unused]] HighFive::SilenceHDF5 silencer{};
+  [[maybe_unused]] HighFive::SilenceHDF5 silencer{};  // NOLINT
   auto offsets = dset.read_all<std::vector<std::uint64_t>>();
   try {
     if (offsets.size() != expected_size) {
@@ -700,6 +701,7 @@ void File::write_bin_table(Dataset &chrom_dset, Dataset &start_dset, Dataset &en
 }
 
 void File::write_indexes() {
+  assert(this->_attrs.nnz.has_value());
   this->index().finalize(*this->_attrs.nnz);
   File::write_indexes(this->dataset("indexes/chrom_offset"), this->dataset("indexes/bin1_offset"),
                       this->index());
@@ -727,6 +729,7 @@ void File::finalize() {
     this->write_chromosomes();
     this->write_bin_table();
 
+    assert(_attrs.nnz.has_value());
     _index->nnz() = *_attrs.nnz;
     this->write_indexes();
     this->write_attributes();

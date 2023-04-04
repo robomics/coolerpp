@@ -37,7 +37,7 @@ inline void init_mcool(std::string_view file_path, InputIt first_resolution,
   using I = remove_cvref_t<decltype(*first_resolution)>;
   static_assert(std::is_integral_v<I>,
                 "InputIt should be an iterator over a collection of integral numbers.");
-  [[maybe_unused]] HighFive::SilenceHDF5 silencer{};
+  [[maybe_unused]] HighFive::SilenceHDF5 silencer{};  // NOLINT
   const auto mode = force_overwrite ? HighFive::File::Truncate : HighFive::File::Create;
   HighFive::File fp(std::string{file_path}, mode);
   Attribute::write(fp, "format", std::string{MCOOL_MAGIC});
@@ -55,7 +55,7 @@ inline void init_mcool(std::string_view file_path, InputIt first_resolution,
 //                        ChromSizeInputIt last_chrom, CellIDInputIt first_cell_id,
 //                        CellIDInputIt last_cell_id, std::uint32_t bin_size, bool force_overwrite)
 //                        {
-//   [[maybe_unused]] HighFive::SilenceHDF5 silencer{};
+//   [[maybe_unused]] HighFive::SilenceHDF5 silencer{};  // NOLINT
 //   const auto mode = force_overwrite ? IO_MODE::Truncate : IO_MODE::Create;
 //   HighFive::File fp(std::string{file_path}, static_cast<unsigned>(mode));
 //   fp.createAttribute("format", std::string{SCOOL_MAGIC});
