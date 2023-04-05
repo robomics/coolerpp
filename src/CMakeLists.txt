@@ -30,7 +30,6 @@ target_sources(
           ${CMAKE_CURRENT_SOURCE_DIR}/index_impl.hpp
           ${CMAKE_CURRENT_SOURCE_DIR}/pixel_impl.hpp
           ${CMAKE_CURRENT_SOURCE_DIR}/uri_impl.hpp
-          ${CMAKE_CURRENT_SOURCE_DIR}/utils.cpp
           ${CMAKE_CURRENT_SOURCE_DIR}/utils_impl.hpp
           ${CMAKE_CURRENT_SOURCE_DIR}/variant_buff_impl.hpp)
 
