@@ -14,7 +14,6 @@ on:
       - "test/**"
       - "CMakeLists.txt"
       - "conanfile.py"
-      - "lsan.supp"
     tags:
       - 'v*.*.*'
 
@@ -27,7 +26,6 @@ on:
       - "test/**"
       - "CMakeLists.txt"
       - "conanfile.py"
-      - "lsan.supp"
 
 # https://stackoverflow.com/a/72408109
 concurrency:
@@ -38,10 +36,6 @@ env:
   CONAN_USER_HOME: "${{ github.workspace }}/conan-cache"
   CONAN_USER_HOME_SHORT: "${{ github.workspace }}/conan-cache/short"
   CONAN_V2_MODE: "1"
-
-  # Workaround memory leak in HighFive
-  # See: https://github.com/BlueBrain/HighFive/pull/583
-  LSAN_OPTIONS: "suppressions=${{ github.workspace }}/lsan.supp"
 
 defaults:
   run:
@@ -120,17 +114,6 @@ jobs:
           conan remove -f "*" --builds
           conan remove -f "*" --src
           conan remove -f "*" --system-reqs
-
-      - name: Suppress ASAN and LSAN warnings
-        run: |
-          # Workaround memory leak in HighFive
-          # See: https://github.com/BlueBrain/HighFive/pull/583
-
-          echo 'interceptor_via_fun:-[HighFive::HDF5ErrMapper walkStack]' > /tmp/asan.supp
-          echo 'interceptor_via_fun:-[HighFive::HDF5ErrMapper walkStack]' > /tmp/leak.supp
-
-          echo 'ASAN_OPTIONS=suppressions=/tmp/asan.supp' >> $GITHUB_ENV
-          echo 'LSAN_OPTIONS=suppressions=/tmp/leak.supp' >> $GITHUB_ENV
 
       - name: Configure project
         run: |

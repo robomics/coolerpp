@@ -14,7 +14,6 @@ on:
       - "test/**"
       - "CMakeLists.txt"
       - "conanfile.py"
-      - "lsan.supp"
     tags:
       - 'v*.*.*'
 
@@ -27,7 +26,6 @@ on:
       - "test/**"
       - "CMakeLists.txt"
       - "conanfile.py"
-      - "lsan.supp"
 
 # https://stackoverflow.com/a/72408109
 concurrency:
