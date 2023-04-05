@@ -146,3 +146,5 @@ class Index {
 };
 
 }  // namespace coolerpp
+
+#include "../../index_impl.hpp"

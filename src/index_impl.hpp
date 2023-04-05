@@ -2,8 +2,6 @@
 //
 // SPDX-License-Identifier: MIT
 
-#include "coolerpp/index.hpp"
-
 #include <fmt/format.h>
 
 #include <algorithm>
@@ -21,7 +19,7 @@
 
 namespace coolerpp {
 
-Index::Index(std::shared_ptr<const BinTableLazy> bins, std::uint64_t nnz)
+inline Index::Index(std::shared_ptr<const BinTableLazy> bins, std::uint64_t nnz)
     : _bins(std::move(bins)),
       _idx(Index::init(_bins->chromosomes(), _bins->bin_size())),
       _nnz(nnz) {
@@ -30,65 +28,67 @@ Index::Index(std::shared_ptr<const BinTableLazy> bins, std::uint64_t nnz)
                           [&](std::size_t sum, const auto &it) { return sum + it.size(); });
 }
 
-const ChromosomeSet &Index::chromosomes() const noexcept {
+inline const ChromosomeSet &Index::chromosomes() const noexcept {
   assert(this->_bins);
   return this->_bins->chromosomes();
 }
 
-const BinTableLazy &Index::bins() const noexcept {
+inline const BinTableLazy &Index::bins() const noexcept {
   assert(this->_bins);
   return *this->_bins;
 }
 
-std::shared_ptr<const BinTableLazy> Index::bins_ptr() const noexcept { return this->_bins; }
+inline std::shared_ptr<const BinTableLazy> Index::bins_ptr() const noexcept { return this->_bins; }
 
-std::size_t Index::num_chromosomes() const noexcept {
+inline std::size_t Index::num_chromosomes() const noexcept {
   assert(this->_idx.size() == this->_bins->num_chromosomes());
   return this->_idx.size();
 }
 
-std::size_t Index::size(std::string_view chrom_name) const {
+inline std::size_t Index::size(std::string_view chrom_name) const {
   const auto chrom_id = this->chromosomes().get_id(chrom_name);
   return this->size(chrom_id);
 }
 
-std::size_t Index::size(std::uint32_t chrom_id) const {
+inline std::size_t Index::size(std::uint32_t chrom_id) const {
   this->validate_chrom_id(chrom_id);
   return this->at(chrom_id).size();
 }
 
-std::uint32_t Index::bin_size() const noexcept {
+inline std::uint32_t Index::bin_size() const noexcept {
   assert(this->_bins);
   return this->_bins->bin_size();
 }
 
-auto Index::begin() const noexcept -> const_iterator { return iterator{this}; }
-auto Index::end() const noexcept -> const_iterator { return iterator::make_end_iterator(this); }
+inline auto Index::begin() const noexcept -> const_iterator { return iterator{this}; }
+inline auto Index::end() const noexcept -> const_iterator {
+  return iterator::make_end_iterator(this);
+}
 
-auto Index::cbegin() const noexcept -> const_iterator { return this->begin(); }
-auto Index::cend() const noexcept -> const_iterator { return this->end(); }
+inline auto Index::cbegin() const noexcept -> const_iterator { return this->begin(); }
+inline auto Index::cend() const noexcept -> const_iterator { return this->end(); }
 
-auto Index::at(std::string_view chrom_name) const -> const mapped_type & {
+inline auto Index::at(std::string_view chrom_name) const -> const mapped_type & {
   const auto chrom_id = this->chromosomes().get_id(chrom_name);
   return this->_idx.at(chrom_id);
 }
 
-auto Index::at(std::uint32_t chrom_id) -> mapped_type & {
+inline auto Index::at(std::uint32_t chrom_id) -> mapped_type & {
   this->validate_chrom_id(chrom_id);
   return this->_idx.at(chrom_id);
 }
 
-auto Index::at(std::string_view chrom_name) -> mapped_type & {
+inline auto Index::at(std::string_view chrom_name) -> mapped_type & {
   const auto chrom_id = this->chromosomes().get_id(chrom_name);
   return this->_idx.at(chrom_id);
 }
 
-auto Index::at(std::uint32_t chrom_id) const -> const mapped_type & {
+inline auto Index::at(std::uint32_t chrom_id) const -> const mapped_type & {
   this->validate_chrom_id(chrom_id);
   return this->_idx.at(chrom_id);
 }
 
-std::uint64_t Index::get_offset_by_bin_id(std::uint64_t bin_id) const {
+inline std::uint64_t Index::get_offset_by_bin_id(std::uint64_t bin_id) const {
   if (bin_id == this->size()) {
     return this->_idx.back().back();
   }
@@ -96,21 +96,23 @@ std::uint64_t Index::get_offset_by_bin_id(std::uint64_t bin_id) const {
   return this->get_offset_by_pos(coords.chrom, coords.start);
 }
 
-std::uint64_t Index::get_offset_by_pos(const Chromosome &chrom, std::uint32_t pos) const {
+inline std::uint64_t Index::get_offset_by_pos(const Chromosome &chrom, std::uint32_t pos) const {
   return this->get_offset_by_pos(chrom.name, pos);
 }
 
-std::uint64_t Index::get_offset_by_pos(std::string_view chrom_name, std::uint32_t pos) const {
+inline std::uint64_t Index::get_offset_by_pos(std::string_view chrom_name,
+                                              std::uint32_t pos) const {
   const auto row_idx = pos / this->bin_size();
   return this->get_offset_by_row_idx(this->chromosomes().get_id(chrom_name), row_idx);
 }
 
-std::uint64_t Index::get_offset_by_pos(std::uint32_t chrom_id, std::uint32_t pos) const {
+inline std::uint64_t Index::get_offset_by_pos(std::uint32_t chrom_id, std::uint32_t pos) const {
   const auto row_idx = pos / this->bin_size();
   return this->get_offset_by_row_idx(chrom_id, row_idx);
 }
 
-std::uint64_t Index::get_offset_by_row_idx(std::uint32_t chrom_id, std::size_t row_idx) const {
+inline std::uint64_t Index::get_offset_by_row_idx(std::uint32_t chrom_id,
+                                                  std::size_t row_idx) const {
   const auto &offsets = this->at(chrom_id);
   if (row_idx >= offsets.size()) {
     throw std::out_of_range(
@@ -120,55 +122,57 @@ std::uint64_t Index::get_offset_by_row_idx(std::uint32_t chrom_id, std::size_t r
   return offsets[row_idx];
 }
 
-void Index::set_offset_by_bin_id(std::uint64_t bin_id, std::uint64_t offset) {
+inline void Index::set_offset_by_bin_id(std::uint64_t bin_id, std::uint64_t offset) {
   const auto &coords = this->_bins->bin_id_to_coords(bin_id);
   this->set_offset_by_pos(coords.chrom, coords.start, offset);
 }
 
-void Index::set_offset_by_pos(const Chromosome &chrom, std::uint32_t pos, std::uint64_t offset) {
+inline void Index::set_offset_by_pos(const Chromosome &chrom, std::uint32_t pos,
+                                     std::uint64_t offset) {
   this->set_offset_by_pos(chrom.name, pos, offset);
 }
 
-void Index::set_offset_by_pos(std::string_view chrom_name, std::uint32_t pos,
-                              std::uint64_t offset) {
+inline void Index::set_offset_by_pos(std::string_view chrom_name, std::uint32_t pos,
+                                     std::uint64_t offset) {
   const auto row_idx = pos / this->bin_size();
   this->set_offset_by_row_idx(this->chromosomes().get_id(chrom_name), row_idx, offset);
 }
 
-void Index::set_offset_by_pos(std::uint32_t chrom_id, std::uint32_t pos, std::uint64_t offset) {
+inline void Index::set_offset_by_pos(std::uint32_t chrom_id, std::uint32_t pos,
+                                     std::uint64_t offset) {
   const auto row_idx = pos / this->bin_size();
   this->set_offset_by_row_idx(chrom_id, row_idx, offset);
 }
 
-void Index::set_offset_by_row_idx(std::uint32_t chrom_id, std::size_t row_idx,
-                                  std::uint64_t offset) {
+inline void Index::set_offset_by_row_idx(std::uint32_t chrom_id, std::size_t row_idx,
+                                         std::uint64_t offset) {
   auto &offsets = this->at(chrom_id);
   assert(row_idx < offsets.size());
   offsets[row_idx] = offset;
 }
 
-void Index::validate() const {
+inline void Index::validate() const {
   std::for_each(this->chromosomes().begin(), this->chromosomes().end(),
                 [this](const Chromosome &chrom) { this->validate(chrom); });
 }
 
-std::uint64_t &Index::nnz() noexcept { return this->_nnz; }
+inline std::uint64_t &Index::nnz() noexcept { return this->_nnz; }
 
-std::vector<std::uint64_t> Index::compute_chrom_offsets() const {
+inline std::vector<std::uint64_t> Index::compute_chrom_offsets() const {
   std::vector<std::uint64_t> buff(this->num_chromosomes());
   this->compute_chrom_offsets(buff);
   return buff;
 }
 
-std::uint64_t Index::get_bin1_offset(std::string_view chrom_name) const {
+inline std::uint64_t Index::get_bin1_offset(std::string_view chrom_name) const {
   return this->at(chrom_name).front();
 }
 
-std::uint64_t Index::get_bin1_offset(std::uint32_t chrom_id) const {
+inline std::uint64_t Index::get_bin1_offset(std::uint32_t chrom_id) const {
   return this->at(chrom_id).front();
 }
 
-void Index::finalize(std::uint64_t nnz) {
+inline void Index::finalize(std::uint64_t nnz) {
   this->_nnz = nnz;
   auto fill_value = nnz;
 
@@ -185,7 +189,7 @@ void Index::finalize(std::uint64_t nnz) {
   this->_idx[0][0] = 0;
 }
 
-void Index::compute_chrom_offsets(std::vector<std::uint64_t> &buff) const noexcept {
+inline void Index::compute_chrom_offsets(std::vector<std::uint64_t> &buff) const noexcept {
   buff.resize(this->num_chromosomes() + 1);
   buff[0] = 0;
 
@@ -195,13 +199,13 @@ void Index::compute_chrom_offsets(std::vector<std::uint64_t> &buff) const noexce
                  });
 }
 
-void Index::validate_chrom_id(std::uint32_t chrom_id) const {
+inline void Index::validate_chrom_id(std::uint32_t chrom_id) const {
   if (static_cast<std::size_t>(chrom_id) >= this->num_chromosomes()) {
     throw std::out_of_range(fmt::format(FMT_STRING("chromosome with id {} not found"), chrom_id));
   }
 }
 
-auto Index::init(const ChromosomeSet &chroms, std::uint32_t bin_size) -> MapT {
+inline auto Index::init(const ChromosomeSet &chroms, std::uint32_t bin_size) -> MapT {
   assert(!chroms.empty());
   assert(bin_size != 0);
 
@@ -214,7 +218,7 @@ auto Index::init(const ChromosomeSet &chroms, std::uint32_t bin_size) -> MapT {
   return idx;
 }
 
-void Index::validate(const Chromosome &chrom) const {
+inline void Index::validate(const Chromosome &chrom) const {
   try {
     const auto chrom_id = this->chromosomes().get_id(chrom);
     const auto &offsets = this->at(chrom_id);
@@ -258,18 +262,20 @@ void Index::validate(const Chromosome &chrom) const {
 }
 
 // NOLINTNEXTLINE
-Index::iterator::iterator(const Index *idx) : _idx(idx), _chrom_id(0), _offset_idx(0) {
+inline Index::iterator::iterator(const Index *idx) : _idx(idx), _chrom_id(0), _offset_idx(0) {
   assert(idx);
 }
 
-bool Index::iterator::operator==(const iterator &other) const noexcept {
+inline bool Index::iterator::operator==(const iterator &other) const noexcept {
   return this->_idx == other._idx && this->_chrom_id == other._chrom_id &&
          this->_offset_idx == other._offset_idx;
 }
 
-bool Index::iterator::operator!=(const iterator &other) const noexcept { return !(*this == other); }
+inline bool Index::iterator::operator!=(const iterator &other) const noexcept {
+  return !(*this == other);
+}
 
-auto Index::iterator::operator*() const -> value_type {
+inline auto Index::iterator::operator*() const -> value_type {
   assert(this->_idx);
   if (this->_chrom_id > this->last_chrom_id()) {
     return this->_idx->_nnz;
@@ -277,7 +283,7 @@ auto Index::iterator::operator*() const -> value_type {
   return this->get_offsets()[this->_offset_idx];
 }
 
-auto Index::iterator::operator++() -> iterator & {
+inline auto Index::iterator::operator++() -> iterator & {
   if (this->_chrom_id > this->last_chrom_id()) {
     return *this = make_end_iterator(this->_idx);
   }
@@ -293,13 +299,13 @@ auto Index::iterator::operator++() -> iterator & {
   return *this;
 }
 
-auto Index::iterator::operator++(int) -> iterator {
+inline auto Index::iterator::operator++(int) -> iterator {
   auto it = *this;
   ++(*this);
   return it;
 }
 
-auto Index::iterator::make_end_iterator(const Index *idx) -> iterator {
+inline auto Index::iterator::make_end_iterator(const Index *idx) -> iterator {
   assert(idx);
 
   iterator it{};
@@ -311,7 +317,7 @@ auto Index::iterator::make_end_iterator(const Index *idx) -> iterator {
   return it;
 }
 
-std::uint32_t Index::iterator::last_chrom_id() const noexcept {
+inline std::uint32_t Index::iterator::last_chrom_id() const noexcept {
   assert(this->_idx);
   if (this->_idx->num_chromosomes() == 0) {
     return 0;
@@ -320,7 +326,7 @@ std::uint32_t Index::iterator::last_chrom_id() const noexcept {
   return static_cast<std::uint32_t>(this->_idx->num_chromosomes() - 1);
 }
 
-auto Index::iterator::get_offsets() const noexcept -> const OffsetVect & {
+inline auto Index::iterator::get_offsets() const noexcept -> const OffsetVect & {
   assert(this->_chrom_id < static_cast<std::uint32_t>(this->_idx->size()));
   return this->_idx->_idx[static_cast<std::size_t>(this->_chrom_id)];
 }
