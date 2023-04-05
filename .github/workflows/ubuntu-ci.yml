@@ -130,7 +130,7 @@ jobs:
       - uses: actions/checkout@v3
 
       - name: Update CMake
-        run: pip install --no-cache-dir 'cmake==3.25.*'
+        run: pip install --no-cache-dir 'cmake==3.26.*'
 
       - name: Generate cache key
         id: cache-key
