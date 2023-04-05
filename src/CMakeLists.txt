@@ -16,8 +16,12 @@ target_sources(
   PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/attribute_impl.hpp
           ${CMAKE_CURRENT_SOURCE_DIR}/bin_table_impl.hpp
           ${CMAKE_CURRENT_SOURCE_DIR}/chromosome_impl.hpp
-          ${CMAKE_CURRENT_SOURCE_DIR}/coolerpp.cpp
+          ${CMAKE_CURRENT_SOURCE_DIR}/coolerpp_accessors_impl.hpp
           ${CMAKE_CURRENT_SOURCE_DIR}/coolerpp_impl.hpp
+          ${CMAKE_CURRENT_SOURCE_DIR}/coolerpp_read_impl.hpp
+          ${CMAKE_CURRENT_SOURCE_DIR}/coolerpp_standard_attr_impl.hpp
+          ${CMAKE_CURRENT_SOURCE_DIR}/coolerpp_validation_impl.hpp
+          ${CMAKE_CURRENT_SOURCE_DIR}/coolerpp_write_impl.hpp
           ${CMAKE_CURRENT_SOURCE_DIR}/dataset_accessors_impl.hpp
           ${CMAKE_CURRENT_SOURCE_DIR}/dataset_impl.hpp
           ${CMAKE_CURRENT_SOURCE_DIR}/dataset_iterator_impl.hpp
