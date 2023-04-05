@@ -15,11 +15,11 @@ class Coolerpp(ConanFile):
     license = "MIT"
     author = "Roberto Rossini (roberros@uio.no)"
     settings = "os", "compiler", "build_type", "arch"
-    requires = ["catch2/3.3.1",
-                "fast_float/3.8.1",
+    requires = ["catch2/3.3.2",
+                "fast_float/4.0.0",
                 "fmt/9.1.0",
                 "hdf5/1.14.0",
-                "highfive/2.6.2",
+                "highfive/2.7.0",
                 "tsl-hopscotch-map/2.3.0",
                 "tsl-ordered-map/1.1.0",
                 "zlib/1.2.13"]
