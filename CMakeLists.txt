@@ -87,7 +87,8 @@ set(ENABLE_SANITIZER_UNDEFINED_BEHAVIOR_USER OFF)
 set(ENABLE_SANITIZER_UNDEFINED_BEHAVIOR_DEVELOPER ON)
 
 dynamic_project_options(
-  PREFIX coolerpp
+  PREFIX
+  coolerpp
   # CLANG_WARNINGS # Override the defaults for the CLANG warnings GCC_WARNINGS   # Override the defaults for the GCC
   CPPCHECK_OPTIONS
   --enable=performance,portability,style,warning
