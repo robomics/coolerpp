@@ -78,7 +78,7 @@ inline void File::validate_bins() const {
   }
 }
 
-template <class PixelIt>
+template <typename PixelIt>
 inline void File::validate_pixels_before_append(PixelIt first_pixel, PixelIt last_pixel) const {
   using PixelT = typename std::iterator_traits<PixelIt>::value_type;
   using T = decltype(std::declval<PixelT>().count);
@@ -141,7 +141,7 @@ inline void File::validate_pixels_before_append(PixelIt first_pixel, PixelIt las
   }
 }
 
-template <class PixelT>
+template <typename PixelT>
 inline void File::validate_pixel_type() const noexcept {
   static_assert(std::is_arithmetic_v<PixelT>);
 

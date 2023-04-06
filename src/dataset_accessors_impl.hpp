@@ -75,22 +75,22 @@ inline HighFive::DataType Dataset::get_h5type() const {
   }
 }
 
-template <class T>
+template <typename T>
 inline auto Dataset::begin() const -> iterator<T> {
   return iterator<T>(*this);
 }
 
-template <class T>
+template <typename T>
 inline auto Dataset::end() const -> iterator<T> {
   return iterator<T>::make_end_iterator(*this);
 }
 
-template <class T>
+template <typename T>
 inline auto Dataset::cbegin() const -> iterator<T> {
   return this->begin<T>();
 }
 
-template <class T>
+template <typename T>
 inline auto Dataset::cend() const -> iterator<T> {
   return this->end<T>();
 }

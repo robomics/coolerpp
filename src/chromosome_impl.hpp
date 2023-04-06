@@ -86,11 +86,11 @@ inline bool operator!=(std::string_view a_name, const Chromosome& b) noexcept {
   return a_name != b.name;
 }
 
-template <class ChromosomeIt>
+template <typename ChromosomeIt>
 inline ChromosomeSet::ChromosomeSet(ChromosomeIt first_chrom, ChromosomeIt last_chrom)
     : _set(construct_set(first_chrom, last_chrom)) {}
 
-template <class ChromosomeNameIt, class ChromosomeSizeIt>
+template <typename ChromosomeNameIt, typename ChromosomeSizeIt>
 inline ChromosomeSet::ChromosomeSet(ChromosomeNameIt first_chrom_name,
                                     ChromosomeNameIt last_chrom_name,
                                     ChromosomeSizeIt first_chrom_size)
@@ -210,7 +210,7 @@ inline void ChromosomeSet::validate_chrom_id(std::uint32_t chrom_id) const {
   }
 }
 
-template <class ChromosomeNameIt, class ChromosomeSizeIt>
+template <typename ChromosomeNameIt, typename ChromosomeSizeIt>
 inline auto ChromosomeSet::construct_set(ChromosomeNameIt first_chrom_name,
                                          ChromosomeNameIt last_chrom_name,
                                          ChromosomeSizeIt first_chrom_size) -> SetT {
@@ -234,7 +234,7 @@ inline auto ChromosomeSet::construct_set(ChromosomeNameIt first_chrom_name,
   return set;
 }
 
-template <class ChromosomeIt>
+template <typename ChromosomeIt>
 inline auto ChromosomeSet::construct_set(ChromosomeIt first_chrom, ChromosomeIt last_chrom)
     -> SetT {
   const auto num_chroms =
@@ -290,7 +290,7 @@ constexpr auto fmt::formatter<coolerpp::Chromosome>::parse(format_parse_context&
   return ctx.end();
 }
 
-template <class FormatContext>
+template <typename FormatContext>
 inline auto fmt::formatter<coolerpp::Chromosome>::format(const coolerpp::Chromosome& c,
                                                          FormatContext& ctx) const
     -> decltype(ctx.out()) {

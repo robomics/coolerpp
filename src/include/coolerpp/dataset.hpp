@@ -30,13 +30,13 @@ namespace coolerpp {
 struct RootGroup;
 
 namespace internal {
-template <class T>
+template <typename T>
 struct is_atomic_buffer
     : public std::disjunction<std::is_same<internal::GenericVariant, std::decay_t<T>>,
                               std::is_same<std::string, std::decay_t<T>>,
                               std::is_arithmetic<std::decay_t<T>>> {};
 
-template <class T>
+template <typename T>
 inline constexpr bool is_atomic_buffer_v = is_atomic_buffer<T>::value;
 }  // namespace internal
 
@@ -48,9 +48,9 @@ class Dataset {
   mutable internal::VariantBuffer _buff{};
 
  public:
-  template <class T>
+  template <typename T>
   class iterator;
-  template <class T>
+  template <typename T>
   using const_iterator = iterator<T>;
 
   [[nodiscard]] static HighFive::DataSetCreateProps generate_default_dset_create_props(
@@ -65,7 +65,7 @@ class Dataset {
   Dataset(RootGroup root_group, std::string_view path_to_dataset,
           const HighFive::DataSetAccessProps &aprops = generate_default_dset_access_props());
 
-  template <class T, class = std::enable_if_t<std::is_arithmetic_v<T>>>
+  template <typename T, typename = std::enable_if_t<std::is_arithmetic_v<T>>>
   Dataset(RootGroup root_group, std::string_view path_to_dataset, const T &type,
           std::size_t max_dim = HighFive::DataSpace::UNLIMITED,
           const HighFive::DataSetAccessProps &aprops = generate_default_dset_access_props(),
@@ -94,45 +94,45 @@ class Dataset {
   void resize(std::size_t new_size);
 
   // Read N values
-  template <class N, class = std::enable_if_t<std::is_arithmetic_v<N>>>
+  template <typename N, typename = std::enable_if_t<std::is_arithmetic_v<N>>>
   std::size_t read(std::vector<N> &buff, std::size_t num, std::size_t offset = 0) const;
   std::size_t read(std::vector<std::string> &buff, std::size_t num, std::size_t offset = 0) const;
   template <std::size_t i = 0>
   std::size_t read(internal::VariantBuffer &vbuff, std::size_t num, std::size_t offset = 0) const;
 
-  template <class BuffT, class T = remove_cvref_t<BuffT>,
-            class = std::enable_if_t<!internal::is_atomic_buffer_v<T>>>
+  template <typename BuffT, typename T = remove_cvref_t<BuffT>,
+            typename = std::enable_if_t<!internal::is_atomic_buffer_v<T>>>
   BuffT read_n(std::size_t num, std::size_t offset = 0) const;
 
   // Read all values
-  template <class BuffT, class T = remove_cvref_t<BuffT>,
-            class = std::enable_if_t<!internal::is_atomic_buffer_v<T>>>
+  template <typename BuffT, typename T = remove_cvref_t<BuffT>,
+            typename = std::enable_if_t<!internal::is_atomic_buffer_v<T>>>
   std::size_t read_all(BuffT &buff, std::size_t offset = 0) const;
 
-  template <class BuffT, class T = remove_cvref_t<BuffT>,
-            class = std::enable_if_t<!internal::is_atomic_buffer_v<T>>>
+  template <typename BuffT, typename T = remove_cvref_t<BuffT>,
+            typename = std::enable_if_t<!internal::is_atomic_buffer_v<T>>>
   BuffT read_all(std::size_t offset = 0) const;
 
   internal::VariantBuffer read_all(std::size_t offset = 0) const;
 
   // Read single values
-  template <class N, class = std::enable_if_t<std::is_arithmetic_v<N>>>
+  template <typename N, typename = std::enable_if_t<std::is_arithmetic_v<N>>>
   std::size_t read(N &buff, std::size_t offset) const;
   std::size_t read(std::string &buff, std::size_t offset) const;
   template <std::size_t i = 0>
   std::size_t read(internal::GenericVariant &vbuff, std::size_t offset) const;
 
-  template <class BuffT, class T = remove_cvref_t<BuffT>,
-            class = std::enable_if_t<internal::is_atomic_buffer_v<T>>>
+  template <typename BuffT, typename T = remove_cvref_t<BuffT>,
+            typename = std::enable_if_t<internal::is_atomic_buffer_v<T>>>
   BuffT read(std::size_t offset) const;
   internal::GenericVariant read(std::size_t offset) const;
 
-  template <class BuffT>
+  template <typename BuffT>
   [[nodiscard]] BuffT read_last() const;
   [[nodiscard]] internal::GenericVariant read_last() const;
 
   // Write N values
-  template <class N, class = std::enable_if_t<std::is_arithmetic_v<N>>>
+  template <typename N, typename = std::enable_if_t<std::is_arithmetic_v<N>>>
   std::size_t write(const std::vector<N> &buff, std::size_t offset = 0,
                     bool allow_dataset_resize = false);
   std::size_t write(const std::vector<std::string> &buff, std::size_t offset = 0,
@@ -140,32 +140,32 @@ class Dataset {
   std::size_t write(const internal::VariantBuffer &vbuff, std::size_t offset = 0,
                     bool allow_dataset_resize = false);
 
-  template <class InputIt, class UnaryOperation = identity,
+  template <typename InputIt, typename UnaryOperation = identity,
             typename std::enable_if_t<is_unary_operation_on_iterator<UnaryOperation, InputIt>, int>
                 * = nullptr>
   std::size_t write(InputIt first_value, InputIt last_value, std::size_t offset = 0,
                     bool allow_dataset_resize = false, UnaryOperation op = identity());
 
-  template <class InputIt, class UnaryOperation = identity,
+  template <typename InputIt, typename UnaryOperation = identity,
             typename std::enable_if_t<is_unary_operation_on_iterator<UnaryOperation, InputIt>, int>
                 * = nullptr>
   std::size_t append(InputIt first_value, InputIt last_value, UnaryOperation op = identity());
 
   // Write single values
-  template <class N, class = std::enable_if_t<std::is_arithmetic_v<N>>>
+  template <typename N, typename = std::enable_if_t<std::is_arithmetic_v<N>>>
   std::size_t write(N buff, std::size_t offset = 0, bool allow_dataset_resize = false);
   std::size_t write(std::string buff, std::size_t offset = 0, bool allow_dataset_resize = false);
   std::size_t write(const internal::GenericVariant &vbuff, std::size_t offset = 0,
                     bool allow_dataset_resize = false);
 
-  template <class BuffT>
+  template <typename BuffT>
   std::size_t append(const BuffT &buff);
 
   // Attribute IO
-  template <class T>
+  template <typename T>
   void write_attribute(std::string_view key, const T &value, bool overwrite_if_exists = false);
 
-  template <class T>
+  template <typename T>
   [[nodiscard]] T read_attribute(std::string_view key) const;
 
   [[nodiscard]] auto read_attribute(std::string_view key, bool missing_ok = false) const
@@ -173,17 +173,17 @@ class Dataset {
 
   [[nodiscard]] bool has_attribute(std::string_view key) const;
 
-  template <class T>
+  template <typename T>
   [[nodiscard]] auto begin() const -> iterator<T>;
-  template <class T>
+  template <typename T>
   [[nodiscard]] auto end() const -> iterator<T>;
 
-  template <class T>
+  template <typename T>
   [[nodiscard]] auto cbegin() const -> iterator<T>;
-  template <class T>
+  template <typename T>
   [[nodiscard]] auto cend() const -> iterator<T>;
 
-  template <class T>
+  template <typename T>
   [[nodiscard]] auto make_iterator_at_offset(std::size_t offset,
                                              std::size_t chunk_size = 64 * 1024) const
       -> iterator<T>;
@@ -207,7 +207,7 @@ class Dataset {
   [[nodiscard]] HighFive::DataType get_h5type() const;
 
  public:
-  template <class T>
+  template <typename T>
   class iterator {
     friend Dataset;
     mutable std::shared_ptr<std::vector<T>> _buff{};

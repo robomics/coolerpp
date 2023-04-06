@@ -69,7 +69,7 @@ void parse_bedpe_record(std::string_view line, std::array<std::string, 7>& buff,
   return {coords, count};
 }
 
-template <class ContactT>
+template <typename ContactT>
 void ingest_pixels(const std::string& path_to_chrom_sizes, const std::string& path_to_output_cooler,
                    std::uint32_t bin_size, std::size_t batch_size = 100'000) {
   auto chromosomes = import_chromosomes(path_to_chrom_sizes);

@@ -17,7 +17,7 @@ namespace coolerpp {
 class BinTableLazy;
 class Index;
 
-template <class N>
+template <typename N>
 class PixelSelector {
   static_assert(std::is_arithmetic_v<N>);
 

@@ -92,7 +92,7 @@ inline const internal::NumericVariant &File::pixel_variant() const noexcept {
   return this->_pixel_variant;
 }
 
-template <class T>
+template <typename T>
 inline bool File::has_pixel_of_type() const noexcept {
   return std::holds_alternative<T>(this->_pixel_variant);
 }
@@ -127,7 +127,7 @@ inline bool File::has_float_pixels() const noexcept {
   // clang-format on
 }
 
-template <class N>
+template <typename N>
 inline typename PixelSelector<N>::iterator File::begin() const {
   // clang-format off
   return PixelSelector<N>(this->_index,
@@ -138,12 +138,12 @@ inline typename PixelSelector<N>::iterator File::begin() const {
   // clang-format on
 }
 
-template <class N>
+template <typename N>
 inline typename PixelSelector<N>::iterator File::cbegin() const {
   return this->begin<N>();
 }
 
-template <class N>
+template <typename N>
 inline typename PixelSelector<N>::iterator File::end() const {
   // clang-format off
   return PixelSelector<N>(this->_index,
@@ -154,7 +154,7 @@ inline typename PixelSelector<N>::iterator File::end() const {
   // clang-format on
 }
 
-template <class N>
+template <typename N>
 inline typename PixelSelector<N>::iterator File::cend() const {
   return this->end<N>();
 }

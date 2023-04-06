@@ -17,7 +17,7 @@
 
 namespace coolerpp {
 
-template <class N, class>
+template <typename N, typename>
 inline std::size_t Dataset::read(std::vector<N> &buff, std::size_t num, std::size_t offset) const {
   [[maybe_unused]] HighFive::SilenceHDF5 silencer{};  // NOLINT
   if (offset + num > this->size()) {
@@ -92,14 +92,14 @@ inline std::size_t Dataset::read(internal::VariantBuffer &vbuff, std::size_t num
   unreachable_code();
 }
 
-template <class BuffT, class T, class>
+template <typename BuffT, typename T, typename>
 inline BuffT Dataset::read_n(std::size_t num, std::size_t offset) const {
   BuffT buff{num};
   this->read(buff, offset);
   return buff;
 }
 
-template <class BuffT, class T, class>
+template <typename BuffT, typename T, typename>
 inline std::size_t Dataset::read_all(BuffT &buff, std::size_t offset) const {
   const auto num = offset > this->size() ? std::size_t(0) : this->size() - offset;
   return this->read(buff, num, offset);
@@ -109,14 +109,14 @@ inline internal::VariantBuffer Dataset::read_all(std::size_t offset) const {
   return this->read_all<internal::VariantBuffer>(offset);
 }
 
-template <class BuffT, class T, class>
+template <typename BuffT, typename T, typename>
 inline BuffT Dataset::read_all(std::size_t offset) const {
   BuffT buff{};
   this->read_all(buff, offset);
   return buff;
 }
 
-template <class N, class>
+template <typename N, typename>
 inline std::size_t Dataset::read(N &buff, std::size_t offset) const {
   [[maybe_unused]] HighFive::SilenceHDF5 silencer{};  // NOLINT
   if (offset >= this->size()) {
@@ -182,7 +182,7 @@ inline std::size_t Dataset::read(internal::GenericVariant &vbuff, std::size_t of
   unreachable_code();
 }
 
-template <class BuffT, class T, class>
+template <typename BuffT, typename T, typename>
 inline BuffT Dataset::read(std::size_t offset) const {
   BuffT buff{};
   this->read(buff, offset);
@@ -193,7 +193,7 @@ inline internal::GenericVariant Dataset::read(std::size_t offset) const {
   return this->read<internal::GenericVariant>(offset);
 }
 
-template <class BuffT>
+template <typename BuffT>
 inline BuffT Dataset::read_last() const {
   if (this->empty()) {
     this->throw_out_of_range_excp(0);
@@ -208,7 +208,7 @@ inline internal::GenericVariant Dataset::read_last() const {
   return this->read_last<internal::GenericVariant>();
 }
 
-template <class T>
+template <typename T>
 inline T Dataset::read_attribute(std::string_view key) const {
   return Attribute::read<T>(this->_dataset, key);
 }

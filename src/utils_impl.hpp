@@ -293,7 +293,7 @@ constexpr auto fmt::formatter<coolerpp::utils::ValidationStatusCooler>::parse(
   return ctx.end();
 }
 
-template <class FormatContext>
+template <typename FormatContext>
 auto fmt::formatter<coolerpp::utils::ValidationStatusCooler>::format(
     const coolerpp::utils::ValidationStatusCooler &s, FormatContext &ctx) const
     -> decltype(ctx.out()) {
@@ -325,7 +325,7 @@ constexpr auto fmt::formatter<coolerpp::utils::ValidationStatusMultiresCooler>::
   return ctx.end();
 }
 
-template <class FormatContext>
+template <typename FormatContext>
 auto fmt::formatter<coolerpp::utils::ValidationStatusMultiresCooler>::format(
     const coolerpp::utils::ValidationStatusMultiresCooler &s, FormatContext &ctx) const
     -> decltype(ctx.out()) {
@@ -360,7 +360,7 @@ constexpr auto fmt::formatter<coolerpp::utils::ValidationStatusScool>::parse(
   return ctx.end();
 }
 
-template <class FormatContext>
+template <typename FormatContext>
 auto fmt::formatter<coolerpp::utils::ValidationStatusScool>::format(
     const coolerpp::utils::ValidationStatusScool &s, FormatContext &ctx) const
     -> decltype(ctx.out()) {

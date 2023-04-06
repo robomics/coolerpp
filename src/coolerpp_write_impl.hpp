@@ -30,7 +30,7 @@
 
 namespace coolerpp {
 
-template <class PixelIt, class>
+template <typename PixelIt, typename>
 inline void File::append_pixels(PixelIt first_pixel, PixelIt last_pixel, bool validate,
                                 [[maybe_unused]] std::size_t chunk_size) {
   using PixelT = typename std::iterator_traits<PixelIt>::value_type;
@@ -139,7 +139,7 @@ inline auto File::create_groups(RootGroup &root_grp) -> GroupMap {
   return groups;
 }
 
-template <class PixelT>
+template <typename PixelT>
 inline auto File::create_datasets(RootGroup &root_grp, const ChromosomeSet &chroms) -> DatasetMap {
   DatasetMap datasets(MANDATORY_DATASET_NAMES.size() + 1);
 
@@ -229,7 +229,7 @@ inline void File::write_chromosomes() {
   this->_attrs.nchroms = this->chromosomes().size();
 }
 
-template <class ChromIt, class UnaryOperation, class>
+template <typename ChromIt, typename UnaryOperation, typename>
 inline void File::write_chromosomes(Dataset &name_dset, Dataset &size_dset, ChromIt first_chrom,
                                     ChromIt last_chrom, UnaryOperation op) {
   const auto num_chroms = std::distance(first_chrom, last_chrom);
@@ -283,7 +283,7 @@ inline void File::write_bin_table(Dataset &chrom_dset, Dataset &start_dset, Data
   assert(end_dset.size() == bin_table.size());
 }
 
-template <class PixelIt>
+template <typename PixelIt>
 inline void File::update_indexes(PixelIt first_pixel, PixelIt last_pixel) {
   using PixelT = typename std::iterator_traits<PixelIt>::value_type;
   using T = decltype(std::declval<PixelT>().count);

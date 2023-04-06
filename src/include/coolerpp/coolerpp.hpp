@@ -61,7 +61,8 @@ struct StandardAttributes {
   std::optional<SumVar> sum{std::int64_t(0)};
   std::optional<SumVar> cis{std::int64_t(0)};
 
-  template <class PixelT = DefaultPixelT, class = std::enable_if_t<std::is_arithmetic_v<PixelT>>>
+  template <typename PixelT = DefaultPixelT,
+            typename = std::enable_if_t<std::is_arithmetic_v<PixelT>>>
   [[nodiscard]] static StandardAttributes init(std::uint32_t bin_size_);
   [[nodiscard]] static StandardAttributes init_empty() noexcept;
 
@@ -70,16 +71,16 @@ struct StandardAttributes {
   StandardAttributes() = default;
 };
 
-template <class InputIt>
+template <typename InputIt>
 void init_mcool(std::string_view file_path, InputIt first_resolution, InputIt last_resolution,
                 bool force_overwrite = false);
 void init_mcool(std::string_view file_path, bool force_overwrite = false);
 
-// template <class ChromSizeInputIt, class CellIDInputIt>
+// template <typename ChromSizeInputIt, typename CellIDInputIt>
 // void init_scool(std::string_view file_path, ChromSizeInputIt first_chrom,
 //                 ChromSizeInputIt last_chrom, CellIDInputIt first_cell_id,
 //                 CellIDInputIt last_cell_id, bool force_overwrite = false);
-// template <class InputIt>
+// template <typename InputIt>
 // void init_scool(std::string_view file_path, InputIt first_chrom, InputIt last_chrom,
 //                 bool force_overwrite = false);
 
@@ -103,7 +104,7 @@ class File {
   explicit File(std::string_view uri, unsigned mode = HighFive::File::ReadOnly,
                 bool validate = true);
 
-  template <class PixelT>
+  template <typename PixelT>
   explicit File(std::string_view uri, ChromosomeSet chroms, PixelT pixel,
                 StandardAttributes attributes);
 
@@ -114,7 +115,7 @@ class File {
 
   // Simple constructor. Open file in read-only mode. Automatically detects pixel count type
   [[nodiscard]] static File open_read_only(std::string_view uri, bool validate = true);
-  template <class PixelT = DefaultPixelT>
+  template <typename PixelT = DefaultPixelT>
   [[nodiscard]] static File create_new_cooler(
       std::string_view uri, const ChromosomeSet &chroms, std::uint32_t bin_size,
       bool overwrite_if_exists = false,
@@ -128,23 +129,23 @@ class File {
   [[nodiscard]] explicit operator bool() const noexcept;
 
   void open(std::string_view uri, bool validate = true);
-  template <class PixelT = DefaultPixelT>
+  template <typename PixelT = DefaultPixelT>
   void create(std::string_view uri, const ChromosomeSet &chroms, std::uint32_t bin_size,
               bool overwrite_if_exists = false,
               StandardAttributes attributes = StandardAttributes::init<PixelT>(0));
   void close();
 
-  // template <class PixelT, class InputIt>
+  // template <typename PixelT, typename InputIt>
   // [[nodiscard]] static  File create_new_mcool(std::string_view file_path,
   //                                                   InputIt first_resolution,
   //                                                   InputIt last_resolution,
   //                                                   bool force_overwrite = false);
 
-  // template <class ChromSizeInputIt, class CellIDInputIt>
+  // template <typename ChromSizeInputIt, typename CellIDInputIt>
   // [[nodiscard]] static  File create_scool(
   //     std::string_view file_path, ChromSizeInputIt first_chrom, ChromSizeInputIt last_chrom,
   //     CellIDInputIt first_cell_id, CellIDInputIt last_cell_id, bool force_overwrite = false);
-  // template <class InputIt>
+  // template <typename InputIt>
   // [[nodiscard]] static  File create_scool(std::string_view file_path, InputIt first_chrom,
   //                                               InputIt last_chrom, bool force_overwrite =
   //                                               false);
@@ -165,7 +166,7 @@ class File {
   [[nodiscard]] auto dataset(std::string_view dataset_name) const -> const Dataset &;
 
   [[nodiscard]] const internal::NumericVariant &pixel_variant() const noexcept;
-  template <class T>
+  template <typename T>
   [[nodiscard]] bool has_pixel_of_type() const noexcept;
 
   [[nodiscard]] bool has_signed_pixels() const noexcept;
@@ -173,35 +174,35 @@ class File {
   [[nodiscard]] bool has_integral_pixels() const noexcept;
   [[nodiscard]] bool has_float_pixels() const noexcept;
 
-  template <class PixelIt, class = std::enable_if_t<is_iterable_v<PixelIt>>>
+  template <typename PixelIt, typename = std::enable_if_t<is_iterable_v<PixelIt>>>
   void append_pixels(PixelIt first_pixel, PixelIt last_pixel, bool validate = false,
                      std::size_t chunk_size = 64 * 1024);
 
-  template <class N>
+  template <typename N>
   [[nodiscard]] typename PixelSelector<N>::iterator begin() const;
-  template <class N>
+  template <typename N>
   [[nodiscard]] typename PixelSelector<N>::iterator end() const;
 
-  template <class N>
+  template <typename N>
   [[nodiscard]] typename PixelSelector<N>::iterator cbegin() const;
-  template <class N>
+  template <typename N>
   [[nodiscard]] typename PixelSelector<N>::iterator cend() const;
 
-  template <class N>
+  template <typename N>
   [[nodiscard]] PixelSelector<N> fetch(std::string_view query) const;
-  template <class N>
+  template <typename N>
   [[nodiscard]] PixelSelector<N> fetch(std::string_view chrom, std::uint32_t start,
                                        std::uint32_t end) const;
-  template <class N>
+  template <typename N>
   [[nodiscard]] PixelSelector<N> fetch(PixelCoordinates query) const;
 
-  template <class N>
+  template <typename N>
   [[nodiscard]] PixelSelector<N> fetch(std::string_view range1, std::string_view range2) const;
-  template <class N>
+  template <typename N>
   [[nodiscard]] PixelSelector<N> fetch(std::string_view chrom1, std::uint32_t start1,
                                        std::uint32_t end1, std::string_view chrom2,
                                        std::uint32_t start2, std::uint32_t end2) const;
-  template <class N>
+  template <typename N>
   [[nodiscard]] PixelSelector<N> fetch(PixelCoordinates coord1, PixelCoordinates coord2) const;
 
   void flush();
@@ -238,7 +239,7 @@ class File {
   [[nodiscard]] static auto create_root_group(HighFive::File &f, std::string_view uri,
                                               bool write_sentinel_attr = true) -> RootGroup;
   [[nodiscard]] static auto create_groups(RootGroup &root_grp) -> GroupMap;
-  template <class PixelT>
+  template <typename PixelT>
   [[nodiscard]] static auto create_datasets(RootGroup &root_grp, const ChromosomeSet &chroms)
       -> DatasetMap;
   static void write_standard_attributes(RootGroup &root_grp, const StandardAttributes &attributes,
@@ -255,7 +256,7 @@ class File {
 
   void validate_bins() const;
 
-  template <class PixelIt>
+  template <typename PixelIt>
   void validate_pixels_before_append(PixelIt first_pixel, PixelIt last_pixel) const;
 
   [[nodiscard]] static internal::NumericVariant detect_pixel_type(
@@ -263,15 +264,15 @@ class File {
   void write_attributes(bool skip_sentinel_attr = true);
   void write_chromosomes();
 
-  template <class ChromIt, class UnaryOperation = identity,
-            class = std::enable_if_t<is_unary_operation_on_iterator<UnaryOperation, ChromIt>>>
+  template <typename ChromIt, typename UnaryOperation = identity,
+            typename = std::enable_if_t<is_unary_operation_on_iterator<UnaryOperation, ChromIt>>>
   static void write_chromosomes(Dataset &name_dset, Dataset &size_dset, ChromIt first_chrom,
                                 ChromIt last_chrom, UnaryOperation op = identity());
 
   void write_bin_table();
   static void write_bin_table(Dataset &chrom_dset, Dataset &start_dset, Dataset &end_dset,
                               const BinTable &bin_table);
-  template <class PixelIt>
+  template <typename PixelIt>
   void update_indexes(PixelIt first_pixel, PixelIt last_pixel);
 
   void write_indexes();
@@ -286,10 +287,10 @@ class File {
 
   [[nodiscard]] auto get_last_bin_written() const -> Bin;
 
-  template <class N, bool cis = false>
+  template <typename N, bool cis = false>
   void update_pixel_sum(N partial_sum);
 
-  template <class PixelT>
+  template <typename PixelT>
   void validate_pixel_type() const noexcept;
 };
 

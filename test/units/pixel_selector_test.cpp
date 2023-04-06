@@ -20,7 +20,7 @@ inline const std::filesystem::path datadir{"test/data"};  // NOLINT(cert-err58-c
 
 namespace coolerpp::test::pixel_selector {
 
-template <class N>
+template <typename N>
 static std::ptrdiff_t generate_test_data(const std::filesystem::path& path,
                                          const ChromosomeSet& chroms, std::uint32_t bin_size) {
   auto f = File::create_new_cooler<N>(path.string(), chroms, bin_size, true);

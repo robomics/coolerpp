@@ -46,7 +46,7 @@ inline std::size_t Dataset::write(const std::vector<std::string> &buff, std::siz
   return offset + buff.size();
 }
 
-template <class N, class>
+template <typename N, typename>
 inline std::size_t Dataset::write(const std::vector<N> &buff, std::size_t offset,
                                   bool allow_dataset_resize) {
   [[maybe_unused]] HighFive::SilenceHDF5 silencer{};  // NOLINT
@@ -72,7 +72,7 @@ inline std::size_t Dataset::write(const internal::VariantBuffer &vbuff, std::siz
   return new_offset;
 }
 
-template <class InputIt, class UnaryOperation,
+template <typename InputIt, typename UnaryOperation,
           typename std::enable_if_t<is_unary_operation_on_iterator<UnaryOperation, InputIt>, int> *>
 inline std::size_t Dataset::write(InputIt first_value, InputIt last_value, std::size_t offset,
                                   bool allow_dataset_resize, UnaryOperation op) {
@@ -105,13 +105,13 @@ inline std::size_t Dataset::write(InputIt first_value, InputIt last_value, std::
   return offset;
 }
 
-template <class InputIt, class UnaryOperation,
+template <typename InputIt, typename UnaryOperation,
           typename std::enable_if_t<is_unary_operation_on_iterator<UnaryOperation, InputIt>, int> *>
 inline std::size_t Dataset::append(InputIt first_value, InputIt last_value, UnaryOperation op) {
   return this->write(first_value, last_value, this->size(), true, op);
 }
 
-template <class N, class>
+template <typename N, typename>
 inline std::size_t Dataset::write(N buff, std::size_t offset, bool allow_dataset_resize) {
   [[maybe_unused]] HighFive::SilenceHDF5 silencer{};  // NOLINT
   if (offset >= this->size()) {
@@ -156,12 +156,12 @@ inline std::size_t Dataset::write(const internal::GenericVariant &vbuff, std::si
   return new_offset;
 }
 
-template <class BuffT>
+template <typename BuffT>
 inline std::size_t Dataset::append(const BuffT &buff) {
   return this->write(buff, this->size(), true);
 }
 
-template <class T>
+template <typename T>
 inline void Dataset::write_attribute(std::string_view key, const T &value,
                                      bool overwrite_if_exists) {
   Attribute::write(this->_dataset, key, value, overwrite_if_exists);

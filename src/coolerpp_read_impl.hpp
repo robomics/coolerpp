@@ -71,18 +71,18 @@ namespace internal {
 }
 }  // namespace internal
 
-template <class N>
+template <typename N>
 inline PixelSelector<N> File::fetch(std::string_view query) const {
   return this->fetch<N>(PixelSelector<N>::parse_query(this->_bins, query));
 }
 
-template <class N>
+template <typename N>
 inline PixelSelector<N> File::fetch(std::string_view chrom, std::uint32_t start,
                                     std::uint32_t end) const {
   return this->fetch<N>(PixelCoordinates{this->_bins, chrom, start, end - std::min(1U, end)});
 }
 
-template <class N>
+template <typename N>
 inline PixelSelector<N> File::fetch(PixelCoordinates query) const {
   // clang-format off
   return PixelSelector<N>(this->_index,
@@ -93,7 +93,7 @@ inline PixelSelector<N> File::fetch(PixelCoordinates query) const {
   // clang-format on
 }
 
-template <class N>
+template <typename N>
 inline PixelSelector<N> File::fetch(std::string_view range1, std::string_view range2) const {
   if (range1 == range2) {
     return this->fetch<N>(range1);
@@ -103,7 +103,7 @@ inline PixelSelector<N> File::fetch(std::string_view range1, std::string_view ra
                         PixelSelector<N>::parse_query(this->_bins, range2));
 }
 
-template <class N>
+template <typename N>
 inline PixelSelector<N> File::fetch(std::string_view chrom1, std::uint32_t start1,
                                     std::uint32_t end1, std::string_view chrom2,
                                     std::uint32_t start2, std::uint32_t end2) const {
@@ -117,7 +117,7 @@ inline PixelSelector<N> File::fetch(std::string_view chrom1, std::uint32_t start
   // clang-format on
 }
 
-template <class N>
+template <typename N>
 inline PixelSelector<N> File::fetch(PixelCoordinates coord1, PixelCoordinates coord2) const {
   // clang-format off
   return PixelSelector<N>(this->_index,

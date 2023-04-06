@@ -21,7 +21,7 @@ static inline const std::filesystem::path datadir{"test/data"};  // NOLINT(cert-
 
 namespace coolerpp::test::attribute {
 
-template <class H5Obj, class T>
+template <typename H5Obj, typename T>
 static void compare_attribute(H5Obj& obj, std::string_view key, const T& expected) {
   T buff{};
   obj.getAttribute(std::string{key}).read(buff);

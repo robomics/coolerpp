@@ -27,7 +27,7 @@ namespace fmt {
 template <>
 struct formatter<coolerpp::Chromosome> {
   constexpr auto parse(format_parse_context& ctx) -> decltype(ctx.begin());
-  template <class FormatContext>
+  template <typename FormatContext>
   auto format(const coolerpp::Chromosome& c, FormatContext& ctx) const -> decltype(ctx.out());
 };
 }  // namespace fmt
@@ -100,12 +100,12 @@ class ChromosomeSet {
 
   ChromosomeSet() = default;
 
-  template <class ChromosomeNameIt, class ChromosomeSizeIt>
+  template <typename ChromosomeNameIt, typename ChromosomeSizeIt>
   ChromosomeSet(ChromosomeNameIt first_chrom_name, ChromosomeNameIt last_chrom_name,
                 ChromosomeSizeIt first_chrom_size);
 
   // Note: chromosome IDs are not preserved
-  template <class ChromosomeIt>
+  template <typename ChromosomeIt>
   ChromosomeSet(ChromosomeIt first_chrom, ChromosomeIt last_chrom);
   ChromosomeSet(std::initializer_list<Chromosome> chromosomes);
 
@@ -148,12 +148,12 @@ class ChromosomeSet {
  private:
   void validate_chrom_id(std::uint32_t chrom_id) const;
 
-  template <class ChromosomeNameIt, class ChromosomeSizeIt>
+  template <typename ChromosomeNameIt, typename ChromosomeSizeIt>
   [[nodiscard]] static auto construct_set(ChromosomeNameIt first_chrom_name,
                                           ChromosomeNameIt last_chrom_name,
                                           ChromosomeSizeIt first_chrom_size) -> SetT;
 
-  template <class ChromosomeIt>
+  template <typename ChromosomeIt>
   [[nodiscard]] static auto construct_set(ChromosomeIt first_chrom, ChromosomeIt last_chrom)
       -> SetT;
 };

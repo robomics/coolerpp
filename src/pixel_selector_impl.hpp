@@ -14,7 +14,7 @@
 
 namespace coolerpp {
 
-template <class N>
+template <typename N>
 inline PixelSelector<N>::PixelSelector(std::shared_ptr<const Index> index,
                                        const Dataset &pixels_bin1_id, const Dataset &pixels_bin2_id,
                                        const Dataset &pixels_count,
@@ -22,7 +22,7 @@ inline PixelSelector<N>::PixelSelector(std::shared_ptr<const Index> index,
     : PixelSelector(std::move(index), pixels_bin1_id, pixels_bin2_id, pixels_count, coords,
                     coords) {}
 
-template <class N>
+template <typename N>
 inline PixelSelector<N>::PixelSelector(std::shared_ptr<const Index> index,
                                        const Dataset &pixels_bin1_id, const Dataset &pixels_bin2_id,
                                        const Dataset &pixels_count,
@@ -37,7 +37,7 @@ inline PixelSelector<N>::PixelSelector(std::shared_ptr<const Index> index,
   assert(_index);
 }
 
-template <class N>
+template <typename N>
 inline PixelSelector<N>::PixelSelector(std::shared_ptr<const Index> index,
                                        const Dataset &pixels_bin1_id, const Dataset &pixels_bin2_id,
                                        const Dataset &pixels_count,
@@ -45,14 +45,14 @@ inline PixelSelector<N>::PixelSelector(std::shared_ptr<const Index> index,
     : PixelSelector<N>(std::move(index), pixels_bin1_id, pixels_bin2_id, pixels_count,
                        std::make_shared<PixelCoordinates>(std::move(coords))) {}
 
-template <class N>
+template <typename N>
 inline PixelSelector<N>::PixelSelector(std::shared_ptr<const Index> index,
                                        const Dataset &pixels_bin1_id, const Dataset &pixels_bin2_id,
                                        const Dataset &pixels_count) noexcept
     : PixelSelector<N>(std::move(index), pixels_bin1_id, pixels_bin2_id, pixels_count, nullptr,
                        nullptr) {}
 
-template <class N>
+template <typename N>
 inline PixelSelector<N>::PixelSelector(std::shared_ptr<const Index> index,
                                        const Dataset &pixels_bin1_id, const Dataset &pixels_bin2_id,
                                        const Dataset &pixels_count, PixelCoordinates coord1,
@@ -61,17 +61,17 @@ inline PixelSelector<N>::PixelSelector(std::shared_ptr<const Index> index,
                     std::make_shared<PixelCoordinates>(std::move(coord1)),
                     std::make_shared<PixelCoordinates>(std::move(coord2))) {}
 
-template <class N>
+template <typename N>
 inline auto PixelSelector<N>::begin() const -> iterator {
   return this->cbegin();
 }
 
-template <class N>
+template <typename N>
 inline auto PixelSelector<N>::end() const -> iterator {
   return this->cend();
 }
 
-template <class N>
+template <typename N>
 inline auto PixelSelector<N>::cbegin() const -> iterator {
   if (!this->_coord1) {
     assert(!this->_coord2);
@@ -83,25 +83,25 @@ inline auto PixelSelector<N>::cbegin() const -> iterator {
                   *this->_pixels_count, this->_coord1,          this->_coord2};
 }
 
-template <class N>
+template <typename N>
 inline auto PixelSelector<N>::cend() const -> iterator {
   return iterator::at_end(this->_index, *this->_pixels_bin1_id, *this->_pixels_bin2_id,
                           *this->_pixels_count, this->_coord1, this->_coord2);
 }
 
-template <class N>
+template <typename N>
 constexpr const PixelCoordinates &PixelSelector<N>::coord1() const noexcept {
   assert(this->_coord1);
   return *this->_coord1;
 }
 
-template <class N>
+template <typename N>
 constexpr const PixelCoordinates &PixelSelector<N>::coord2() const noexcept {
   assert(this->_coord1);
   return *this->_coord2;
 }
 
-template <class N>
+template <typename N>
 inline PixelCoordinates PixelSelector<N>::parse_query(std::shared_ptr<const BinTableLazy> bins,
                                                       std::string_view query) {
   assert(bins);
@@ -174,7 +174,7 @@ inline PixelCoordinates PixelSelector<N>::parse_query(std::shared_ptr<const BinT
   return {bins, chrom, start_pos, end_pos};
 }
 
-template <class N>
+template <typename N>
 inline PixelSelector<N>::iterator::iterator(std::shared_ptr<const Index> index,
                                             const Dataset &pixels_bin1_id,
                                             const Dataset &pixels_bin2_id,
@@ -187,7 +187,7 @@ inline PixelSelector<N>::iterator::iterator(std::shared_ptr<const Index> index,
       _bin2_id_last(pixels_bin2_id.end<std::uint64_t>()),
       _count_it(pixels_count.begin<N>()) {}
 
-template <class N>
+template <typename N>
 inline PixelSelector<N>::iterator::iterator(std::shared_ptr<const Index> index,
                                             const Dataset &pixels_bin1_id,
                                             const Dataset &pixels_bin2_id,
@@ -226,7 +226,7 @@ inline PixelSelector<N>::iterator::iterator(std::shared_ptr<const Index> index,
   }
 }
 
-template <class N>
+template <typename N>
 inline auto PixelSelector<N>::iterator::at_end(std::shared_ptr<const Index> index,
                                                const Dataset &pixels_bin1_id,
                                                const Dataset &pixels_bin2_id,
@@ -241,7 +241,7 @@ inline auto PixelSelector<N>::iterator::at_end(std::shared_ptr<const Index> inde
   return it;
 }
 
-template <class N>
+template <typename N>
 inline auto PixelSelector<N>::iterator::at_end(std::shared_ptr<const Index> index,
                                                const Dataset &pixels_bin1_id,
                                                const Dataset &pixels_bin2_id,
@@ -307,39 +307,39 @@ inline auto PixelSelector<N>::iterator::at_end(std::shared_ptr<const Index> inde
   return it;
 }
 
-template <class N>
+template <typename N>
 constexpr bool PixelSelector<N>::iterator::operator==(const iterator &other) const noexcept {
   assert(this->_index == other._index);
   return this->_bin2_id_it == other._bin2_id_it;
 }
-template <class N>
+template <typename N>
 constexpr bool PixelSelector<N>::iterator::operator!=(const iterator &other) const noexcept {
   return !(*this == other);
 }
 
-template <class N>
+template <typename N>
 constexpr bool PixelSelector<N>::iterator::operator<(const iterator &other) const noexcept {
   assert(this->_index == other._index);
   return this->_bin2_id_it < other._bin2_id_it;
 }
-template <class N>
+template <typename N>
 constexpr bool PixelSelector<N>::iterator::operator<=(const iterator &other) const noexcept {
   assert(this->_index == other._index);
   return this->_bin2_id_it <= other._bin2_id_it;
 }
 
-template <class N>
+template <typename N>
 constexpr bool PixelSelector<N>::iterator::operator>(const iterator &other) const noexcept {
   assert(this->_index == other._index);
   return this->_bin2_id_it > other._bin2_id_it;
 }
-template <class N>
+template <typename N>
 constexpr bool PixelSelector<N>::iterator::operator>=(const iterator &other) const noexcept {
   assert(this->_index == other._index);
   return this->_bin2_id_it >= other._bin2_id_it;
 }
 
-template <class N>
+template <typename N>
 inline auto PixelSelector<N>::iterator::operator*() const -> value_type {
   assert(this->_index);
   assert(this->_bin2_id_it < this->_bin2_id_last);
@@ -351,7 +351,7 @@ inline auto PixelSelector<N>::iterator::operator*() const -> value_type {
   // clang-format on
 }
 
-template <class N>
+template <typename N>
 inline auto PixelSelector<N>::iterator::operator++() -> iterator & {
   assert(this->_bin2_id_it < this->_bin2_id_last);
   std::ignore = ++this->_bin1_id_it;
@@ -365,14 +365,14 @@ inline auto PixelSelector<N>::iterator::operator++() -> iterator & {
   return *this;
 }
 
-template <class N>
+template <typename N>
 inline auto PixelSelector<N>::iterator::operator++(int) -> iterator {
   auto it = *this;
   std::ignore = ++(*this);
   return it;
 }
 
-template <class N>
+template <typename N>
 inline void PixelSelector<N>::iterator::jump_to_row(std::uint64_t bin_id) {
   assert(this->_index);
   assert(bin_id <= this->_index->bins().size());
@@ -394,7 +394,7 @@ inline void PixelSelector<N>::iterator::jump_to_row(std::uint64_t bin_id) {
   this->_count_it += offset;
 }
 
-template <class N>
+template <typename N>
 inline void PixelSelector<N>::iterator::jump_to_col(std::uint64_t bin_id) {
   assert(this->_index);
   assert(bin_id <= this->_index->bins().size());
@@ -436,7 +436,7 @@ inline void PixelSelector<N>::iterator::jump_to_col(std::uint64_t bin_id) {
   assert(this->_bin2_id_it <= this->_bin2_id_last);
 }
 
-template <class N>
+template <typename N>
 inline void PixelSelector<N>::iterator::jump(std::uint64_t bin1_id, std::uint64_t bin2_id) {
   assert(bin1_id <= bin2_id);
 
@@ -446,7 +446,7 @@ inline void PixelSelector<N>::iterator::jump(std::uint64_t bin1_id, std::uint64_
   }
 }
 
-template <class N>
+template <typename N>
 inline void PixelSelector<N>::iterator::jump_to_next_overlap() {
   assert(this->_coord1);
   assert(this->_coord2);
@@ -482,7 +482,7 @@ inline void PixelSelector<N>::iterator::jump_to_next_overlap() {
   }
 }
 
-template <class N>
+template <typename N>
 inline bool PixelSelector<N>::iterator::discard() const {
   if (!this->_coord1) {
     // Iterator is traversing the entire matrix:
@@ -504,7 +504,7 @@ inline bool PixelSelector<N>::iterator::discard() const {
   return !overlaps_range1 || !overlaps_range2;
 }
 
-template <class N>
+template <typename N>
 inline std::size_t PixelSelector<N>::iterator::h5_offset() const noexcept {
   assert(this->_bin1_id_it.h5_offset() == this->_bin2_id_it.h5_offset());
   assert(this->_count_it.h5_offset() == this->_bin2_id_it.h5_offset());
@@ -512,7 +512,7 @@ inline std::size_t PixelSelector<N>::iterator::h5_offset() const noexcept {
   return this->_bin2_id_it.h5_offset();
 }
 
-template <class N>
+template <typename N>
 inline void PixelSelector<N>::iterator::jump_at_end() {
   if (this->_bin2_id_it == this->_bin2_id_last) {
     return;
