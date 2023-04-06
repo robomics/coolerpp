@@ -75,16 +75,13 @@ void init_mcool(std::string_view file_path, InputIt first_resolution, InputIt la
                 bool force_overwrite = false);
 void init_mcool(std::string_view file_path, bool force_overwrite = false);
 
-template <class ChromSizeInputIt, class CellIDInputIt>
-void init_scool(std::string_view file_path, ChromSizeInputIt first_chrom,
-                ChromSizeInputIt last_chrom, CellIDInputIt first_cell_id,
-                CellIDInputIt last_cell_id, bool force_overwrite = false);
-template <class InputIt>
-void init_scool(std::string_view file_path, InputIt first_chrom, InputIt last_chrom,
-                bool force_overwrite = false);
-
-[[nodiscard]] Chromosome find_longest_chromosome(const ChromosomeSet &chroms);
-[[nodiscard]] Chromosome find_chromosome_with_longest_name(const ChromosomeSet &chroms);
+// template <class ChromSizeInputIt, class CellIDInputIt>
+// void init_scool(std::string_view file_path, ChromSizeInputIt first_chrom,
+//                 ChromSizeInputIt last_chrom, CellIDInputIt first_cell_id,
+//                 CellIDInputIt last_cell_id, bool force_overwrite = false);
+// template <class InputIt>
+// void init_scool(std::string_view file_path, InputIt first_chrom, InputIt last_chrom,
+//                 bool force_overwrite = false);
 
 class File {
  public:
@@ -298,4 +295,9 @@ class File {
 
 }  // namespace coolerpp
 
+#include "../../coolerpp_accessors_impl.hpp"
 #include "../../coolerpp_impl.hpp"
+#include "../../coolerpp_read_impl.hpp"
+#include "../../coolerpp_standard_attr_impl.hpp"
+#include "../../coolerpp_validation_impl.hpp"
+#include "../../coolerpp_write_impl.hpp"
