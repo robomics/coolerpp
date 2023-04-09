@@ -25,6 +25,7 @@ inline HighFive::DataSetCreateProps Dataset::generate_default_dset_create_props(
     std::uint_fast8_t compression_lvl, const std::size_t chunk_size) {
   assert(chunk_size != 0);
   HighFive::DataSetCreateProps props{};
+  props.add(HighFive::Shuffle());
   props.add(HighFive::Deflate(conditional_static_cast<std::uint32_t>(compression_lvl)));
   props.add(HighFive::Chunking(chunk_size / sizeof(std::int32_t)));
   return props;
