@@ -108,9 +108,6 @@ jobs:
 
     container:
       image: ${{ matrix.image }}:2.0.4
-      options: '--user=root'
-      volumes:
-        - github.workspace
 
     env:
       CONAN_HOME: '/home/conan/.conan2'
@@ -154,7 +151,7 @@ jobs:
              -s build_type="${{ matrix.build_type }}" \
              -s compiler.libcxx=libstdc++11           \
              -s compiler.cppstd=17                    \
-             --output-folder="${{ github.workspace }}/build"
+             --output-folder=build
 
       - name: Clean Conan cache (post-build)
         if: steps.cache-conan.outputs.cache-hit != 'true'
@@ -165,24 +162,22 @@ jobs:
 
       - name: Configure project
         run: |
-          git config --global --add safe.directory ${{ github.workspace }}
-
           cmake -DCMAKE_BUILD_TYPE=${{ matrix.build_type }}          \
-                -DCMAKE_PREFIX_PATH="${{ github.workspace }}/build"  \
+                -DCMAKE_PREFIX_PATH=build                            \
                 -DENABLE_DEVELOPER_MODE=${{ matrix.developer_mode }} \
                 -DOPT_ENABLE_CLANG_TIDY=OFF                          \
                 -DOPT_ENABLE_CPPCHECK=OFF                            \
                 -DCOOLERPP_ENABLE_TESTING=ON                         \
                 -DCOOLERPP_BUILD_EXAMPLES=ON                         \
                 -DOPT_ENABLE_CONAN=OFF                               \
-                -S "${{ github.workspace }}"                         \
-                -B "${{ github.workspace }}/build"
+                -S .                                                 \
+                -B build
 
       - name: Build project
-        run: cmake --build ${{ github.workspace }}/build -j $(nproc)
+        run: cmake --build build -j $(nproc)
 
       - name: Run unit tests
-        working-directory: ${{ github.workspace }}/build
+        working-directory: build
         run: |
           ctest --test-dir .        \
                 --schedule-random   \

@@ -106,9 +106,6 @@ jobs:
     runs-on: ubuntu-latest
     container:
       image: conanio/clang14-ubuntu16.04:2.0.4
-      options: '--user=root'
-      volumes:
-        - github.workspace
 
     env:
       CONAN_HOME: '/home/conan/.conan2'
@@ -151,7 +148,7 @@ jobs:
              -s build_type=Release          \
              -s compiler.libcxx=libstdc++11 \
              -s compiler.cppstd=17          \
-             --output-folder="${{ github.workspace }}/build"
+             --output-folder=build
 
       - name: Clean Conan cache (post-build)
         if: steps.cache-conan.outputs.cache-hit != 'true'
@@ -162,24 +159,22 @@ jobs:
 
       - name: Configure project
         run: |
-          git config --global --add safe.directory ${{ github.workspace }}
-          mkdir ${{ github.workspace }}/build
-          cmake -DCMAKE_BUILD_TYPE=Release                          \
-                -DCMAKE_PREFIX_PATH="${{ github.workspace }}/build" \
-                -DENABLE_DEVELOPER_MODE=OFF                         \
-                -DCOOLERPP_BUILD_EXAMPLES=ON                        \
-                -DCOOLERPP_ENABLE_TESTING=OFF                       \
-                -S "${{ github.workspace }}"                        \
-                -B "${{ github.workspace }}/build"
+          cmake -DCMAKE_BUILD_TYPE=Release     \
+                -DCMAKE_PREFIX_PATH=build      \
+                -DENABLE_DEVELOPER_MODE=OFF    \
+                -DCOOLERPP_BUILD_EXAMPLES=ON   \
+                -DCOOLERPP_ENABLE_TESTING=OFF  \
+                -S .                           \
+                -B build
 
       - name: Build project
-        run: cmake --build ${{ github.workspace }}/build -j $(nproc)
+        run: cmake --build build -j $(nproc)
 
       - name: Upload coolerpp_dump
         uses: actions/upload-artifact@v3
         with:
           name: coolerpp-dump-fuzzy-testing
-          path: ${{ github.workspace }}/build/examples/coolerpp_dump
+          path: build/examples/coolerpp_dump
           if-no-files-found: error
           retention-days: 1
 
@@ -188,7 +183,6 @@ jobs:
     needs: [ build-project, preproc-test-dataset ]
     container:
       image: ubuntu:22.04
-      options: "-v ${{ github.workspace }}:${{ github.workspace }}"
 
     steps:
       - uses: actions/checkout@v3

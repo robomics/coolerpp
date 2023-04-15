@@ -85,7 +85,7 @@ jobs:
              --build=missing         \
              --build=cascade         \
              -pr default             \
-             -s runtime_type=Release \
+             -s build_type=Release   \
              -s compiler.cppstd=17   \
              --output-folder="${{ github.workspace }}/build"
 
