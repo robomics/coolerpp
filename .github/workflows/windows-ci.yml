@@ -86,8 +86,9 @@ jobs:
              --build=cascade         \
              -pr default             \
              -s build_type=Release   \
+             -s compiler=msvc        \
              -s compiler.cppstd=17   \
-             --output-folder="${{ github.workspace }}/build"
+             --output-folder=build
 
       - name: Configure project
         run: |

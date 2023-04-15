@@ -103,6 +103,7 @@ jobs:
                 -DOPT_ENABLE_SANITIZER_ADDRESS=OFF            \
                 -DOPT_ENABLE_SANITIZER_UNDEFINED_BEHAVIOR=OFF \
                 -DOPT_ENABLE_CLANG_TIDY=ON                    \
+                -DOPT_ENABLE_CONAN=OFF                        \
                 -DCOOLERPP_BUILD_EXAMPLES=ON                  \
                 -DCOOLERPP_ENABLE_TESTING=ON                  \
                 -S .                                          \

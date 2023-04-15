@@ -106,6 +106,7 @@ jobs:
     runs-on: ubuntu-latest
     container:
       image: conanio/clang14-ubuntu16.04:2.0.4
+      options: "--user=root"
 
     env:
       CONAN_HOME: '/home/conan/.conan2'
