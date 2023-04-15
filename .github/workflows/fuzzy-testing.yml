@@ -13,7 +13,7 @@ on:
       - "src/**"
       - "test/scripts/fuzzy_test.py"
       - "CMakeLists.txt"
-      - "conanfile.py"
+      - "conanfile.txt"
     tags:
       - 'v*.*.*'
 
@@ -25,7 +25,7 @@ on:
       - "src/**"
       - "test/scripts/fuzzy_test.py"
       - "CMakeLists.txt"
-      - "conanfile.py"
+      - "conanfile.txt"
 
   schedule:
     # Run weekly
@@ -121,7 +121,7 @@ jobs:
       - name: Generate cache key
         id: cache-key
         run: |
-          hash="${{ hashFiles('conanfile.py', '.github/workflows/fuzzy-testing.yml') }}"
+          hash="${{ hashFiles('conanfile.txt', '.github/workflows/fuzzy-testing.yml') }}"
 
           echo "key=fuzzy-testing-$hash" >> $GITHUB_OUTPUT
 
@@ -143,11 +143,12 @@ jobs:
       - name: Install build dependencies
         working-directory: ${{ github.workspace }}/build
         run: |
-          conan install ../conanfile.py     \
+          conan install .                   \
              --build outdated               \
              -s build_type=Release          \
              -s compiler.libcxx=libstdc++11 \
-             -s compiler.cppstd=17
+             -s compiler.cppstd=17          \
+             --output-folder="${{ github.workspace }}/build"
 
       - name: Clean Conan cache (post-build)
         if: steps.cache-conan.outputs.cache-hit != 'true'

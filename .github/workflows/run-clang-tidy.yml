@@ -14,7 +14,7 @@ on:
       - "test/**"
       - ".clang-tidy"
       - "CMakeLists.txt"
-      - "conanfile.py"
+      - "conanfile.txt"
     tags:
       - 'v*.*.*'
 
@@ -27,7 +27,7 @@ on:
       - "test/**"
       - ".clang-tidy"
       - "CMakeLists.txt"
-      - "conanfile.py"
+      - "conanfile.txt"
 
 # https://stackoverflow.com/a/72408109
 concurrency:
@@ -62,7 +62,7 @@ jobs:
       - name: Generate cache key
         id: cache-key
         run: |
-          hash="${{ hashFiles('conanfile.py', '.github/workflows/run-clang-tidy.yml') }}"
+          hash="${{ hashFiles('conanfile.txt', '.github/workflows/run-clang-tidy.yml') }}"
 
           echo "key=run-clang-tidy-$hash" >> $GITHUB_OUTPUT
 
@@ -82,13 +82,13 @@ jobs:
           conan remove -f "*" --system-reqs
 
       - name: Install build dependencies
-        working-directory: ${{ github.workspace }}/build
         run: |
-          conan install ../conanfile.py     \
+          conan install .                   \
              --build outdated               \
              -s build_type=Debug            \
              -s compiler.libcxx=libstdc++11 \
-             -s compiler.cppstd=17
+             -s compiler.cppstd=17          \
+             --output-folder="${{ github.workspace }}/build"
 
       - name: Configure project
         run: |

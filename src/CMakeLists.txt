@@ -39,8 +39,6 @@ target_include_directories(coolerpp INTERFACE ${CMAKE_CURRENT_SOURCE_DIR}/includ
 target_link_libraries(
   coolerpp
   INTERFACE coolerpp_project_warnings coolerpp_project_options
-            fmt::fmt # For some reason linking fmt as sys library raises a
-                     # "Found relative path while evaluating include directories" error
 )
 # cmake-format: on
 
@@ -48,7 +46,8 @@ target_link_system_libraries(
   coolerpp
   INTERFACE
   FastFloat::fast_float
-  HighFive::HighFive
+  fmt::fmt
+  HighFive
   tsl::hopscotch_map
   tsl::ordered_map
   std::filesystem)
