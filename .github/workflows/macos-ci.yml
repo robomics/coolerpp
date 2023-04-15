@@ -99,8 +99,7 @@ jobs:
       - name: Configure Conan
         if: steps.cache-conan.outputs.cache-hit != 'true'
         run: |
-          conan profile new "$CONAN_USER_HOME/profiles/default" --detect --force
-          conan config init
+          conan profile detect --force
           conan profile update settings.compiler=${{ matrix.compiler-name }} default
           conan profile update settings.compiler.version=${{ matrix.compiler-version }} default
           conan profile update settings.compiler.cppstd=17 default
@@ -111,10 +110,10 @@ jobs:
       - name: Clean Conan cache (pre-build)
         if: steps.cache-conan.outputs.cache-hit != 'true'
         run: |
-          mkdir -p build
-          conan remove -f "*" --builds
-          conan remove -f "*" --src
-          conan remove -f "*" --system-reqs
+          conan cache clean "*" --build
+          conan cache clean "*" --download
+          conan cache clean "*" --source
+          conan remove --confirm "*"
 
       - name: Install build dependencies
         run: |
@@ -128,10 +127,9 @@ jobs:
       - name: Clean Conan cache (post-build)
         if: steps.cache-conan.outputs.cache-hit != 'true'
         run: |
-          conan remove -f "*" --builds
-          conan remove -f "*" --src
-          conan remove -f "*" --system-reqs
-          conan remove -f "*" --outdated
+          conan cache clean "*" --build
+          conan cache clean "*" --download
+          conan cache clean "*" --source
 
       - name: Configure project
         run: |
