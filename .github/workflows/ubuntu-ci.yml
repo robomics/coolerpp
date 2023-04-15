@@ -108,6 +108,7 @@ jobs:
 
     container:
       image: ${{ matrix.image }}:2.0.4
+      options: '--user=1001'
       volumes:
         - github.workspace
 
