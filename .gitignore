@@ -16,3 +16,4 @@ test/reference_impl
 # Ignored files
 gmon.out
 perf.*
+compile_commands.json
