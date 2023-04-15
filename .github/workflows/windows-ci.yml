@@ -33,10 +33,7 @@ concurrency:
   cancel-in-progress: true
 
 env:
-  CONAN_REVISIONS_ENABLED: "1"
-  CONAN_USER_HOME: "${{ github.workspace }}/conan-cache"
-  CONAN_USER_HOME_SHORT: "${{ github.workspace }}/conan-cache/short"
-  CONAN_V2_MODE: "1"
+  CONAN_HOME: "${{ github.workspace }}/.conan2"
 
 defaults:
   run:
@@ -67,7 +64,7 @@ jobs:
         uses: actions/cache@v3
         with:
           key: conan-${{ hashFiles('conanfile.txt', '.github/workflows/windows-ci.yml') }}
-          path: ${{ env.CONAN_USER_HOME }}
+          path: ${{ env.CONAN_HOME }}
 
       - name: Clean Conan cache (pre-build)
         if: steps.cache-conan.outputs.cache-hit != 'true'
