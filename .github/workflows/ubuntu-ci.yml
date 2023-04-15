@@ -111,7 +111,7 @@ jobs:
       options: "-v ${{ github.workspace }}:${{ github.workspace }} --user=root"
 
     env:
-      CONAN_USER_HOME: '/home/conan/'
+      CONAN_HOME: '/home/conan/.conan2'
 
     steps:
       - uses: actions/checkout@v3
