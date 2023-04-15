@@ -48,10 +48,10 @@ jobs:
       fail-fast: false
       matrix:
         include:
-          - { compiler: clang, os: 'macos-10.15', conan-ver: '1.59.*', cmake-ver: '3.26.*', build_type: Release, developer_mode: OFF }
-          - { compiler: clang, os: 'macos-11',    conan-ver: '1.59.*', cmake-ver: '3.26.*', build_type: Release, developer_mode: OFF }
-          - { compiler: clang, os: 'macos-12',    conan-ver: '1.59.*', cmake-ver: '3.26.*', build_type: Release, developer_mode: OFF }
-          - { compiler: clang, os: 'macos-12',    conan-ver: '1.59.*', cmake-ver: '3.26.*', build_type: Debug,   developer_mode: OFF }
+          - { compiler-name: clang, compiler-version: 12, os: 'macos-10.15', conan-ver: '1.59.*', cmake-ver: '3.26.*', build_type: Release, developer_mode: OFF }
+          - { compiler-name: clang, compiler-version: 13, os: 'macos-11',    conan-ver: '1.59.*', cmake-ver: '3.26.*', build_type: Release, developer_mode: OFF }
+          - { compiler-name: clang, compiler-version: 14, os: 'macos-12',    conan-ver: '1.59.*', cmake-ver: '3.26.*', build_type: Release, developer_mode: OFF }
+          - { compiler-name: clang, compiler-version: 14, os: 'macos-12',    conan-ver: '1.59.*', cmake-ver: '3.26.*', build_type: Debug,   developer_mode: OFF }
 
     steps:
       - uses: actions/checkout@v3
@@ -81,7 +81,7 @@ jobs:
         id: cache-key
         run: |
           set -u
-          
+
           os="${{ matrix.os }}"
           compiler="${{ matrix.compiler }}"
           build_type="${{ matrix.build_type }}"
