@@ -112,6 +112,7 @@ jobs:
       - name: Install build dependencies
         run: |
           conan install .                                         \
+             --build=missing                                      \
              --build=cascade                                      \
              -pr default                                          \
              -s "build_type=${{ matrix.build_type }}"             \
