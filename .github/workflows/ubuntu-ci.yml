@@ -138,6 +138,11 @@ jobs:
           key: conan-${{ steps.cache-key.outputs.key }}
           path: ${{ env.CONAN_USER_HOME }}
 
+      - name: Configure Conan
+        if: steps.cache-conan.outputs.cache-hit != 'true'
+        run: |
+          ln -s /home/conan/.conan2/ "$CONAN_USER_HOME/.conan2"
+
       - name: Clean Conan cache (pre-build)
         if: steps.cache-conan.outputs.cache-hit != 'true'
         run: |
