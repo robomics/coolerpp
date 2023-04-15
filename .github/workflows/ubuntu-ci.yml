@@ -152,7 +152,7 @@ jobs:
       - name: Install build dependencies
         working-directory: ${{ github.workspace }}/build
         run: |
-          conan install conanfile.py                  \
+          conan install ../conanfile.py               \
              --build outdated                         \
              -s build_type="${{ matrix.build_type }}" \
              -s compiler.libcxx=libstdc++11           \
