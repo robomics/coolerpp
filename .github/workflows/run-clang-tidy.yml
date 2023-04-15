@@ -14,7 +14,7 @@ on:
       - "test/**"
       - ".clang-tidy"
       - "CMakeLists.txt"
-      - "conanfile.py"
+      - "conanfile.txt"
     tags:
       - 'v*.*.*'
 
@@ -27,7 +27,7 @@ on:
       - "test/**"
       - ".clang-tidy"
       - "CMakeLists.txt"
-      - "conanfile.py"
+      - "conanfile.txt"
 
 # https://stackoverflow.com/a/72408109
 concurrency:
@@ -35,16 +35,14 @@ concurrency:
   cancel-in-progress: true
 
 env:
-  CONAN_USER_HOME: "${{ github.workspace }}/conan-cache"
-  CONAN_USER_HOME_SHORT: "${{ github.workspace }}/conan-cache/short"
-  CONAN_V2_MODE: "1"
+  CONAN_HOME: '/root/.conan2'
 
 jobs:
   run-clang-tidy:
     runs-on: ubuntu-latest
     container:
       image: ubuntu:22.04
-      options: "-v ${{ github.workspace }}:${{ github.workspace }}"
+      options: '--user=root'
 
     steps:
       - uses: actions/checkout@v3
@@ -53,8 +51,8 @@ jobs:
         run: |
           apt-get update
           apt-get install -y clang clang-tidy cmake git python3-pip
-          
-          pip install --no-cache-dir 'conan>=1.58,<2'
+
+          pip install --no-cache-dir 'conan==2.0.*'
 
       - name: Print clang-tidy version
         run: clang-tidy --version
@@ -62,7 +60,7 @@ jobs:
       - name: Generate cache key
         id: cache-key
         run: |
-          hash="${{ hashFiles('conanfile.py', '.github/workflows/run-clang-tidy.yml') }}"
+          hash="${{ hashFiles('conanfile.txt', '.github/workflows/run-clang-tidy.yml') }}"
 
           echo "key=run-clang-tidy-$hash" >> $GITHUB_OUTPUT
 
@@ -71,46 +69,55 @@ jobs:
         uses: actions/cache@v3
         with:
           key: ${{ steps.cache-key.outputs.key }}
-          path: ${{ env.CONAN_USER_HOME }}
+          path: ${{ env.CONAN_HOME }}
+
+      - name: Configure Conan
+        if: steps.cache-conan.outputs.cache-hit != 'true'
+        run: |
+          conan profile detect --force
 
       - name: Clean Conan cache (pre-build)
         if: steps.cache-conan.outputs.cache-hit != 'true'
         run: |
-          conan remove -f "*" --builds
-          conan remove -f "*" --src
-          conan remove -f "*" --system-reqs
+          conan cache clean "*" --build
+          conan cache clean "*" --download
+          conan cache clean "*" --source
+          conan remove --confirm "*"
 
-      - name: Clean up Conan
-        if: steps.cache-conan.outputs.cache-hit != 'true'
+      - name: Install build dependencies
         run: |
-          conan remove -f "*" --builds
-          conan remove -f "*" --src
-          conan remove -f "*" --system-reqs
+          conan install .                   \
+             --build=missing                \
+             --build=cascade                \
+             -pr default                    \
+             -s build_type=Debug            \
+             -s compiler.libcxx=libstdc++11 \
+             -s compiler.cppstd=17          \
+             --output-folder=build
 
       - name: Configure project
         run: |
-          git config --global --add safe.directory ${{ github.workspace }}
-          mkdir ${{ github.workspace }}/build
           cmake -DCMAKE_BUILD_TYPE=Debug                      \
+                -DCMAKE_PREFIX_PATH="$PWD/build"              \
                 -DENABLE_DEVELOPER_MODE=ON                    \
                 -DOPT_ENABLE_SANITIZER_ADDRESS=OFF            \
                 -DOPT_ENABLE_SANITIZER_UNDEFINED_BEHAVIOR=OFF \
                 -DOPT_ENABLE_CLANG_TIDY=ON                    \
+                -DOPT_ENABLE_CONAN=OFF                        \
                 -DCOOLERPP_BUILD_EXAMPLES=ON                  \
                 -DCOOLERPP_ENABLE_TESTING=ON                  \
-                -S "${{ github.workspace }}"                  \
-                -B "${{ github.workspace }}/build"
+                -S .                                          \
+                -B build
 
       - name: Clean Conan cache (post-build)
         if: steps.cache-conan.outputs.cache-hit != 'true'
         run: |
-          conan remove -f "*" --builds
-          conan remove -f "*" --src
-          conan remove -f "*" --system-reqs
-          conan remove -f "*" --outdated
+          conan cache clean "*" --build
+          conan cache clean "*" --download
+          conan cache clean "*" --source
 
       - name: Build project
-        run: cmake --build ${{ github.workspace }}/build -j $(nproc)
+        run: cmake --build build -j $(nproc)
 
 
   clang-tidy-status-check:
