@@ -37,7 +37,7 @@ concurrency:
   cancel-in-progress: true
 
 env:
-  CONAN_HOME: "${{ github.workspace }}/.conan2"
+  CONAN_HOME: '/home/conan/.conan2'
   TEST_DATASET_URL: 'https://4dn-open-data-public.s3.amazonaws.com/fourfront-webprod/wfoutput/27bbfb40-0224-427c-be41-398b43d70c48/4DNFI9FVHJZQ.mcool'
   TEST_DATASET_SHA256: '1bd4b092fada8aedfcf878befba29b1ef3b7adbc7efeb539cd7e381eb3922158'
 
