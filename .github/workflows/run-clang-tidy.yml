@@ -98,7 +98,7 @@ jobs:
       - name: Configure project
         run: |
           cmake -DCMAKE_BUILD_TYPE=Debug                      \
-                -DCMAKE_PREFIX_PATH=build                     \
+                -DCMAKE_PREFIX_PATH="$PWD/build"              \
                 -DENABLE_DEVELOPER_MODE=ON                    \
                 -DOPT_ENABLE_SANITIZER_ADDRESS=OFF            \
                 -DOPT_ENABLE_SANITIZER_UNDEFINED_BEHAVIOR=OFF \
