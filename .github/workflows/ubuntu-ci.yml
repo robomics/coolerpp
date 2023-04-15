@@ -108,14 +108,13 @@ jobs:
 
     container:
       image: ${{ matrix.image }}:2.0.4
-      options: "-v ${{ github.workspace }}:${{ github.workspace }}"
+      options: "-v ${{ github.workspace }}:${{ github.workspace }} --user=root"
+
+    env:
+      CONAN_USER_HOME: '/home/conan/'
 
     steps:
       - uses: actions/checkout@v3
-
-      - name: Fix permissions
-        run: |
-          sudo chown -R "$(whoami):$(whoami)" '${{ github.workspace }}'
 
       - name: Update CMake
         run: pip install --no-cache-dir 'cmake==3.26.*'
@@ -164,6 +163,8 @@ jobs:
 
       - name: Configure project
         run: |
+          git config --global --add safe.directory ${{ github.workspace }}
+
           cmake -DCMAKE_BUILD_TYPE=${{ matrix.build_type }}          \
                 -DCMAKE_PREFIX_PATH="${{ github.workspace }}/build"  \
                 -DENABLE_DEVELOPER_MODE=${{ matrix.developer_mode }} \
