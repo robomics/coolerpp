@@ -35,7 +35,6 @@ concurrency:
 env:
   CONAN_USER_HOME: "${{ github.workspace }}/conan-cache"
   CONAN_USER_HOME_SHORT: "${{ github.workspace }}/conan-cache/short"
-  CONAN_V2_MODE: "1"
 
 defaults:
   run:
