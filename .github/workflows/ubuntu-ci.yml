@@ -141,6 +141,7 @@ jobs:
       - name: Configure Conan
         if: steps.cache-conan.outputs.cache-hit != 'true'
         run: |
+          mkdir -p "$CONAN_USER_HOME"
           ln -s /home/conan/.conan2/ "$CONAN_USER_HOME/.conan2"
 
       - name: Clean Conan cache (pre-build)
