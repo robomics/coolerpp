@@ -51,7 +51,7 @@ jobs:
 
       - name: Generate requirements.txt for pip
         run: |
-          echo 'conan==1.59.*' > requirements.txt
+          echo 'conan==2.0.*' > requirements.txt
 
       - uses: actions/setup-python@v4
         with:

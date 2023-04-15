@@ -117,7 +117,7 @@ jobs:
       matrix: ${{ fromJSON(needs.matrix-factory.outputs.matrix) }}
 
     container:
-      image: ${{ matrix.image }}:1.59.0
+      image: ${{ matrix.image }}:2.0.2
       options: "-v ${{ github.workspace }}:${{ github.workspace }} --user=root"
 
     steps:
