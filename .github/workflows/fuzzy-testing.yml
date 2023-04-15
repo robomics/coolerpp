@@ -108,7 +108,7 @@ jobs:
   build-project:
     runs-on: ubuntu-latest
     container:
-      image: conanio/clang14-ubuntu16.04:2.0.2
+      image: conanio/clang14-ubuntu16.04:2.0.4
       options: "-v ${{ github.workspace }}:${{ github.workspace }} --user root"
 
     steps:
@@ -135,15 +135,17 @@ jobs:
       - name: Clean Conan cache (pre-build)
         if: steps.cache-conan.outputs.cache-hit != 'true'
         run: |
-          mkdir -p build
-          conan remove -f "*" --builds
-          conan remove -f "*" --src
-          conan remove -f "*" --system-reqs
+          conan cache clean "*" --build
+          conan cache clean "*" --download
+          conan cache clean "*" --source
+          conan remove --confirm "*"
 
       - name: Install build dependencies
         run: |
           conan install .                   \
-             --build outdated               \
+             --build=missing                \
+             --build=cascade                \
+             -pr default                    \
              -s build_type=Release          \
              -s compiler.libcxx=libstdc++11 \
              -s compiler.cppstd=17          \
@@ -152,10 +154,9 @@ jobs:
       - name: Clean Conan cache (post-build)
         if: steps.cache-conan.outputs.cache-hit != 'true'
         run: |
-          conan remove -f "*" --builds
-          conan remove -f "*" --src
-          conan remove -f "*" --system-reqs
-          conan remove -f "*" --outdated
+          conan cache clean "*" --build
+          conan cache clean "*" --download
+          conan cache clean "*" --source
 
       - name: Configure project
         run: |

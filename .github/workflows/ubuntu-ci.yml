@@ -77,7 +77,6 @@ jobs:
             // Debug builds (short CI)
             includes.push({ image: 'conanio/gcc8-ubuntu16.04',      build_type: 'Debug',   developer_mode: 'OFF' })
             includes.push({ image: 'conanio/gcc12-ubuntu16.04',     build_type: 'Debug',   developer_mode: 'ON'  })
-            includes.push({ image: 'conanio/clang8',                build_type: 'Debug',   developer_mode: 'OFF' })
             includes.push({ image: 'conanio/clang14-ubuntu16.04',   build_type: 'Debug',   developer_mode: 'ON'  })
             // Release builds (short CI)
             includes.push({ image: 'conanio/gcc12-ubuntu16.04',     build_type: 'Release', developer_mode: 'ON'  })
@@ -90,7 +89,6 @@ jobs:
             includes.push({ image: 'conanio/gcc10-ubuntu16.04',     build_type: 'Debug',   developer_mode: 'OFF' })
             includes.push({ image: 'conanio/gcc11-ubuntu16.04',     build_type: 'Debug',   developer_mode: 'ON'  })
             includes.push({ image: 'conanio/gcc12-ubuntu16.04',     build_type: 'Debug',   developer_mode: 'ON'  })
-            includes.push({ image: 'conanio/clang9',                build_type: 'Debug',   developer_mode: 'OFF' })
             includes.push({ image: 'conanio/clang10-ubuntu16.04',   build_type: 'Debug',   developer_mode: 'OFF' })
             includes.push({ image: 'conanio/clang11-ubuntu16.04',   build_type: 'Debug',   developer_mode: 'OFF' })
             includes.push({ image: 'conanio/clang12-ubuntu16.04',   build_type: 'Debug',   developer_mode: 'OFF' })
@@ -101,8 +99,6 @@ jobs:
             includes.push({ image: 'conanio/gcc9-ubuntu16.04',      build_type: 'Release', developer_mode: 'OFF' })
             includes.push({ image: 'conanio/gcc10-ubuntu16.04',     build_type: 'Release', developer_mode: 'ON'  })
             includes.push({ image: 'conanio/gcc11-ubuntu16.04',     build_type: 'Release', developer_mode: 'ON'  })
-            includes.push({ image: 'conanio/clang8',                build_type: 'Release', developer_mode: 'OFF' })
-            includes.push({ image: 'conanio/clang9',                build_type: 'Release', developer_mode: 'OFF' })
             includes.push({ image: 'conanio/clang10-ubuntu16.04',   build_type: 'Release', developer_mode: 'OFF' })
             includes.push({ image: 'conanio/clang11-ubuntu16.04',   build_type: 'Release', developer_mode: 'OFF' })
             includes.push({ image: 'conanio/clang12-ubuntu16.04',   build_type: 'Release', developer_mode: 'ON'  })
@@ -117,7 +113,7 @@ jobs:
       matrix: ${{ fromJSON(needs.matrix-factory.outputs.matrix) }}
 
     container:
-      image: ${{ matrix.image }}:2.0.2
+      image: ${{ matrix.image }}:2.0.4
       options: "-v ${{ github.workspace }}:${{ github.workspace }} --user=root"
 
     steps:
@@ -145,14 +141,17 @@ jobs:
       - name: Clean Conan cache (pre-build)
         if: steps.cache-conan.outputs.cache-hit != 'true'
         run: |
-          conan remove -f "*" --builds
-          conan remove -f "*" --src
-          conan remove -f "*" --system-reqs
+          conan cache clean "*" --build
+          conan cache clean "*" --download
+          conan cache clean "*" --source
+          conan remove --confirm "*"
 
       - name: Install build dependencies
         run: |
           conan install .                             \
-             --build outdated                         \
+             --build=missing                          \
+             --build=cascade                          \
+             -pr default                              \
              -s build_type="${{ matrix.build_type }}" \
              -s compiler.libcxx=libstdc++11           \
              -s compiler.cppstd=17                    \
@@ -161,10 +160,9 @@ jobs:
       - name: Clean Conan cache (post-build)
         if: steps.cache-conan.outputs.cache-hit != 'true'
         run: |
-          conan remove -f "*" --builds
-          conan remove -f "*" --src
-          conan remove -f "*" --system-reqs
-          conan remove -f "*" --outdated
+          conan cache clean "*" --build
+          conan cache clean "*" --download
+          conan cache clean "*" --source
 
       - name: Configure project
         run: |
