@@ -35,7 +35,7 @@ concurrency:
   cancel-in-progress: true
 
 env:
-  CONAN_HOME: '/home/conan/.conan2'
+  CONAN_HOME: "${{ github.workspace }}/.conan2"
 
 jobs:
   run-clang-tidy:
@@ -70,6 +70,11 @@ jobs:
         with:
           key: ${{ steps.cache-key.outputs.key }}
           path: ${{ env.CONAN_HOME }}
+
+      - name: Configure Conan
+        if: steps.cache-conan.outputs.cache-hit != 'true'
+        run: |
+          conan profile detect --force
 
       - name: Clean Conan cache (pre-build)
         if: steps.cache-conan.outputs.cache-hit != 'true'
