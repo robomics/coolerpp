@@ -72,7 +72,7 @@ jobs:
             // https://docs.github.com/en/actions/learn-github-actions/contexts#fromjson
             // https://github.com/actions/runner/issues/982#issuecomment-809360765
             var ci_short = "${{ steps.ci-type.outputs.type }}" === "short"
-            
+
             var includes = []
             // Debug builds (short CI)
             includes.push({ image: 'conanio/gcc8-ubuntu16.04',      build_type: 'Debug',   developer_mode: 'OFF' })
@@ -150,7 +150,7 @@ jobs:
           conan remove -f "*" --system-reqs
 
       - name: Install build dependencies
-        if: steps.cache-conan.outputs.cache-hit != 'true'
+        working-directory: ${{ github.workspace }}/build
         run: |
           conan install conanfile.py                  \
              --build outdated                         \
@@ -169,13 +169,14 @@ jobs:
       - name: Configure project
         run: |
           git config --global --add safe.directory ${{ github.workspace }}
-          
+
           cmake -DCMAKE_BUILD_TYPE=${{ matrix.build_type }}          \
                 -DENABLE_DEVELOPER_MODE=${{ matrix.developer_mode }} \
                 -DOPT_ENABLE_CLANG_TIDY=OFF                          \
                 -DOPT_ENABLE_CPPCHECK=OFF                            \
                 -DCOOLERPP_ENABLE_TESTING=ON                         \
                 -DCOOLERPP_BUILD_EXAMPLES=ON                         \
+                -DOPT_ENABLE_CONAN=OFF                               \
                 -S "${{ github.workspace }}"                         \
                 -B "${{ github.workspace }}/build"
 

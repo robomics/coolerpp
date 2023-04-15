@@ -53,7 +53,7 @@ jobs:
         run: |
           apt-get update
           apt-get install -y clang clang-tidy cmake git python3-pip
-          
+
           pip install --no-cache-dir 'conan>=1.58,<2'
 
       - name: Print clang-tidy version

@@ -115,16 +115,14 @@ jobs:
           conan remove -f "*" --src
           conan remove -f "*" --system-reqs
 
-      - name: Configure project
+      - name: Install build dependencies
+        working-directory: ${{ github.workspace }}/build
         run: |
-          cmake -DCMAKE_BUILD_TYPE=${{ matrix.build_type }}          \
-                -DENABLE_DEVELOPER_MODE=${{ matrix.developer_mode }} \
-                -DCOOLERPP_ENABLE_TESTING=ON                         \
-                -DCOOLERPP_BUILD_EXAMPLES=ON                         \
-                -DOPT_ENABLE_CLANG_TIDY=OFF                          \
-                -DOPT_ENABLE_CPPCHECK=OFF                            \
-                -S "${{ github.workspace }}"                         \
-                -B "${{ github.workspace }}/build"
+          conan install conanfile.py                  \
+             --build outdated                         \
+             -s build_type="${{ matrix.build_type }}" \
+             -s compiler.libcxx=libc++                \
+             -s compiler.cppstd=17
 
       - name: Clean Conan cache (post-build)
         if: steps.cache-conan.outputs.cache-hit != 'true'
@@ -133,6 +131,18 @@ jobs:
           conan remove -f "*" --src
           conan remove -f "*" --system-reqs
           conan remove -f "*" --outdated
+
+      - name: Configure project
+        run: |
+          cmake -DCMAKE_BUILD_TYPE=${{ matrix.build_type }}          \
+                -DENABLE_DEVELOPER_MODE=${{ matrix.developer_mode }} \
+                -DCOOLERPP_ENABLE_TESTING=ON                         \
+                -DCOOLERPP_BUILD_EXAMPLES=ON                         \
+                -DOPT_ENABLE_CLANG_TIDY=OFF                          \
+                -DOPT_ENABLE_CPPCHECK=OFF                            \
+                -DOPT_ENABLE_CONAN=OFF                               \
+                -S "${{ github.workspace }}"                         \
+                -B "${{ github.workspace }}/build"
 
       - name: Build project
         run: cmake --build ${{ github.workspace }}/build

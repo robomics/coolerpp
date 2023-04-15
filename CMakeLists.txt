@@ -71,7 +71,8 @@ include(${CMAKE_CURRENT_SOURCE_DIR}/cmake/CompilerWarnings.cmake)
 # `project_warnings` uncomment the options to enable them:
 
 set(ENABLE_CACHE_DEFAULT ON)
-set(ENABLE_CONAN_DEFAULT ON)
+set(ENABLE_CONAN_DEVELOPER ON)
+set(ENABLE_CONAN_USER OFF)
 set(ENABLE_CPPCHECK_DEFAULT OFF)
 set(ENABLE_DOXYGEN_USER OFF)
 set(ENABLE_DOXYGEN_DEVELOPER ON)
