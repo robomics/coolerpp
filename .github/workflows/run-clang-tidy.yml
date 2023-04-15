@@ -42,7 +42,8 @@ jobs:
     runs-on: ubuntu-latest
     container:
       image: ubuntu:22.04
-      options: "-v ${{ github.workspace }}:${{ github.workspace }}"
+      volumes:
+        - github.workspace
 
     steps:
       - uses: actions/checkout@v3
