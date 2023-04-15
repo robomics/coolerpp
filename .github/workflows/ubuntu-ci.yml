@@ -133,7 +133,7 @@ jobs:
         uses: actions/cache@v3
         with:
           key: conan-${{ steps.cache-key.outputs.key }}
-          path: ${{ env.CONAN_USER_HOME }}
+          path: ${{ env.CONAN_HOME }}
 
       - name: Clean Conan cache (pre-build)
         if: steps.cache-conan.outputs.cache-hit != 'true'
