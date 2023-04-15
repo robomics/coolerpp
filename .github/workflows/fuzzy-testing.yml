@@ -141,7 +141,6 @@ jobs:
           conan remove -f "*" --system-reqs
 
       - name: Install build dependencies
-        working-directory: ${{ github.workspace }}/build
         run: |
           conan install .                   \
              --build outdated               \
@@ -162,11 +161,12 @@ jobs:
         run: |
           git config --global --add safe.directory ${{ github.workspace }}
           mkdir ${{ github.workspace }}/build
-          cmake -DCMAKE_BUILD_TYPE=Release    \
-                -DENABLE_DEVELOPER_MODE=OFF   \
-                -DCOOLERPP_BUILD_EXAMPLES=ON  \
-                -DCOOLERPP_ENABLE_TESTING=OFF \
-                -S "${{ github.workspace }}"  \
+          cmake -DCMAKE_BUILD_TYPE=Release                          \
+                -DCMAKE_PREFIX_PATH="${{ github.workspace }}/build" \
+                -DENABLE_DEVELOPER_MODE=OFF                         \
+                -DCOOLERPP_BUILD_EXAMPLES=ON                        \
+                -DCOOLERPP_ENABLE_TESTING=OFF                       \
+                -S "${{ github.workspace }}"                        \
                 -B "${{ github.workspace }}/build"
 
       - name: Build project

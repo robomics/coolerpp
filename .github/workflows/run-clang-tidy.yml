@@ -94,14 +94,15 @@ jobs:
         run: |
           git config --global --add safe.directory ${{ github.workspace }}
           mkdir ${{ github.workspace }}/build
-          cmake -DCMAKE_BUILD_TYPE=Debug                      \
-                -DENABLE_DEVELOPER_MODE=ON                    \
-                -DOPT_ENABLE_SANITIZER_ADDRESS=OFF            \
-                -DOPT_ENABLE_SANITIZER_UNDEFINED_BEHAVIOR=OFF \
-                -DOPT_ENABLE_CLANG_TIDY=ON                    \
-                -DCOOLERPP_BUILD_EXAMPLES=ON                  \
-                -DCOOLERPP_ENABLE_TESTING=ON                  \
-                -S "${{ github.workspace }}"                  \
+          cmake -DCMAKE_BUILD_TYPE=Debug                            \
+                -DCMAKE_PREFIX_PATH="${{ github.workspace }}/build" \
+                -DENABLE_DEVELOPER_MODE=ON                          \
+                -DOPT_ENABLE_SANITIZER_ADDRESS=OFF                  \
+                -DOPT_ENABLE_SANITIZER_UNDEFINED_BEHAVIOR=OFF       \
+                -DOPT_ENABLE_CLANG_TIDY=ON                          \
+                -DCOOLERPP_BUILD_EXAMPLES=ON                        \
+                -DCOOLERPP_ENABLE_TESTING=ON                        \
+                -S "${{ github.workspace }}"                        \
                 -B "${{ github.workspace }}/build"
 
       - name: Clean Conan cache (post-build)

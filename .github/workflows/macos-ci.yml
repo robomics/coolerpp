@@ -117,9 +117,7 @@ jobs:
           conan remove -f "*" --system-reqs
 
       - name: Install build dependencies
-        working-directory: ${{ github.workspace }}/build
         run: |
-
           conan install .                             \
              --build outdated                         \
              -s build_type="${{ matrix.build_type }}" \
@@ -138,6 +136,7 @@ jobs:
       - name: Configure project
         run: |
           cmake -DCMAKE_BUILD_TYPE=${{ matrix.build_type }}          \
+                -DCMAKE_PREFIX_PATH="${{ github.workspace }}/build"  \
                 -DENABLE_DEVELOPER_MODE=${{ matrix.developer_mode }} \
                 -DCOOLERPP_ENABLE_TESTING=ON                         \
                 -DCOOLERPP_BUILD_EXAMPLES=ON                         \

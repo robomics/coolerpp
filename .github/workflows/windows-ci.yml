@@ -88,6 +88,7 @@ jobs:
       - name: Configure project
         run: |
           cmake -DCMAKE_BUILD_TYPE=Release   \
+                -DCMAKE_PREFIX_PATH=build    \
                 -DENABLE_DEVELOPER_MODE=OFF  \
                 -DCOOLERPP_ENABLE_TESTING=ON \
                 -DCOOLERPP_BUILD_EXAMPLES=ON \
