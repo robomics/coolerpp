@@ -42,7 +42,7 @@ jobs:
     runs-on: ubuntu-latest
     container:
       image: ubuntu:22.04
-      options: '--user=1001'
+      options: '--user=root'
       volumes:
         - github.workspace
 

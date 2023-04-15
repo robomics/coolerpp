@@ -106,9 +106,12 @@ jobs:
     runs-on: ubuntu-latest
     container:
       image: conanio/clang14-ubuntu16.04:2.0.4
-      options: '--user=1001'
+      options: '--user=root'
       volumes:
         - github.workspace
+
+    env:
+      CONAN_HOME: '/home/conan/.conan2'
 
     steps:
       - uses: actions/checkout@v3
