@@ -299,7 +299,7 @@ inline void File::update_pixel_sum(N partial_sum) {
   if constexpr (std::is_floating_point_v<N>) {
     std::get<double>(*buff) += conditional_static_cast<double>(partial_sum);
   } else {
-    assert(std::is_signed_v<N>);
+    assert(std::is_integral_v<N>);
     std::get<std::int64_t>(*buff) += conditional_static_cast<std::int64_t>(partial_sum);
   }
 }
