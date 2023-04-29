@@ -54,10 +54,10 @@ struct StandardAttributes {
 
   // Optional but common
   std::optional<std::string> format_url{"https://github.com/open2c/cooler"};
-  std::optional<std::uint64_t> nbins{0};
-  std::optional<std::uint32_t> nchroms{0};
-  std::optional<std::uint64_t> nnz{0};
-  using SumVar = std::variant<double, std::int64_t, std::uint64_t>;
+  std::optional<std::int64_t> nbins{0};
+  std::optional<std::int32_t> nchroms{0};
+  std::optional<std::int64_t> nnz{0};
+  using SumVar = std::variant<double, std::int64_t>;
   std::optional<SumVar> sum{std::int64_t(0)};
   std::optional<SumVar> cis{std::int64_t(0)};
 

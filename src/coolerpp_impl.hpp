@@ -84,10 +84,10 @@ inline File::File(std::string_view uri, unsigned mode, bool validate)
       _bins(std::make_shared<BinTable>(
           import_chroms(_datasets.at("chroms/name"), _datasets.at("chroms/length"), false),
           this->bin_size())),
-      _index(std::make_shared<Index>(import_indexes(_datasets.at("indexes/chrom_offset"),
-                                                    _datasets.at("indexes/bin1_offset"),
-                                                    // NOLINTNEXTLINE
-                                                    chromosomes(), _bins, *_attrs.nnz, false))) {
+      _index(std::make_shared<Index>(
+          import_indexes(_datasets.at("indexes/chrom_offset"), _datasets.at("indexes/bin1_offset"),
+                         // NOLINTNEXTLINE
+                         chromosomes(), _bins, static_cast<std::uint64_t>(*_attrs.nnz), false))) {
   assert(mode == HighFive::File::ReadOnly || mode == HighFive::File::ReadWrite);
   if (validate) {
     this->validate_bins();
@@ -221,7 +221,7 @@ inline void File::finalize() {
     this->write_bin_table();
 
     assert(_attrs.nnz.has_value());
-    _index->nnz() = *_attrs.nnz;
+    _index->nnz() = static_cast<std::uint64_t>(*_attrs.nnz);
     this->write_indexes();
     this->write_attributes();
 
@@ -298,10 +298,9 @@ inline void File::update_pixel_sum(N partial_sum) {
   assert(buff.has_value());
   if constexpr (std::is_floating_point_v<N>) {
     std::get<double>(*buff) += conditional_static_cast<double>(partial_sum);
-  } else if constexpr (std::is_signed_v<N>) {
-    std::get<std::int64_t>(*buff) += conditional_static_cast<std::int64_t>(partial_sum);
   } else {
-    std::get<std::uint64_t>(*buff) += conditional_static_cast<std::uint64_t>(partial_sum);
+    assert(std::is_integral_v<N>);
+    std::get<std::int64_t>(*buff) += conditional_static_cast<std::int64_t>(partial_sum);
   }
 }
 
