@@ -157,7 +157,7 @@ inline void File::validate_pixel_type() const noexcept {
     assert_holds_alternative(this->_attrs.sum, double{});
     assert_holds_alternative(this->_attrs.cis, double{});
   } else {
-    assert(this->has_unsigned_pixels() || this->has_signed_pixels());
+    assert(this->has_integral_pixels());
     assert_holds_alternative(this->_attrs.sum, std::int64_t{});
     assert_holds_alternative(this->_attrs.cis, std::int64_t{});
   }
