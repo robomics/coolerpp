@@ -29,7 +29,7 @@ static std::ptrdiff_t generate_test_data(const std::filesystem::path& path,
 
   std::vector<Pixel<N>> pixels;
 
-  N n = 0;
+  N n = 1;
   for (std::uint64_t i = 0; i < num_bins; ++i) {
     for (std::uint64_t j = i; j < num_bins; ++j) {
       pixels.emplace_back(Pixel<N>{PixelCoordinates{f.bins_ptr(), i, j}, n++});
@@ -43,7 +43,7 @@ static std::ptrdiff_t generate_test_data(const std::filesystem::path& path,
 TEST_CASE("Pixel selector: 1D queries", "[pixel_selector][short]") {
   const auto path1 = testdir() / "pixel_selector_devel.cool";
 
-  const ChromosomeSet chroms{Chromosome{"chr1", 1000}};
+  const ChromosomeSet chroms{Chromosome{"chr1", 1000}, Chromosome{"chr2", 100}};
   constexpr std::uint32_t bin_size = 10;
   using T = std::uint32_t;
 
@@ -56,9 +56,9 @@ TEST_CASE("Pixel selector: 1D queries", "[pixel_selector][short]") {
     const std::vector<Pixel<T>> pixels(selector.begin(), selector.end());
     REQUIRE(pixels.size() == 3);
 
-    CHECK(pixels[0].count == 0);
-    CHECK(pixels[1].count == 1);
-    CHECK(pixels[2].count == 100);
+    CHECK(pixels[0].count == 1);
+    CHECK(pixels[1].count == 2);
+    CHECK(pixels[2].count == 111);
   }
 
   SECTION("query overlaps chrom end") {
@@ -66,9 +66,9 @@ TEST_CASE("Pixel selector: 1D queries", "[pixel_selector][short]") {
     const std::vector<Pixel<T>> pixels(selector.begin(), selector.end());
     REQUIRE(pixels.size() == 3);
 
-    CHECK(pixels[0].count == 5047);
-    CHECK(pixels[1].count == 5048);
-    CHECK(pixels[2].count == 5049);
+    CHECK(pixels[0].count == 6028);
+    CHECK(pixels[1].count == 6029);
+    CHECK(pixels[2].count == 6040);
   }
 
   SECTION("query does not overlap chrom boundaries") {
@@ -76,12 +76,12 @@ TEST_CASE("Pixel selector: 1D queries", "[pixel_selector][short]") {
     const std::vector<Pixel<T>> pixels(selector.begin(), selector.end());
     REQUIRE(pixels.size() == 6);
 
-    CHECK(pixels[0].count == 4725);
-    CHECK(pixels[1].count == 4726);
-    CHECK(pixels[2].count == 4727);
-    CHECK(pixels[3].count == 4750);
-    CHECK(pixels[4].count == 4751);
-    CHECK(pixels[5].count == 4774);
+    CHECK(pixels[0].count == 5476);
+    CHECK(pixels[1].count == 5477);
+    CHECK(pixels[2].count == 5478);
+    CHECK(pixels[3].count == 5511);
+    CHECK(pixels[4].count == 5512);
+    CHECK(pixels[5].count == 5545);
   }
 
   SECTION("query does not line up with bins") {
@@ -89,12 +89,12 @@ TEST_CASE("Pixel selector: 1D queries", "[pixel_selector][short]") {
     const std::vector<Pixel<T>> pixels(selector.begin(), selector.end());
     REQUIRE(pixels.size() == 6);
 
-    CHECK(pixels[0].count == 4995);
-    CHECK(pixels[1].count == 4996);
-    CHECK(pixels[2].count == 4997);
-    CHECK(pixels[3].count == 5005);
-    CHECK(pixels[4].count == 5006);
-    CHECK(pixels[5].count == 5014);
+    CHECK(pixels[0].count == 5896);
+    CHECK(pixels[1].count == 5897);
+    CHECK(pixels[2].count == 5898);
+    CHECK(pixels[3].count == 5916);
+    CHECK(pixels[4].count == 5917);
+    CHECK(pixels[5].count == 5935);
   }
 
   SECTION("large query") {
@@ -105,45 +105,61 @@ TEST_CASE("Pixel selector: 1D queries", "[pixel_selector][short]") {
         selector.begin(), selector.end(), T(0),
         [&](T accumulator, const Pixel<T>& pixel) { return accumulator + pixel.count; });
 
-    CHECK(sum == 11852659);
+    CHECK(sum == 13'405'665);
   }
 
   SECTION("query spans 1 bin") {
     auto selector = f.fetch<T>("chr1:0-9");
     REQUIRE(std::distance(selector.begin(), selector.end()) == 1);
-    CHECK((*selector.begin()).count == 0);
+    CHECK((*selector.begin()).count == 1);
 
     selector = f.fetch<T>("chr1:5-7");
     REQUIRE(std::distance(selector.begin(), selector.end()) == 1);
-    CHECK((*selector.begin()).count == 0);
+    CHECK((*selector.begin()).count == 1);
 
     selector = f.fetch<T>("chr1:991-1000");
     REQUIRE(std::distance(selector.begin(), selector.end()) == 1);
-    CHECK((*selector.begin()).count == 5049);
+    CHECK((*selector.begin()).count == 6040);
+
+    selector = f.fetch<T>("chr2:50-60");
+    REQUIRE(std::distance(selector.begin(), selector.end()) == 1);
+    CHECK((*selector.begin()).count == 6091);
   }
 
   SECTION("query spans 1bp") {
     auto selector = f.fetch<T>("chr1:0-1");
     REQUIRE(std::distance(selector.begin(), selector.end()) == 1);
-    CHECK((*selector.begin()).count == 0);
+    CHECK((*selector.begin()).count == 1);
+
+    selector = f.fetch<T>("chr2:0-1");
+    REQUIRE(std::distance(selector.begin(), selector.end()) == 1);
+    CHECK((*selector.begin()).count == 6051);
 
     selector = f.fetch<T>("chr1:12-13");
     REQUIRE(std::distance(selector.begin(), selector.end()) == 1);
-    CHECK((*selector.begin()).count == 100);
+    CHECK((*selector.begin()).count == 111);
 
     selector = f.fetch<T>("chr1:999-1000");
     REQUIRE(std::distance(selector.begin(), selector.end()) == 1);
-    CHECK((*selector.begin()).count == 5049);
+    CHECK((*selector.begin()).count == 6040);
   }
 
   SECTION("query spans entire chromosome") {
     auto selector = f.fetch<T>("chr1");
 
     CHECK(std::distance(selector.begin(), selector.end()) == 5050);
-    const auto sum = std::accumulate(
+    auto sum = std::accumulate(
         selector.begin(), selector.end(), T(0),
         [&](T accumulator, const Pixel<T>& pixel) { return accumulator + pixel.count; });
-    CHECK(sum == 12748725);
+    CHECK(sum == 14'420'275);
+
+    selector = f.fetch<T>("chr2");
+
+    CHECK(std::distance(selector.begin(), selector.end()) == 55);
+    sum = std::accumulate(
+        selector.begin(), selector.end(), T(0),
+        [&](T accumulator, const Pixel<T>& pixel) { return accumulator + pixel.count; });
+    CHECK(sum == 334'290);
   }
 
   SECTION("invalid queries") {

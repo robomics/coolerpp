@@ -57,6 +57,10 @@ inline void File::append_pixels(PixelIt first_pixel, PixelIt last_pixel, bool va
   T sum = 0;
   T cis_sum = 0;
   this->dataset("pixels/count").append(first_pixel, last_pixel, [&](const Pixel<T> &pixel) {
+    if (pixel.count == 0) {
+      throw std::runtime_error(
+          fmt::format(FMT_STRING("Found pixel with 0 interactions: {}"), pixel));
+    }
     sum += pixel.count;
     if (pixel.coords.chrom1_id() == pixel.coords.chrom2_id()) {
       cis_sum += pixel.count;
