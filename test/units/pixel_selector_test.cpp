@@ -147,9 +147,8 @@ TEST_CASE("Pixel selector: 1D queries", "[pixel_selector][short]") {
   }
 
   SECTION("invalid queries") {
-    CHECK_THROWS_WITH(f.fetch<T>(""), Catch::Matchers::Equals("query \"\" is malformed"));
-    CHECK_THROWS_WITH(f.fetch<T>("chr2:0-1"),
-                      Catch::Matchers::ContainsSubstring("invalid chromosome"));
+    CHECK_THROWS_WITH(f.fetch<T>(""), Catch::Matchers::Equals("query is empty"));
+    CHECK_THROWS_WITH(f.fetch<T>("chr3"), Catch::Matchers::ContainsSubstring("invalid chromosome"));
 
     CHECK_THROWS_WITH(f.fetch<T>(":0-1"), Catch::Matchers::ContainsSubstring("invalid chromosome"));
     CHECK_THROWS_WITH(f.fetch<T>("-:0-1"),

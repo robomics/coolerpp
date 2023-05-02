@@ -105,6 +105,9 @@ template <class N>
 inline PixelCoordinates PixelSelector<N>::parse_query(std::shared_ptr<const BinTableLazy> bins,
                                                       std::string_view query) {
   assert(bins);
+  if (query == "") {
+    throw std::runtime_error("query is empty");
+  }
   const auto &chroms = bins->chromosomes();
   if (chroms.contains(query)) {
     const auto &chrom = chroms.at(query);
@@ -113,6 +116,10 @@ inline PixelCoordinates PixelSelector<N>::parse_query(std::shared_ptr<const BinT
 
   const auto p1 = query.find_last_of(':');
   const auto p2 = query.find_last_of('-');
+
+  if (p1 == std::string_view::npos && p2 == std::string_view::npos) {
+    throw std::runtime_error(fmt::format(FMT_STRING("invalid chromosome \"{}\""), query));
+  }
 
   if (p1 == std::string_view::npos || p2 == std::string_view::npos || p1 > p2) {
     throw std::runtime_error(fmt::format(FMT_STRING("query \"{}\" is malformed"), query));
