@@ -111,7 +111,7 @@ inline PixelCoordinates PixelSelector<N>::parse_query(std::shared_ptr<const BinT
   const auto &chroms = bins->chromosomes();
   if (chroms.contains(query)) {
     const auto &chrom = chroms.at(query);
-    return {bins, chrom, 0, chrom.size};
+    return {bins, chrom, 0, chrom.size - 1};
   }
 
   const auto p1 = query.find_last_of(':');
