@@ -273,9 +273,22 @@ inline auto PixelSelector<N>::iterator::at_end(std::shared_ptr<const Index> inde
   // Get the bin id for the last row overlapping the query
   auto bin1_id = it._coord1->bin2_id();
 
+  if (bin1_id != 0) {
+    // Efficiently deal with the possiblity that a cooler file does not have any
+    // interactions overlapping or upstream of the queried region
+    const auto offset = it._index->get_offset_by_bin_id(bin1_id);
+    if (offset == 0) {
+      it._bin1_id_it = pixels_bin1_id.begin<std::uint64_t>();
+      it._bin2_id_it = pixels_bin2_id.begin<std::uint64_t>();
+      it._bin2_id_last = pixels_bin2_id.begin<std::uint64_t>();
+      it._count_it = pixels_count.begin<N>();
+      return it;
+    }
+  }
+
   do {
     // Get the offset to the last row overlapping the query
-    auto offset = it._index->get_offset_by_bin_id(bin1_id);
+    const auto offset = it._index->get_offset_by_bin_id(bin1_id);
     it._bin1_id_it = pixels_bin1_id.make_iterator_at_offset<std::uint64_t>(offset);
     it._bin2_id_it = pixels_bin2_id.make_iterator_at_offset<std::uint64_t>(offset);
     // Even though we do not yet know where the last iterator actually is, the jump methods expect
