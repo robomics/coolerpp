@@ -89,6 +89,13 @@ TEST_CASE("Pixel", "[pixel][short]") {
 
     CHECK(std::is_sorted(coords.begin(), coords.end()));
   }
+
+  SECTION("fmt") {
+    auto p = P("chr1", "chr1", 0, 10);
+    CHECK(fmt::format(FMT_STRING("{}"), p) == "chr1\t0\t1\tchr1\t10\t11\t0");
+    CHECK(fmt::format(FMT_STRING("{:bedpe}"), p) == "chr1\t0\t1\tchr1\t10\t11\t0");
+    CHECK(fmt::format(FMT_STRING("{:raw}"), p) == "0\t10\t0");
+  }
 }
 
 }  // namespace coolerpp
