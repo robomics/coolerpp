@@ -23,8 +23,8 @@ include(FetchContent)
 # cmake-format: off
 FetchContent_Declare(
         _coolerpp_project_options
-        URL ${CMAKE_CURRENT_SOURCE_DIR}/external/project_options-v0.27.2.tar.xz
-        URL_HASH SHA512=be58956b40932a96df4232897df06012423f55d00dfda26e047ff140ef084361b591b675b2372a17dc80ee20f949797f6beb8b351355a1b9d39ec73c06c41cdd
+        URL ${CMAKE_CURRENT_SOURCE_DIR}/external/project_options-v0.28.0.tar.xz
+        URL_HASH SHA512=216d0970ace00e3176788a2b5abb7b92490c005111d26365e7807a5e86c6323e38b33e2e5b01f4ee43438a8f8e96cacf16cedc6f905a7e0ad58752905b260b38
 )
 # cmake-format: on
 
@@ -71,6 +71,7 @@ include(${CMAKE_CURRENT_SOURCE_DIR}/cmake/CompilerWarnings.cmake)
 # `project_warnings` uncomment the options to enable them:
 
 set(ENABLE_CACHE_DEFAULT ON)
+set(ENABLE_COMPILE_COMMANDS_SYMLINK_DEFAULT OFF)
 set(ENABLE_CONAN_DEVELOPER ON)
 set(ENABLE_CONAN_USER OFF)
 set(ENABLE_CPPCHECK_DEFAULT OFF)
