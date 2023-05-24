@@ -210,11 +210,7 @@ inline auto File::read_standard_attributes(const RootGroup &root_grp, bool initi
       std::visit(
           [&](auto sum) {
             using T = remove_cvref_t<decltype(sum)>;
-            if constexpr (std::is_unsigned_v<T>) {
-              buff = conditional_static_cast<std::uint64_t>(sum);
-              return;
-            }
-            if constexpr (std::is_signed_v<T>) {
+            if constexpr (std::is_integral_v<T>) {
               buff = conditional_static_cast<std::int64_t>(sum);
               return;
             }

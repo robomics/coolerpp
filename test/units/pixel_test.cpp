@@ -20,48 +20,53 @@ TEST_CASE("Pixel", "[pixel][short]") {
   constexpr std::uint32_t bin_size = 1;
   const auto bins = std::make_shared<const BinTableLazy>(chroms, bin_size);
 
-  auto P = [&](std::string_view chrom1, std::string_view chrom2, std::uint32_t pos1,
+  auto PI = [&](std::string_view chrom1, std::string_view chrom2, std::uint32_t pos1,
                std::uint32_t pos2, std::uint32_t count = 0) {
     return Pixel<std::uint32_t>{PixelCoordinates{bins, chrom1, chrom2, pos1, pos2}, count};
   };
 
+  auto PFP = [&](std::string_view chrom1, std::string_view chrom2, std::uint32_t pos1,
+                std::uint32_t pos2, double count = 0) {
+    return Pixel<double>{PixelCoordinates{bins, chrom1, chrom2, pos1, pos2}, count};
+  };
+
   SECTION("operator bool") {
     CHECK(!PixelCoordinates{});
-    CHECK(!!P("chr1", "chr1", 0, 10));
+    CHECK(!!PI("chr1", "chr1", 0, 10));
   }
 
   SECTION("(dis)equality") {
-    CHECK(P("chr1", "chr1", 0, 10) == P("chr1", "chr1", 0, 10));
+    CHECK(PI("chr1", "chr1", 0, 10) == PI("chr1", "chr1", 0, 10));
 
-    CHECK(P("chr1", "chr1", 0, 10) != P("chr1", "chr2", 0, 10));
-    CHECK(P("chr1", "chr1", 0, 10) != P("chr2", "chr1", 0, 10));
+    CHECK(PI("chr1", "chr1", 0, 10) != PI("chr1", "chr2", 0, 10));
+    CHECK(PI("chr1", "chr1", 0, 10) != PI("chr2", "chr1", 0, 10));
 
-    CHECK(P("chr1", "chr1", 0, 10) != P("chr1", "chr1", 1, 10));
-    CHECK(P("chr1", "chr1", 0, 10) != P("chr1", "chr1", 0, 11));
+    CHECK(PI("chr1", "chr1", 0, 10) != PI("chr1", "chr1", 1, 10));
+    CHECK(PI("chr1", "chr1", 0, 10) != PI("chr1", "chr1", 0, 11));
   }
 
   SECTION("ordering") {
-    CHECK(P("chr1", "chr1", 0, 0) < P("chr2", "chr2", 0, 0));
-    CHECK(P("chr1", "chr1", 0, 0) <= P("chr2", "chr2", 0, 0));
+    CHECK(PI("chr1", "chr1", 0, 0) < PI("chr2", "chr2", 0, 0));
+    CHECK(PI("chr1", "chr1", 0, 0) <= PI("chr2", "chr2", 0, 0));
 
-    CHECK(P("chr1", "chr1", 0, 0) < P("chr1", "chr2", 0, 0));
-    CHECK(P("chr1", "chr1", 0, 0) <= P("chr1", "chr2", 0, 0));
+    CHECK(PI("chr1", "chr1", 0, 0) < PI("chr1", "chr2", 0, 0));
+    CHECK(PI("chr1", "chr1", 0, 0) <= PI("chr1", "chr2", 0, 0));
 
-    CHECK(P("chr2", "chr2", 0, 0) > P("chr1", "chr1", 0, 0));
-    CHECK(P("chr2", "chr2", 0, 0) >= P("chr1", "chr1", 0, 0));
+    CHECK(PI("chr2", "chr2", 0, 0) > PI("chr1", "chr1", 0, 0));
+    CHECK(PI("chr2", "chr2", 0, 0) >= PI("chr1", "chr1", 0, 0));
 
-    CHECK(P("chr1", "chr2", 0, 0) > P("chr1", "chr1", 0, 0));
-    CHECK(P("chr1", "chr2", 0, 0) >= P("chr1", "chr1", 0, 0));
+    CHECK(PI("chr1", "chr2", 0, 0) > PI("chr1", "chr1", 0, 0));
+    CHECK(PI("chr1", "chr2", 0, 0) >= PI("chr1", "chr1", 0, 0));
 
-    CHECK(P("chr1", "chr1", 0, 0) < P("chr1", "chr1", 0, 1));
-    CHECK(P("chr1", "chr1", 0, 0) < P("chr1", "chr1", 1, 0));
-    CHECK(P("chr1", "chr1", 0, 0) <= P("chr1", "chr1", 0, 1));
-    CHECK(P("chr1", "chr1", 0, 0) <= P("chr1", "chr1", 1, 0));
+    CHECK(PI("chr1", "chr1", 0, 0) < PI("chr1", "chr1", 0, 1));
+    CHECK(PI("chr1", "chr1", 0, 0) < PI("chr1", "chr1", 1, 0));
+    CHECK(PI("chr1", "chr1", 0, 0) <= PI("chr1", "chr1", 0, 1));
+    CHECK(PI("chr1", "chr1", 0, 0) <= PI("chr1", "chr1", 1, 0));
 
-    CHECK(P("chr1", "chr1", 0, 1) > P("chr1", "chr1", 0, 0));
-    CHECK(P("chr1", "chr1", 1, 0) > P("chr1", "chr1", 0, 0));
-    CHECK(P("chr1", "chr1", 0, 1) >= P("chr1", "chr1", 0, 0));
-    CHECK(P("chr1", "chr1", 1, 0) >= P("chr1", "chr1", 0, 0));
+    CHECK(PI("chr1", "chr1", 0, 1) > PI("chr1", "chr1", 0, 0));
+    CHECK(PI("chr1", "chr1", 1, 0) > PI("chr1", "chr1", 0, 0));
+    CHECK(PI("chr1", "chr1", 0, 1) >= PI("chr1", "chr1", 0, 0));
+    CHECK(PI("chr1", "chr1", 1, 0) >= PI("chr1", "chr1", 0, 0));
   }
 
   SECTION("sorting") {
@@ -88,6 +93,18 @@ TEST_CASE("Pixel", "[pixel][short]") {
     };
 
     CHECK(std::is_sorted(coords.begin(), coords.end()));
+  }
+
+  SECTION("fmt") {
+    auto p1 = PI("chr1", "chr1", 0, 10);
+    CHECK(fmt::format(FMT_STRING("{}"), p1) == "chr1\t0\t1\tchr1\t10\t11\t0");
+    CHECK(fmt::format(FMT_STRING("{:bedpe}"), p1) == "chr1\t0\t1\tchr1\t10\t11\t0");
+    CHECK(fmt::format(FMT_STRING("{:raw}"), p1) == "0\t10\t0");
+
+    auto p2 = PFP("chr1", "chr1", 0, 10, 1.2);
+    CHECK(fmt::format(FMT_STRING("{}"), p2) == "chr1\t0\t1\tchr1\t10\t11\t1.2");
+    CHECK(fmt::format(FMT_STRING("{:bedpe}"), p2) == "chr1\t0\t1\tchr1\t10\t11\t1.2");
+    CHECK(fmt::format(FMT_STRING("{:raw}"), p2) == "0\t10\t1.2");
   }
 }
 

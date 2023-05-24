@@ -209,8 +209,7 @@ inline auto fmt::formatter<coolerpp::PixelCoordinates>::format(const coolerpp::P
 template <typename N>
 constexpr auto fmt::formatter<coolerpp::Pixel<N>>::parse(format_parse_context &ctx)
     -> decltype(ctx.begin()) {
-  this->coord_formatter.parse(ctx);
-  return ctx.end();
+  return this->coord_formatter.parse(ctx);
 }
 
 template <typename N>

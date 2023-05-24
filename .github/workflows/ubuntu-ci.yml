@@ -13,7 +13,7 @@ on:
       - "src/**"
       - "test/**"
       - "CMakeLists.txt"
-      - "conanfile.py"
+      - "conanfile.txt"
     tags:
       - 'v*.*.*'
 
@@ -25,18 +25,12 @@ on:
       - "src/**"
       - "test/**"
       - "CMakeLists.txt"
-      - "conanfile.py"
+      - "conanfile.txt"
 
 # https://stackoverflow.com/a/72408109
 concurrency:
   group: ${{ github.workflow }}-${{ github.event.pull_request.number || github.ref }}
   cancel-in-progress: true
-
-env:
-  CONAN_REVISIONS_ENABLED: "1"
-  CONAN_USER_HOME: "${{ github.workspace }}/conan-cache"
-  CONAN_USER_HOME_SHORT: "${{ github.workspace }}/conan-cache/short"
-  CONAN_V2_MODE: "1"
 
 defaults:
   run:
@@ -72,12 +66,11 @@ jobs:
             // https://docs.github.com/en/actions/learn-github-actions/contexts#fromjson
             // https://github.com/actions/runner/issues/982#issuecomment-809360765
             var ci_short = "${{ steps.ci-type.outputs.type }}" === "short"
-            
+
             var includes = []
             // Debug builds (short CI)
             includes.push({ image: 'conanio/gcc8-ubuntu16.04',      build_type: 'Debug',   developer_mode: 'OFF' })
             includes.push({ image: 'conanio/gcc12-ubuntu16.04',     build_type: 'Debug',   developer_mode: 'ON'  })
-            includes.push({ image: 'conanio/clang8',                build_type: 'Debug',   developer_mode: 'OFF' })
             includes.push({ image: 'conanio/clang14-ubuntu16.04',   build_type: 'Debug',   developer_mode: 'ON'  })
             // Release builds (short CI)
             includes.push({ image: 'conanio/gcc12-ubuntu16.04',     build_type: 'Release', developer_mode: 'ON'  })
@@ -90,7 +83,6 @@ jobs:
             includes.push({ image: 'conanio/gcc10-ubuntu16.04',     build_type: 'Debug',   developer_mode: 'OFF' })
             includes.push({ image: 'conanio/gcc11-ubuntu16.04',     build_type: 'Debug',   developer_mode: 'ON'  })
             includes.push({ image: 'conanio/gcc12-ubuntu16.04',     build_type: 'Debug',   developer_mode: 'ON'  })
-            includes.push({ image: 'conanio/clang9',                build_type: 'Debug',   developer_mode: 'OFF' })
             includes.push({ image: 'conanio/clang10-ubuntu16.04',   build_type: 'Debug',   developer_mode: 'OFF' })
             includes.push({ image: 'conanio/clang11-ubuntu16.04',   build_type: 'Debug',   developer_mode: 'OFF' })
             includes.push({ image: 'conanio/clang12-ubuntu16.04',   build_type: 'Debug',   developer_mode: 'OFF' })
@@ -101,8 +93,6 @@ jobs:
             includes.push({ image: 'conanio/gcc9-ubuntu16.04',      build_type: 'Release', developer_mode: 'OFF' })
             includes.push({ image: 'conanio/gcc10-ubuntu16.04',     build_type: 'Release', developer_mode: 'ON'  })
             includes.push({ image: 'conanio/gcc11-ubuntu16.04',     build_type: 'Release', developer_mode: 'ON'  })
-            includes.push({ image: 'conanio/clang8',                build_type: 'Release', developer_mode: 'OFF' })
-            includes.push({ image: 'conanio/clang9',                build_type: 'Release', developer_mode: 'OFF' })
             includes.push({ image: 'conanio/clang10-ubuntu16.04',   build_type: 'Release', developer_mode: 'OFF' })
             includes.push({ image: 'conanio/clang11-ubuntu16.04',   build_type: 'Release', developer_mode: 'OFF' })
             includes.push({ image: 'conanio/clang12-ubuntu16.04',   build_type: 'Release', developer_mode: 'ON'  })
@@ -117,8 +107,11 @@ jobs:
       matrix: ${{ fromJSON(needs.matrix-factory.outputs.matrix) }}
 
     container:
-      image: ${{ matrix.image }}:1.59.0
-      options: "-v ${{ github.workspace }}:${{ github.workspace }} --user=root"
+      image: ${{ matrix.image }}:2.0.4
+      options: "--user=root"
+
+    env:
+      CONAN_HOME: '/home/conan/.conan2'
 
     steps:
       - uses: actions/checkout@v3
@@ -131,7 +124,7 @@ jobs:
         run: |
           image="${{ matrix.image }}"
           build_type="${{ matrix.build_type }}"
-          hash="${{ hashFiles('conanfile.py', '.github/workflows/ubuntu-ci.yml') }}"
+          hash="${{ hashFiles('conanfile.txt', '.github/workflows/ubuntu-ci.yml') }}"
 
           echo "key=$image-$build_type-$hash" >> $GITHUB_OUTPUT
 
@@ -140,50 +133,52 @@ jobs:
         uses: actions/cache@v3
         with:
           key: conan-${{ steps.cache-key.outputs.key }}
-          path: ${{ env.CONAN_USER_HOME }}
+          path: ${{ env.CONAN_HOME }}
 
       - name: Clean Conan cache (pre-build)
         if: steps.cache-conan.outputs.cache-hit != 'true'
         run: |
-          conan remove -f "*" --builds
-          conan remove -f "*" --src
-          conan remove -f "*" --system-reqs
+          conan cache clean "*" --build
+          conan cache clean "*" --download
+          conan cache clean "*" --source
+          conan remove --confirm "*"
 
       - name: Install build dependencies
-        if: steps.cache-conan.outputs.cache-hit != 'true'
         run: |
-          conan install conanfile.py                  \
-             --build outdated                         \
+          conan install .                             \
+             --build=missing                          \
+             --build=cascade                          \
+             -pr default                              \
              -s build_type="${{ matrix.build_type }}" \
              -s compiler.libcxx=libstdc++11           \
-             -s compiler.cppstd=17
+             -s compiler.cppstd=17                    \
+             --output-folder=build
 
       - name: Clean Conan cache (post-build)
         if: steps.cache-conan.outputs.cache-hit != 'true'
         run: |
-          conan remove -f "*" --builds
-          conan remove -f "*" --src
-          conan remove -f "*" --system-reqs
-          conan remove -f "*" --outdated
+          conan cache clean "*" --build
+          conan cache clean "*" --download
+          conan cache clean "*" --source
 
       - name: Configure project
         run: |
-          git config --global --add safe.directory ${{ github.workspace }}
-          
           cmake -DCMAKE_BUILD_TYPE=${{ matrix.build_type }}          \
+                -DCMAKE_PREFIX_PATH="$PWD/build"                     \
                 -DENABLE_DEVELOPER_MODE=${{ matrix.developer_mode }} \
                 -DOPT_ENABLE_CLANG_TIDY=OFF                          \
                 -DOPT_ENABLE_CPPCHECK=OFF                            \
                 -DCOOLERPP_ENABLE_TESTING=ON                         \
                 -DCOOLERPP_BUILD_EXAMPLES=ON                         \
-                -S "${{ github.workspace }}"                         \
-                -B "${{ github.workspace }}/build"
+                -DOPT_ENABLE_CONAN=OFF                               \
+                -S .                                                 \
+                -B build
 
       - name: Build project
-        run: cmake --build ${{ github.workspace }}/build -j $(nproc)
+        run: cmake --build build -j $(nproc)
 
       - name: Run unit tests
-        working-directory: ${{ github.workspace }}/build
+        working-directory: build
         run: |
           ctest --test-dir .        \
                 --schedule-random   \

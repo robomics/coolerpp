@@ -156,14 +156,10 @@ inline void File::validate_pixel_type() const noexcept {
     assert(this->has_float_pixels());
     assert_holds_alternative(this->_attrs.sum, double{});
     assert_holds_alternative(this->_attrs.cis, double{});
-  } else if constexpr (std::is_signed_v<PixelT>) {
-    assert(this->has_signed_pixels());
+  } else {
+    assert(this->has_integral_pixels());
     assert_holds_alternative(this->_attrs.sum, std::int64_t{});
     assert_holds_alternative(this->_attrs.cis, std::int64_t{});
-  } else {
-    assert(this->has_unsigned_pixels());
-    assert_holds_alternative(this->_attrs.sum, std::uint64_t{});
-    assert_holds_alternative(this->_attrs.cis, std::uint64_t{});
   }
 }
 

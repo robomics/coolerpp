@@ -13,4 +13,3 @@ SPDX-License-Identifier: MIT
 This library is currently work-in-progress, completely lacks documentation and its API is subject to change.
 
 Use at your own risk :).
-

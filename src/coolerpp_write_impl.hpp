@@ -57,6 +57,10 @@ inline void File::append_pixels(PixelIt first_pixel, PixelIt last_pixel, bool va
   T sum = 0;
   T cis_sum = 0;
   this->dataset("pixels/count").append(first_pixel, last_pixel, [&](const Pixel<T> &pixel) {
+    if (pixel.count == 0) {
+      throw std::runtime_error(
+          fmt::format(FMT_STRING("Found pixel with 0 interactions: {}"), pixel.coords));
+    }
     sum += pixel.count;
     if (pixel.coords.chrom1_id() == pixel.coords.chrom2_id()) {
       cis_sum += pixel.count;
@@ -294,7 +298,7 @@ inline void File::update_indexes(PixelIt first_pixel, PixelIt last_pixel) {
 
   const auto last_bin_written = this->get_last_bin_written();
 
-  auto nnz = *this->_attrs.nnz;
+  auto nnz = static_cast<std::uint64_t>(*this->_attrs.nnz);
   PixelCoordinates first_pixel_in_row{this->_bins, last_bin_written.chrom.name,
                                       last_bin_written.start, last_bin_written.start};
 
@@ -309,7 +313,7 @@ inline void File::update_indexes(PixelIt first_pixel, PixelIt last_pixel) {
 
 inline void File::write_indexes() {
   assert(this->_attrs.nnz.has_value());
-  this->index().finalize(*this->_attrs.nnz);
+  this->index().finalize(static_cast<std::uint64_t>(*this->_attrs.nnz));
   File::write_indexes(this->dataset("indexes/chrom_offset"), this->dataset("indexes/bin1_offset"),
                       this->index());
 }
