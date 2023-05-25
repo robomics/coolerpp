@@ -537,14 +537,29 @@ TEST_CASE("Coolerpp: Balancer", "[cooler][short]") {
   auto clr = File::open_read_only(path.string());
 
   SECTION("read weights") {
-    CHECK(clr.read_weights("weight")->type() == Weights::Type::MULTIPLICATIVE);
-    for (const auto name : {"GW_SCALE", "INTER_SCALE", "SCALE", "VC", "VC_SQRT"}) {
-      CHECK(clr.read_weights(name)->type() == Weights::Type::DIVISIVE);
+    SECTION("valid") {
+      CHECK(clr.read_weights("weight")->type() == Weights::Type::MULTIPLICATIVE);
+      for (const auto name : {"GW_SCALE", "INTER_SCALE", "SCALE", "VC", "VC_SQRT"}) {
+        CHECK(clr.read_weights(name)->type() == Weights::Type::DIVISIVE);
+      }
     }
 
     SECTION("invalid") {
       CHECK_THROWS(clr.read_weights(""));
       CHECK_THROWS(clr.read_weights("AAA"));
+    }
+
+    SECTION("purging") {
+      CHECK(clr.purge_weights() == false);
+      CHECK(clr.purge_weights("weight") == false);
+
+      const auto w = clr.read_weights("weight");
+      CHECK(w.use_count() == 2);
+      CHECK(clr.purge_weights("weight") == true);
+      CHECK(w.use_count() == 1);
+
+      clr.read_weights("weight");
+      CHECK(clr.purge_weights() == true);
     }
   }
 
