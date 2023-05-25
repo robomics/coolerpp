@@ -162,6 +162,15 @@ TEST_CASE("Pixel selector: 1D queries", "[pixel_selector][short]") {
     CHECK(sum == 334'290);
   }
 
+  SECTION("equality operator") {
+    CHECK(f.fetch<T>("chr1:0-1000") == f.fetch<T>("chr1:0-1000"));
+    CHECK(f.fetch<T>("chr1:10-1000") != f.fetch<T>("chr1:0-1000"));
+  }
+
+  SECTION("overloads return identical results") {
+    CHECK(f.fetch<T>("chr1:0-1000") == f.fetch<T>("chr1", 0, 1000));
+  }
+
   SECTION("invalid queries") {
     CHECK_THROWS_WITH(f.fetch<T>(""), Catch::Matchers::Equals("query is empty"));
     CHECK_THROWS_WITH(f.fetch<T>("chr3"), Catch::Matchers::ContainsSubstring("invalid chromosome"));
@@ -206,6 +215,11 @@ TEST_CASE("Pixel selector: 2D queries", "[pixel_selector][short]") {
   auto f = File::open_read_only(path.string());
 
   SECTION("cis") {
+    SECTION("overloads return identical results") {
+      CHECK(f.fetch<T>("1:5000000-5500000", "1:5000000-6500000") ==
+            f.fetch<T>("1", 5000000, 5500000, "1", 5000000, 6500000));
+    }
+
     SECTION("valid") {
       auto selector = f.fetch<T>("1:5000000-5500000", "1:5000000-6500000");
       const std::vector<Pixel<T>> pixels(selector.begin(), selector.end());
@@ -228,6 +242,10 @@ TEST_CASE("Pixel selector: 2D queries", "[pixel_selector][short]") {
   }
 
   SECTION("trans") {
+    SECTION("overloads return identical results") {
+      CHECK(f.fetch<T>("1:48000000-50000000", "4:30000000-35000000") ==
+            f.fetch<T>("1", 48000000, 50000000, "4", 30000000, 35000000));
+    }
     SECTION("valid") {
       auto selector = f.fetch<T>("1:48000000-50000000", "4:30000000-35000000");
       const std::vector<Pixel<T>> pixels(selector.begin(), selector.end());

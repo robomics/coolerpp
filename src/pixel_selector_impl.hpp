@@ -62,6 +62,16 @@ inline PixelSelector<N>::PixelSelector(std::shared_ptr<const Index> index,
                     std::make_shared<PixelCoordinates>(std::move(coord2))) {}
 
 template <class N>
+inline bool PixelSelector<N>::operator==(const PixelSelector<N> &other) const noexcept {
+  return this->begin() == other.begin() && this->end() == other.end();
+}
+
+template <class N>
+inline bool PixelSelector<N>::operator!=(const PixelSelector<N> &other) const noexcept {
+  return !(*this == other);
+}
+
+template <class N>
 inline auto PixelSelector<N>::begin() const -> iterator {
   return this->cbegin();
 }
@@ -493,7 +503,7 @@ inline void PixelSelector<N>::iterator::jump_to_next_overlap() {
     // There's no more data to be read, as we're past the last column overlapping the query,
     // and the next row does not overlap the query
     if (this->_bin2_id_it >= this->_bin2_id_last || next_row > this->_coord1->bin2_id()) {
-      assert(col > this->_coord2->bin2_id());
+      // assert(col > this->_coord2->bin2_id());  // This is not always true for trans queries
       this->jump_at_end();
       return;
     }
