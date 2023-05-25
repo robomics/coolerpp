@@ -158,6 +158,17 @@ inline std::shared_ptr<Weights> File::read_weights(std::string_view name, Weight
   return node.first->second;
 }
 
+inline bool File::purge_weights(std::string_view name) {
+  if (this->_weights.empty()) {
+    return false;
+  }
+  if (name == "") {
+    this->_weights.clear();
+    return true;
+  }
+  return this->_weights.erase(std::string{name});
+}
+
 inline auto File::open_root_group(const HighFive::File &f, std::string_view uri) -> RootGroup {
   [[maybe_unused]] HighFive::SilenceHDF5 silencer{};  // NOLINT
   return {f.getGroup(parse_cooler_uri(uri).group_path)};

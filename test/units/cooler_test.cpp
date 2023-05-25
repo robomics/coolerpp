@@ -6,6 +6,7 @@
 
 #include <algorithm>
 #include <catch2/catch_test_macros.hpp>
+#include <catch2/matchers/catch_matchers_floating_point.hpp>
 #include <catch2/matchers/catch_matchers_string.hpp>
 #include <filesystem>
 #include <random>
@@ -527,6 +528,52 @@ TEST_CASE("Coolerpp: write weights", "[cooler][short]") {
   SECTION("attempt write on read-only file") {
     constexpr std::array<double, 1> w{};
     CHECK_THROWS(File::open_read_only(path2.string()).write_weights("weights", w.begin(), w.end()));
+  }
+}
+
+// NOLINTNEXTLINE(readability-function-cognitive-complexity)
+TEST_CASE("Coolerpp: Balancer", "[cooler][short]") {
+  auto path = datadir / "ENCFF993FGR.2500000.cool";
+  auto clr = File::open_read_only(path.string());
+
+  SECTION("read weights") {
+    CHECK(clr.read_weights("weight")->type() == Weights::Type::MULTIPLICATIVE);
+    for (const auto name : {"GW_SCALE", "INTER_SCALE", "SCALE", "VC", "VC_SQRT"}) {
+      CHECK(clr.read_weights(name)->type() == Weights::Type::DIVISIVE);
+    }
+
+    SECTION("invalid") {
+      CHECK_THROWS(clr.read_weights(""));
+      CHECK_THROWS(clr.read_weights("AAA"));
+    }
+  }
+
+  SECTION("Balancer") {
+    SECTION("ICE") {
+      const auto sel = Balancer(clr.fetch<std::int32_t>("chr1", 5'000'000, 10'000'000),
+                                clr.read_weights("weight"));
+      constexpr std::array<double, 3> expected{3.345797, 0.328794, 4.456354};
+      const std::vector<Pixel<double>> pixels{sel.begin(), sel.end()};
+
+      REQUIRE(pixels.size() == expected.size());
+
+      for (std::size_t i = 0; i < expected.size(); ++i) {
+        CHECK_THAT(pixels[i].count, Catch::Matchers::WithinAbs(expected[i], 1.0e-6));
+      }
+    }
+
+    SECTION("GW_SCALE") {
+      const auto sel = Balancer(clr.fetch<std::int32_t>("chr1", 5'000'000, 10'000'000),
+                                clr.read_weights("GW_SCALE"));
+      constexpr std::array<double, 3> expected{927703.336647, 77376.912375, 890112.397104};
+      const std::vector<Pixel<double>> pixels{sel.begin(), sel.end()};
+
+      REQUIRE(pixels.size() == expected.size());
+
+      for (std::size_t i = 0; i < expected.size(); ++i) {
+        CHECK_THAT(pixels[i].count, Catch::Matchers::WithinAbs(expected[i], 1.0e-6));
+      }
+    }
   }
 }
 
