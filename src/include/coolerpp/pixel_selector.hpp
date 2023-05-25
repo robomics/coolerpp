@@ -63,7 +63,7 @@ class PixelSelector {
   [[nodiscard]] constexpr const PixelCoordinates &coord1() const noexcept;
   [[nodiscard]] constexpr const PixelCoordinates &coord2() const noexcept;
 
-  [[nodiscard]] static PixelCoordinates parse_query(const std::shared_ptr<const BinTableLazy> bins,
+  [[nodiscard]] static PixelCoordinates parse_query(std::shared_ptr<const BinTableLazy> bins,
                                                     std::string_view query);
 
   class iterator {

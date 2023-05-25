@@ -21,12 +21,12 @@ TEST_CASE("Pixel", "[pixel][short]") {
   const auto bins = std::make_shared<const BinTableLazy>(chroms, bin_size);
 
   auto PI = [&](std::string_view chrom1, std::string_view chrom2, std::uint32_t pos1,
-               std::uint32_t pos2, std::uint32_t count = 0) {
+                std::uint32_t pos2, std::uint32_t count = 0) {
     return Pixel<std::uint32_t>{PixelCoordinates{bins, chrom1, chrom2, pos1, pos2}, count};
   };
 
   auto PFP = [&](std::string_view chrom1, std::string_view chrom2, std::uint32_t pos1,
-                std::uint32_t pos2, double count = 0) {
+                 std::uint32_t pos2, double count = 0) {
     return Pixel<double>{PixelCoordinates{bins, chrom1, chrom2, pos1, pos2}, count};
   };
 
