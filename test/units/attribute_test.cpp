@@ -23,10 +23,21 @@ namespace coolerpp::test::attribute {
 
 template <class H5Obj, class T>
 static void compare_attribute(H5Obj& obj, std::string_view key, const T& expected) {
+  static_assert(std::is_same_v<T, std::string> || std::is_fundamental_v<T>);
   T buff{};
   obj.getAttribute(std::string{key}).read(buff);
 
   CHECK(expected == buff);
+}
+
+template <class H5Obj, class T>
+static void compare_attribute(H5Obj& obj, std::string_view key, const std::vector<T>& expected) {
+  std::vector<T> buff{};
+  obj.getAttribute(std::string{key}).read(buff);
+  REQUIRE(expected.size() == buff.size());
+  for (std::size_t i = 0; i < buff.size(); ++i) {
+    CHECK(expected[i] == buff[i]);
+  }
 }
 
 // NOLINTNEXTLINE(readability-function-cognitive-complexity)
@@ -252,6 +263,24 @@ TEST_CASE("Attribute: write", "[cooler][short]") {
       compare_attribute(d, "float", buff);
     }
   }
+
+  SECTION("std::vector") {
+    const std::vector<std::int32_t> buff{1, 2, 3};
+    SECTION("File") {
+      Attribute::write(f, "std::vector", buff);
+      compare_attribute(f, "std::vector", buff);
+    }
+
+    SECTION("Group") {
+      Attribute::write(g, "std::vector", buff);
+      compare_attribute(g, "std::vector", buff);
+    }
+
+    SECTION("Dataset") {
+      Attribute::write(d, "std::vector", buff);
+      compare_attribute(d, "std::vector", buff);
+    }
+  }
 }
 
 // NOLINTNEXTLINE(readability-function-cognitive-complexity)
@@ -351,6 +380,30 @@ TEST_CASE("Attribute: read", "[cooler][short]") {
     }
     SECTION("Dataset") {
       CHECK_THAT(Attribute::read<float>(d, "float"), Catch::Matchers::WithinRel(buff));
+    }
+  }
+
+  SECTION("std::vector") {
+    SECTION("File") {
+      const auto buff = Attribute::read_vector<std::int64_t>(f, "std::vector");
+      REQUIRE(buff.size() == 5);
+      for (std::size_t i = 0; i < buff.size(); ++i) {
+        CHECK(buff[i] == conditional_static_cast<std::int64_t>(i + 1));
+      }
+    }
+    SECTION("Group") {
+      const auto buff = Attribute::read_vector<std::int64_t>(g, "std::vector");
+      REQUIRE(buff.size() == 5);
+      for (std::size_t i = 0; i < buff.size(); ++i) {
+        CHECK(buff[i] == conditional_static_cast<std::int64_t>(i + 1));
+      }
+    }
+    SECTION("Dataset") {
+      const auto buff = Attribute::read_vector<std::int64_t>(d, "std::vector");
+      REQUIRE(buff.size() == 5);
+      for (std::size_t i = 0; i < buff.size(); ++i) {
+        CHECK(buff[i] == conditional_static_cast<std::int64_t>(i + 1));
+      }
     }
   }
 }

@@ -42,6 +42,11 @@ struct Attribute {
   template <class T, class ParentObj>
   [[nodiscard]] static T read(const ParentObj& h5obj, std::string_view key);
 
+  template <class T, class ParentObj>
+  [[nodiscard]] static std::vector<T> read_vector(const ParentObj& h5obj, std::string_view key);
+  template <class T, class ParentObj>
+  static void read_vector(const ParentObj& h5obj, std::string_view key, std::vector<T>& buff);
+
  private:
   template <std::size_t i = 1>  // i = 1 skips T=monostate
   [[nodiscard]] static auto read_variant(const HighFive::Attribute& attr) -> AttributeVar;
