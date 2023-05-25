@@ -62,6 +62,16 @@ inline PixelSelector<N>::PixelSelector(std::shared_ptr<const Index> index,
                     std::make_shared<PixelCoordinates>(std::move(coord2))) {}
 
 template <class N>
+inline bool PixelSelector<N>::operator==(const PixelSelector<N> &other) const noexcept {
+  return this->begin() == other.begin() && this->end() == other.end();
+}
+
+template <class N>
+inline bool PixelSelector<N>::operator!=(const PixelSelector<N> &other) const noexcept {
+  return !(*this == other);
+}
+
+template <class N>
 inline auto PixelSelector<N>::begin() const -> iterator {
   return this->cbegin();
 }
