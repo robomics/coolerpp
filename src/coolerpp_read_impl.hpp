@@ -128,7 +128,7 @@ inline PixelSelector<N> File::fetch(PixelCoordinates coord1, PixelCoordinates co
   // clang-format on
 }
 
-inline std::shared_ptr<Weights> File::read_weights(std::string_view name) {
+inline std::shared_ptr<Weights> File::read_weights(std::string_view name) const {
   if (name.empty()) {
     throw std::runtime_error("weight dataset name is empty");
   }
@@ -136,7 +136,8 @@ inline std::shared_ptr<Weights> File::read_weights(std::string_view name) {
   return this->read_weights(name, Weights::infer_type(name));
 }
 
-inline std::shared_ptr<Weights> File::read_weights(std::string_view name, Weights::Type type) {
+inline std::shared_ptr<Weights> File::read_weights(std::string_view name,
+                                                   Weights::Type type) const {
   if (name.empty()) {
     throw std::runtime_error("weight dataset name is empty");
   }

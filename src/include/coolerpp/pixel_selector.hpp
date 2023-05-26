@@ -54,8 +54,8 @@ class PixelSelector {
                 const Dataset &pixels_bin2_id, const Dataset &pixels_count, PixelCoordinates coord1,
                 PixelCoordinates coord2) noexcept;
 
-  [[nodiscard]] bool operator==(const PixelSelector<N>& other) const noexcept;
-  [[nodiscard]] bool operator!=(const PixelSelector<N>& other) const noexcept;
+  [[nodiscard]] bool operator==(const PixelSelector<N> &other) const noexcept;
+  [[nodiscard]] bool operator!=(const PixelSelector<N> &other) const noexcept;
 
   [[nodiscard]] auto begin() const -> iterator;
   [[nodiscard]] auto end() const -> iterator;

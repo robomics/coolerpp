@@ -132,8 +132,14 @@ inline auto Weights::infer_type(std::string_view name) -> Type {
 }
 
 template <typename N>
-inline Balancer<N>::Balancer(PixelSelector<N> selector, std::shared_ptr<Weights> weights)
-    : _selector(std::move(selector)), _weights(std::move(weights)) {}
+inline Balancer<N>::Balancer(const PixelSelector<N>& selector, std::shared_ptr<Weights> weights)
+    : Balancer(selector.begin(), selector.end(), std::move(weights)) {}
+
+template <typename N>
+inline Balancer<N>::Balancer(typename PixelSelector<N>::iterator first,
+                             typename PixelSelector<N>::iterator last,
+                             std::shared_ptr<Weights> weights)
+    : _first(std::move(first)), _last(std::move(last)), _weights(std::move(weights)) {}
 
 template <typename N>
 inline Weights::Type Balancer<N>::type() const noexcept {
@@ -155,12 +161,12 @@ inline auto Balancer<N>::end() const -> iterator {
 
 template <typename N>
 inline auto Balancer<N>::cbegin() const -> iterator {
-  return iterator{this->_selector.begin(), this->_weights};
+  return iterator{this->_first, this->_weights};
 }
 
 template <typename N>
 inline auto Balancer<N>::cend() const -> iterator {
-  return iterator{this->_selector.end(), this->_weights};
+  return iterator{this->_last, this->_weights};
 }
 
 template <typename N>

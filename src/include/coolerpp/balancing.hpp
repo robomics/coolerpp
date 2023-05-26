@@ -45,12 +45,15 @@ class Balancer {
   class iterator;
 
  private:
-  PixelSelector<N> _selector;
+  typename PixelSelector<N>::iterator _first;
+  typename PixelSelector<N>::iterator _last;
   std::shared_ptr<Weights> _weights;
 
  public:
   Balancer() = delete;
-  Balancer(PixelSelector<N> selector, std::shared_ptr<Weights> weights);
+  Balancer(const PixelSelector<N> &selector, std::shared_ptr<Weights> weights);
+  Balancer(typename PixelSelector<N>::iterator first, typename PixelSelector<N>::iterator last,
+           std::shared_ptr<Weights> weights);
 
   [[nodiscard]] Weights::Type type() const noexcept;
 
