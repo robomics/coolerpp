@@ -242,7 +242,7 @@ def worker(
     num_failures = 0
     num_queries = 0
 
-    if balance is None:
+    if balance is None or balance == "raw":
         balance = False
 
     try:

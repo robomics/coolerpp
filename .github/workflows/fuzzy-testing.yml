@@ -12,6 +12,7 @@ on:
       - "examples/**"
       - "src/**"
       - "test/scripts/fuzzy_test.py"
+      - "test/scripts/link_h5_dataset.py"
       - "CMakeLists.txt"
       - "conanfile.txt"
     tags:
@@ -24,6 +25,7 @@ on:
       - "examples/**"
       - "src/**"
       - "test/scripts/fuzzy_test.py"
+      - "test/scripts/link_h5_dataset.py"
       - "CMakeLists.txt"
       - "conanfile.txt"
 
@@ -46,6 +48,7 @@ jobs:
     runs-on: ubuntu-latest
     outputs:
       cache-key: ${{ steps.generate-cache-key.outputs.key }}
+      cooler-uri: ${{ steps.remove-unused-res.outputs.mcool }}
 
     steps:
       - name: Generate cache key
@@ -60,6 +63,9 @@ jobs:
         with:
           key: ${{ steps.generate-cache-key.outputs.key }}
           path: test/data/
+
+      - uses: actions/checkout@v3
+        if: steps.cache-dataset.outputs.cache-hit != 'true'
 
       - name: Download test dataset
         if: steps.cache-dataset.outputs.cache-hit != 'true'
@@ -93,14 +99,26 @@ jobs:
 
       - name: Remove unused resolutions
         if: steps.cache-dataset.outputs.cache-hit != 'true'
+        id: remove-unused-res
         run: |
           src="test/data/$(basename "$TEST_DATASET_URL")"
           dest="$src.new"
+
+          echo "mcool=$src::/resolutions/1000" >> "$GITHUB_OUTPUT"
 
           cooler cp "$src::/resolutions/1000" "$dest::/resolutions/1000"
 
           ls -lah test/data/*.mcool*
           mv "$dest" "$src"
+
+      - name: Rename default weight dataset
+        if: steps.cache-dataset.outputs.cache-hit != 'true'
+        run: |
+          test/scripts/link_h5_dataset.py \
+            "${{ steps.remove-unused-res.outputs.mcool }}" \
+            bins/weight \
+            bins/ICE
+
 
   build-project:
     runs-on: ubuntu-latest
@@ -188,7 +206,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        balance: [ 'raw', 'weight', 'KR']
+        balance: [ 'raw', 'ICE', 'KR']
 
     steps:
       - uses: actions/checkout@v3
@@ -217,8 +235,6 @@ jobs:
           seed="$(python3 -c 'import random; print(random.randint(0, 2**32))')"
           2>&1 echo "Seed: ${seed}"
 
-          cooler_uri="test/data/$(basename "$TEST_DATASET_URL")::/resolutions/1000"
-
           chmod 755 coolerpp_dump
           coolerpp_dump="$(readlink -f ./coolerpp_dump)"
 
@@ -227,7 +243,7 @@ jobs:
             --seed="$seed" \
             --duration 600 \
             --balance ${{ matrix.balance }} \
-            "$cooler_uri"
+            "${{ needs.preproc-test-dataset.outputs.cooler-uri }}"
 
   fuzzy-testing-status-check:
     name: Status Check (fuzzy-testing)
