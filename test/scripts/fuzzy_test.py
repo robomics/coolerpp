@@ -16,7 +16,7 @@ import shutil
 import subprocess as sp
 import sys
 import time
-from typing import Dict, Tuple
+from typing import Dict, Tuple, Union
 
 import cooler
 import numpy as np
@@ -75,6 +75,9 @@ def make_cli():
         default=1_000_000,
         help="Standard deviation for query size.",
     )
+    cli.add_argument(
+        "--balance", type=str, help="Name of the dataset to use for balancing."
+    )
     cli.add_argument("--seed", type=int, default=2074288341)
     cli.add_argument(
         "--nproc",
@@ -86,18 +89,32 @@ def make_cli():
     return cli
 
 
-def cooler_dump(selector, query1: str, query2: str):
+def cooler_dump(selector, query1: str, query2: str) -> pd.DataFrame:
     logging.debug("[cooler] running query for %s, %s...", query1, query2)
-    return selector.fetch(query1, query2)
+    df = selector.fetch(query1, query2)
+    if "balanced" in df:
+        df["count"] = df["balanced"]
+    return df.drop(columns="balanced", errors="ignore").set_index(
+        ["chrom1", "start1", "end1", "chrom2", "start2", "end2"]
+    )
 
 
 def coolerpp_dump(
     coolerpp_bin: pathlib.Path,
     path_to_cooler_file: pathlib.Path,
+    balance: Union[bool, str],
     query1: str,
     query2: str,
-):
-    cmd = [shutil.which(str(coolerpp_bin)), str(path_to_cooler_file), query1, query2]
+) -> pd.DataFrame:
+    if not balance:
+        balance = "raw"
+    cmd = [
+        shutil.which(str(coolerpp_bin)),
+        str(path_to_cooler_file),
+        balance,
+        query1,
+        query2,
+    ]
 
     cmd = shlex.split(" ".join(str(tok) for tok in cmd))
     logging.debug("[coolerpp] Running %s...", cmd)
@@ -113,7 +130,7 @@ def coolerpp_dump(
             print(coolerpp_dump.stderr, file=sys.stderr)
             raise RuntimeError(f"{cmd} terminated with code {code}")
 
-    return df
+    return df.set_index(["chrom1", "start1", "end1", "chrom2", "start2", "end2"])
 
 
 def read_chrom_sizes(path_to_cooler_file: pathlib.Path) -> Dict[str, int]:
@@ -159,6 +176,19 @@ def generate_query_2d(
     return q1, q2
 
 
+def find_differences(df1: pd.DataFrame, df2: pd.DataFrame) -> pd.DataFrame:
+    df = df1.merge(
+        df2, how="outer", left_index=True, right_index=True, suffixes=("1", "2")
+    )
+    # We're mapping False to None so that we can more easily drop identical rows with dropna()
+    df["count_close_enough"] = pd.Series(np.isclose(df["count1"], df["count2"])).map(
+        {False: None}
+    )
+
+    # We're dropping the counts to avoid incorrectly flagging rows with nan as counts
+    return df.drop(columns=["count1", "count2"]).dropna()
+
+
 def results_are_identical(worker_id, q1, q2, expected, found) -> bool:
     if len(expected) != len(found):
         logging.warning(
@@ -171,18 +201,18 @@ def results_are_identical(worker_id, q1, q2, expected, found) -> bool:
         )
         return False
 
-    diff = expected.compare(found)
-
-    if len(diff) != 0:
-        logging.warning(
-            "[%d] %s, %s (%d nnz): FAIL! Found %d differences!",
-            worker_id,
-            q1,
-            q2,
-            len(expected),
-            len(diff),
-        )
-        return False
+    if len(expected) != 0:
+        diff = find_differences(expected, found)
+        if len(diff) != 0:
+            logging.warning(
+                "[%d] %s, %s (%d nnz): FAIL! Found %d differences!",
+                worker_id,
+                q1,
+                q2,
+                len(expected),
+                len(diff),
+            )
+            return False
 
     logging.debug("[%d] %s, %s (%d nnz): OK!", worker_id, q1, q2, len(expected))
     return True
@@ -202,6 +232,7 @@ def worker(
     query_length_mu: float,
     query_length_std: float,
     _1d_to_2d_query_ratio: float,
+    balance: Union[str, None],
     seed: int,
     worker_id: int,
     end_time,
@@ -211,6 +242,9 @@ def worker(
     num_failures = 0
     num_queries = 0
 
+    if balance is None:
+        balance = False
+
     try:
         seed_prng(worker_id, seed)
 
@@ -218,7 +252,7 @@ def worker(
         weights = chrom_sizes / chrom_sizes.sum()
 
         sel = cooler.Cooler(str(path_to_cooler)).matrix(
-            balance=False, as_pixels=True, join=True
+            balance=balance, as_pixels=True, join=True
         )
 
         while time.time() < end_time:
@@ -248,7 +282,9 @@ def worker(
 
             num_queries += 1
             expected = cooler_dump(sel, q1, q2)
-            found = coolerpp_dump(path_to_coolerpp_dump, path_to_cooler, q1, q2)
+            found = coolerpp_dump(
+                path_to_coolerpp_dump, path_to_cooler, balance, q1, q2
+            )
 
             if not results_are_identical(worker_id, q1, q2, expected, found):
                 num_failures += 1
@@ -284,6 +320,7 @@ def main():
                 itertools.repeat(args["query_length_avg"]),
                 itertools.repeat(args["query_length_std"]),
                 itertools.repeat(args["1d_to_2d_query_ratio"]),
+                itertools.repeat(args["balance"]),
                 itertools.repeat(args["seed"]),
                 range(args["nproc"]),
                 itertools.repeat(end_time),

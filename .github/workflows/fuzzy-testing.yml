@@ -185,6 +185,11 @@ jobs:
     container:
       image: ubuntu:22.04
 
+    strategy:
+      fail-fast: false
+      matrix:
+        balance: [ 'raw', 'weight', 'KR']
+
     steps:
       - uses: actions/checkout@v3
 
@@ -221,6 +226,7 @@ jobs:
             --path-to-coolerpp-dump="$coolerpp_dump" \
             --seed="$seed" \
             --duration 600 \
+            --balance ${{ matrix.balance }} \
             "$cooler_uri"
 
   fuzzy-testing-status-check:
