@@ -57,48 +57,56 @@ jobs:
           key="test-dataset-$TEST_DATASET_SHA256"
           echo "key=$key" >> $GITHUB_OUTPUT
 
-      - name: Cache test datasets
-        id: cache-dataset
+      - name: Check test dataset is already cached
+        id: check-cache
         uses: actions/cache@v3
+        with:
+          lookup-only: true
+          key: ${{ steps.generate-cache-key.outputs.key }}
+          path: test/data/
+
+      - name: Cache test datasets
+        uses: actions/cache@v3
+        if: steps.check-cache.outputs.cache-hit != 'true'
         with:
           key: ${{ steps.generate-cache-key.outputs.key }}
           path: test/data/
 
       - uses: actions/checkout@v3
-        if: steps.cache-dataset.outputs.cache-hit != 'true'
+        if: steps.check-cache.outputs.cache-hit != 'true'
 
       - name: Download test dataset
-        if: steps.cache-dataset.outputs.cache-hit != 'true'
+        if: steps.check-cache.outputs.cache-hit != 'true'
         run: |
           mkdir -p test/data
           cd test/data
           curl -LO "$TEST_DATASET_URL"
 
       - name: Checksum test dataset
-        if: steps.cache-dataset.outputs.cache-hit != 'true'
+        if: steps.check-cache.outputs.cache-hit != 'true'
         run: |
           echo "$TEST_DATASET_SHA256  test/data/$(basename "$TEST_DATASET_URL")" > checksum.sha256
           shasum -c checksum.sha256
 
       - name: Generate requirements.txt
-        if: steps.cache-dataset.outputs.cache-hit != 'true'
+        if: steps.check-cache.outputs.cache-hit != 'true'
         run: |
           echo 'cooler>=0.9.1' > requirements.txt
 
       - name: Setup Python
-        if: steps.cache-dataset.outputs.cache-hit != 'true'
+        if: steps.check-cache.outputs.cache-hit != 'true'
         uses: actions/setup-python@v4
         with:
           python-version: '3.11'
           cache: pip
 
       - name: Install Cooler
-        if: steps.cache-dataset.outputs.cache-hit != 'true'
+        if: steps.check-cache.outputs.cache-hit != 'true'
         run: |
           pip3 install -r requirements.txt
 
       - name: Remove unused resolutions
-        if: steps.cache-dataset.outputs.cache-hit != 'true'
+        if: steps.check-cache.outputs.cache-hit != 'true'
         id: remove-unused-res
         run: |
           src="test/data/$(basename "$TEST_DATASET_URL")"
@@ -112,7 +120,7 @@ jobs:
           mv "$dest" "$src"
 
       - name: Rename default weight dataset
-        if: steps.cache-dataset.outputs.cache-hit != 'true'
+        if: steps.check-cache.outputs.cache-hit != 'true'
         run: |
           test/scripts/link_h5_dataset.py \
             "${{ steps.remove-unused-res.outputs.mcool }}" \
@@ -226,13 +234,8 @@ jobs:
         uses: actions/cache@v3
         with:
           key: ${{ needs.preproc-test-dataset.outputs.cache-key }}
+          fail-on-cache-miss: true
           path: test/data/
-
-      - name: Ensure cache restore was successful
-        if: steps.cache-dataset.outputs.cache-hit != 'true'
-        run: |
-          echo 2>&1 'Failed to restore test dataset from cache'
-          exit 1
 
       - name: Run test
         env:
