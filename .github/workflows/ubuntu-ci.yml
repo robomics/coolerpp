@@ -70,10 +70,10 @@ jobs:
             var includes = []
             // Debug builds (short CI)
             includes.push({ image: 'conanio/gcc8-ubuntu16.04',      build_type: 'Debug',   developer_mode: 'OFF' })
-            includes.push({ image: 'conanio/gcc12-ubuntu16.04',     build_type: 'Debug',   developer_mode: 'ON'  })
+            includes.push({ image: 'conanio/gcc13-ubuntu16.04',     build_type: 'Debug',   developer_mode: 'ON'  })
             includes.push({ image: 'conanio/clang14-ubuntu16.04',   build_type: 'Debug',   developer_mode: 'ON'  })
             // Release builds (short CI)
-            includes.push({ image: 'conanio/gcc12-ubuntu16.04',     build_type: 'Release', developer_mode: 'ON'  })
+            includes.push({ image: 'conanio/gcc13-ubuntu16.04',     build_type: 'Release', developer_mode: 'ON'  })
             includes.push({ image: 'conanio/clang14-ubuntu16.04',   build_type: 'Release', developer_mode: 'ON'  })
             if (ci_short) {
               return { include: includes }
@@ -93,6 +93,7 @@ jobs:
             includes.push({ image: 'conanio/gcc9-ubuntu16.04',      build_type: 'Release', developer_mode: 'OFF' })
             includes.push({ image: 'conanio/gcc10-ubuntu16.04',     build_type: 'Release', developer_mode: 'ON'  })
             includes.push({ image: 'conanio/gcc11-ubuntu16.04',     build_type: 'Release', developer_mode: 'ON'  })
+            includes.push({ image: 'conanio/gcc12-ubuntu16.04',     build_type: 'Release', developer_mode: 'ON'  })
             includes.push({ image: 'conanio/clang10-ubuntu16.04',   build_type: 'Release', developer_mode: 'OFF' })
             includes.push({ image: 'conanio/clang11-ubuntu16.04',   build_type: 'Release', developer_mode: 'OFF' })
             includes.push({ image: 'conanio/clang12-ubuntu16.04',   build_type: 'Release', developer_mode: 'ON'  })
