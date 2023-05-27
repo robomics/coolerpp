@@ -39,7 +39,7 @@ TEST_CASE("BinTableLazy", "[bin-table][short]") {
     CHECK(table.at(1) == expected);
     CHECK(table.at("chr1") != expected);
 
-    CHECK_THROWS_AS(table.at(Chromosome{"chr5", 0}), std::out_of_range);
+    CHECK_THROWS_AS(table.at(Chromosome{"chr5", 1}), std::out_of_range);
     CHECK_THROWS_AS(table.at("a"), std::out_of_range);
     CHECK_THROWS_AS(table.at(10), std::out_of_range);
   }

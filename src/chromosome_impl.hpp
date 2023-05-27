@@ -20,7 +20,9 @@
 namespace coolerpp {
 
 inline Chromosome::Chromosome(std::string name_, std::uint32_t size_) noexcept
-    : name(std::move(name_)), size(size_) {}
+    : name(std::move(name_)), size(size_) {
+  assert(size != 0);
+}
 
 inline bool Chromosome::operator<(const Chromosome& other) const noexcept {
   return this->name < other.name;

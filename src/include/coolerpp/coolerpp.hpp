@@ -24,6 +24,7 @@ DISABLE_WARNING_POP
 #include <variant>
 #include <vector>
 
+#include "coolerpp/balancing.hpp"
 #include "coolerpp/bin_table.hpp"
 #include "coolerpp/chromosome.hpp"
 #include "coolerpp/dataset.hpp"
@@ -94,6 +95,7 @@ class File {
   RootGroup _root_group{};
   GroupMap _groups{};
   DatasetMap _datasets{};
+  mutable tsl::hopscotch_map<std::string, std::shared_ptr<Weights>> _weights{};
   StandardAttributes _attrs{StandardAttributes::init(0)};
   internal::NumericVariant _pixel_variant{};
   std::shared_ptr<const BinTable> _bins{};
@@ -193,8 +195,6 @@ class File {
   template <typename N>
   [[nodiscard]] PixelSelector<N> fetch(std::string_view chrom, std::uint32_t start,
                                        std::uint32_t end) const;
-  template <typename N>
-  [[nodiscard]] PixelSelector<N> fetch(PixelCoordinates query) const;
 
   template <typename N>
   [[nodiscard]] PixelSelector<N> fetch(std::string_view range1, std::string_view range2) const;
@@ -202,8 +202,11 @@ class File {
   [[nodiscard]] PixelSelector<N> fetch(std::string_view chrom1, std::uint32_t start1,
                                        std::uint32_t end1, std::string_view chrom2,
                                        std::uint32_t start2, std::uint32_t end2) const;
-  template <typename N>
-  [[nodiscard]] PixelSelector<N> fetch(PixelCoordinates coord1, PixelCoordinates coord2) const;
+
+  std::shared_ptr<Weights> read_weights(std::string_view name) const;
+  std::shared_ptr<Weights> read_weights(std::string_view name, Weights::Type type) const;
+
+  bool purge_weights(std::string_view name = "");
 
   void flush();
 
@@ -292,6 +295,12 @@ class File {
 
   template <typename PixelT>
   void validate_pixel_type() const noexcept;
+
+  // IMPORTANT: the private fetch() methods interpret queries as open-open
+  template <ctypename N>
+  [[nodiscard]] PixelSelector<N> fetch(PixelCoordinates query) const;
+  template <typename N>
+  [[nodiscard]] PixelSelector<N> fetch(PixelCoordinates coord1, PixelCoordinates coord2) const;
 };
 
 }  // namespace coolerpp

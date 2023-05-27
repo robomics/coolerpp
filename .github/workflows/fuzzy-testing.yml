@@ -12,6 +12,7 @@ on:
       - "examples/**"
       - "src/**"
       - "test/scripts/fuzzy_test.py"
+      - "test/scripts/link_h5_dataset.py"
       - "CMakeLists.txt"
       - "conanfile.txt"
     tags:
@@ -24,12 +25,16 @@ on:
       - "examples/**"
       - "src/**"
       - "test/scripts/fuzzy_test.py"
+      - "test/scripts/link_h5_dataset.py"
       - "CMakeLists.txt"
       - "conanfile.txt"
 
   schedule:
     # Run weekly
     - cron: '15 3 * * 0'
+
+  workflow_dispatch:
+
 
 # https://stackoverflow.com/a/72408109
 concurrency:
@@ -45,62 +50,84 @@ jobs:
     name: Preprocess test dataset
     runs-on: ubuntu-latest
     outputs:
-      cache-key: ${{ steps.generate-cache-key.outputs.key }}
+      cache-key: ${{ steps.collect-metadata.outputs.key }}
+      cooler-uri: ${{ steps.collect-metadata.outputs.uri }}
 
     steps:
-      - name: Generate cache key
-        id: generate-cache-key
+      - name: Collect metadata
+        id: collect-metadata
         run: |
           key="test-dataset-$TEST_DATASET_SHA256"
-          echo "key=$key" >> $GITHUB_OUTPUT
+          uri="test/data/$(basename "$TEST_DATASET_URL")::/resolutions/1000"
 
-      - name: Cache test datasets
-        id: cache-dataset
+          echo "key=$key" >> $GITHUB_OUTPUT
+          echo "uri=$uri" >> "$GITHUB_OUTPUT"
+
+      - name: Check test dataset is already cached
+        id: check-cache
         uses: actions/cache@v3
         with:
-          key: ${{ steps.generate-cache-key.outputs.key }}
+          lookup-only: true
+          key: ${{ steps.collect-metadata.outputs.key }}
           path: test/data/
 
+      - name: Cache test datasets
+        uses: actions/cache@v3
+        if: steps.check-cache.outputs.cache-hit != 'true'
+        with:
+          key: ${{ steps.collect-metadata.outputs.key }}
+          path: test/data/
+
+      - uses: actions/checkout@v3
+        if: steps.check-cache.outputs.cache-hit != 'true'
+
       - name: Download test dataset
-        if: steps.cache-dataset.outputs.cache-hit != 'true'
+        if: steps.check-cache.outputs.cache-hit != 'true'
         run: |
           mkdir -p test/data
           cd test/data
-          curl -LO "$TEST_DATASET_URL"
+          curl -L "$TEST_DATASET_URL" -o test.mcool
 
       - name: Checksum test dataset
-        if: steps.cache-dataset.outputs.cache-hit != 'true'
+        if: steps.check-cache.outputs.cache-hit != 'true'
         run: |
-          echo "$TEST_DATASET_SHA256  test/data/$(basename "$TEST_DATASET_URL")" > checksum.sha256
+          echo "$TEST_DATASET_SHA256  test/data/test.mcool" > checksum.sha256
           shasum -c checksum.sha256
 
       - name: Generate requirements.txt
-        if: steps.cache-dataset.outputs.cache-hit != 'true'
+        if: steps.check-cache.outputs.cache-hit != 'true'
         run: |
           echo 'cooler>=0.9.1' > requirements.txt
 
       - name: Setup Python
-        if: steps.cache-dataset.outputs.cache-hit != 'true'
+        if: steps.check-cache.outputs.cache-hit != 'true'
         uses: actions/setup-python@v4
         with:
           python-version: '3.11'
           cache: pip
 
       - name: Install Cooler
-        if: steps.cache-dataset.outputs.cache-hit != 'true'
+        if: steps.check-cache.outputs.cache-hit != 'true'
         run: |
           pip3 install -r requirements.txt
 
       - name: Remove unused resolutions
-        if: steps.cache-dataset.outputs.cache-hit != 'true'
+        if: steps.check-cache.outputs.cache-hit != 'true'
         run: |
-          src="test/data/$(basename "$TEST_DATASET_URL")"
-          dest="$src.new"
+          cooler cp 'test.mcool::/resolutions/1000' \
+                    "${{ steps.collect-metadata.outputs.uri }}"
 
-          cooler cp "$src::/resolutions/1000" "$dest::/resolutions/1000"
+          ls -lah test/data/*.mcool
+          rm test/data/test.mcool
 
-          ls -lah test/data/*.mcool*
-          mv "$dest" "$src"
+      - name: Rename default weight dataset
+        if: steps.check-cache.outputs.cache-hit != 'true'
+        run: |
+          test/scripts/link_h5_dataset.py \
+            "${{ steps.collect-metadata.outputs.uri }}" \
+            bins/weight \
+            bins/ICE
+
 
   build-project:
     runs-on: ubuntu-latest
@@ -185,13 +212,18 @@ jobs:
     container:
       image: ubuntu:22.04
 
+    strategy:
+      fail-fast: false
+      matrix:
+        balance: [ 'raw', 'ICE', 'KR']
+
     steps:
       - uses: actions/checkout@v3
 
       - name: Install test dependencies
         run: |
           apt-get update
-          apt-get install -y python3-pip
+          apt-get install -y python3-pip zstd
           pip install --no-cache-dir 'cooler>=0.9.1'
 
       - name: Download coolerpp_dump
@@ -203,6 +235,7 @@ jobs:
         uses: actions/cache@v3
         with:
           key: ${{ needs.preproc-test-dataset.outputs.cache-key }}
+          fail-on-cache-miss: true
           path: test/data/
 
       - name: Run test
@@ -212,8 +245,6 @@ jobs:
           seed="$(python3 -c 'import random; print(random.randint(0, 2**32))')"
           2>&1 echo "Seed: ${seed}"
 
-          cooler_uri="test/data/$(basename "$TEST_DATASET_URL")::/resolutions/1000"
-
           chmod 755 coolerpp_dump
           coolerpp_dump="$(readlink -f ./coolerpp_dump)"
 
@@ -221,7 +252,8 @@ jobs:
             --path-to-coolerpp-dump="$coolerpp_dump" \
             --seed="$seed" \
             --duration 600 \
-            "$cooler_uri"
+            --balance ${{ matrix.balance }} \
+            "${{ needs.preproc-test-dataset.outputs.cooler-uri }}"
 
   fuzzy-testing-status-check:
     name: Status Check (fuzzy-testing)

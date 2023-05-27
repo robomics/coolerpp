@@ -87,6 +87,25 @@ inline auto Attribute::read(const ParentObj& h5obj, std::string_view key, bool m
   return attr;
 }
 
+template <class T, class ParentObj>
+inline std::vector<T> Attribute::read_vector(const ParentObj& h5obj, std::string_view key) {
+  std::vector<T> buff;
+  Attribute::read_vector(h5obj, key, buff);
+  return buff;
+}
+
+template <class T, class ParentObj>
+inline void Attribute::read_vector(const ParentObj& h5obj, std::string_view key,
+                                   std::vector<T>& buff) {
+  [[maybe_unused]] HighFive::SilenceHDF5 silencer{};  // NOLINT
+  try {
+    h5obj.getAttribute(std::string{key}).read(buff);
+  } catch (const std::exception& e) {
+    throw std::runtime_error(fmt::format(FMT_STRING("Unable to read attribute \"{}/{}\": {}"),
+                                         h5obj.getPath(), key, e.what()));
+  }
+}
+
 template <std::size_t i>
 inline auto Attribute::read_variant(const HighFive::Attribute& attr) -> AttributeVar {
   if constexpr (i < std::variant_size_v<AttributeVar>) {
