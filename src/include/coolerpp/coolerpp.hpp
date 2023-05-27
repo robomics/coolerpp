@@ -297,7 +297,7 @@ class File {
   void validate_pixel_type() const noexcept;
 
   // IMPORTANT: the private fetch() methods interpret queries as open-open
-  template <ctypename N>
+  template <typename N>
   [[nodiscard]] PixelSelector<N> fetch(PixelCoordinates query) const;
   template <typename N>
   [[nodiscard]] PixelSelector<N> fetch(PixelCoordinates coord1, PixelCoordinates coord2) const;

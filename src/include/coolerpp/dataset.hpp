@@ -171,7 +171,7 @@ class Dataset {
   [[nodiscard]] auto read_attribute(std::string_view key, bool missing_ok = false) const
       -> Attribute::AttributeVar;
 
-  template <class T>
+  template <typename T>
   void read_attribute(std::string_view key, std::vector<T> &buff) const;
 
   [[nodiscard]] bool has_attribute(std::string_view key) const;

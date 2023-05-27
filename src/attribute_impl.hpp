@@ -87,14 +87,14 @@ inline auto Attribute::read(const ParentObj& h5obj, std::string_view key, bool m
   return attr;
 }
 
-template <class T, class ParentObj>
+template <typename T, typename ParentObj>
 inline std::vector<T> Attribute::read_vector(const ParentObj& h5obj, std::string_view key) {
   std::vector<T> buff;
   Attribute::read_vector(h5obj, key, buff);
   return buff;
 }
 
-template <class T, class ParentObj>
+template <typename T, typename ParentObj>
 inline void Attribute::read_vector(const ParentObj& h5obj, std::string_view key,
                                    std::vector<T>& buff) {
   [[maybe_unused]] HighFive::SilenceHDF5 silencer{};  // NOLINT

@@ -42,9 +42,9 @@ struct Attribute {
   template <typename T, typename ParentObj>
   [[nodiscard]] static T read(const ParentObj& h5obj, std::string_view key);
 
-  template <class T, class ParentObj>
+  template <typename T, typename ParentObj>
   [[nodiscard]] static std::vector<T> read_vector(const ParentObj& h5obj, std::string_view key);
-  template <class T, class ParentObj>
+  template <typename T, typename ParentObj>
   static void read_vector(const ParentObj& h5obj, std::string_view key, std::vector<T>& buff);
 
  private:

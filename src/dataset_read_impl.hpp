@@ -217,7 +217,7 @@ inline T Dataset::read_attribute(std::string_view key) const {
   }
 }
 
-template <class T>
+template <typename T>
 inline void Dataset::read_attribute(std::string_view key, std::vector<T> &buff) const {
   Attribute::read_vector(this->_dataset, key, buff);
 }
