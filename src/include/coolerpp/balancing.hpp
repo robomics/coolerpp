@@ -47,13 +47,13 @@ class Balancer {
  private:
   typename PixelSelector<N>::iterator _first;
   typename PixelSelector<N>::iterator _last;
-  std::shared_ptr<Weights> _weights;
+  std::shared_ptr<const Weights> _weights;
 
  public:
   Balancer() = delete;
-  Balancer(const PixelSelector<N> &selector, std::shared_ptr<Weights> weights);
+  Balancer(const PixelSelector<N> &selector, std::shared_ptr<const Weights> weights);
   Balancer(typename PixelSelector<N>::iterator first, typename PixelSelector<N>::iterator last,
-           std::shared_ptr<Weights> weights);
+           std::shared_ptr<const Weights> weights);
 
   [[nodiscard]] Weights::Type type() const noexcept;
 
@@ -65,7 +65,7 @@ class Balancer {
 
   class iterator {
     typename PixelSelector<N>::iterator _it{};
-    std::shared_ptr<Weights> _weights{};
+    std::shared_ptr<const Weights> _weights{};
 
    public:
     using difference_type = std::ptrdiff_t;
@@ -76,7 +76,7 @@ class Balancer {
     using iterator_category = std::forward_iterator_tag;
 
     iterator() = default;
-    iterator(typename PixelSelector<N>::iterator it, std::shared_ptr<Weights> weights);
+    iterator(typename PixelSelector<N>::iterator it, std::shared_ptr<const Weights> weights);
 
     [[nodiscard]] constexpr bool operator==(const iterator &other) const noexcept;
     [[nodiscard]] constexpr bool operator!=(const iterator &other) const noexcept;

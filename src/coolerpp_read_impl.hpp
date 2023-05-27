@@ -128,7 +128,7 @@ inline PixelSelector<N> File::fetch(PixelCoordinates coord1, PixelCoordinates co
   // clang-format on
 }
 
-inline std::shared_ptr<Weights> File::read_weights(std::string_view name) const {
+inline std::shared_ptr<const Weights> File::read_weights(std::string_view name) const {
   if (name.empty()) {
     throw std::runtime_error("weight dataset name is empty");
   }
@@ -136,8 +136,8 @@ inline std::shared_ptr<Weights> File::read_weights(std::string_view name) const 
   return this->read_weights(name, Weights::infer_type(name));
 }
 
-inline std::shared_ptr<Weights> File::read_weights(std::string_view name,
-                                                   Weights::Type type) const {
+inline std::shared_ptr<const Weights> File::read_weights(std::string_view name,
+                                                         Weights::Type type) const {
   if (name.empty()) {
     throw std::runtime_error("weight dataset name is empty");
   }
@@ -155,7 +155,8 @@ inline std::shared_ptr<Weights> File::read_weights(std::string_view name,
   }
 
   const auto node = this->_weights.emplace(
-      name, std::make_shared<Weights>(*this->_bins, Dataset{this->_root_group, dset_path}, type));
+      name,
+      std::make_shared<const Weights>(*this->_bins, Dataset{this->_root_group, dset_path}, type));
   return node.first->second;
 }
 
