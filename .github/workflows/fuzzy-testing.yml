@@ -228,6 +228,12 @@ jobs:
           key: ${{ needs.preproc-test-dataset.outputs.cache-key }}
           path: test/data/
 
+      - name: Ensure cache restore was successful
+        if: steps.cache-dataset.outputs.cache-hit != 'true'
+        run: |
+          echo 2>&1 'Failed to restore test dataset from cache'
+          exit 1
+
       - name: Run test
         env:
           PYTHONHASHSEED: 0
