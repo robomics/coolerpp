@@ -2,104 +2,75 @@
 //
 // SPDX-License-Identifier: MIT
 
-#include <fmt/compile.h>
 #include <fmt/format.h>
-#include <fmt/os.h>
 
 #include <algorithm>
-#include <chrono>
-#include <fstream>
-#include <string>
+#include <cstdint>
+#include <exception>
+#include <string_view>
 
 #include "coolerpp/coolerpp.hpp"
 
 using namespace coolerpp;
 
+template <typename It>
+static void print_pixels(It first_pixel, It last_pixel) {
+  std::for_each(first_pixel, last_pixel,
+                [](const auto& pixel) { fmt::print(FMT_STRING("{:bedpe}\n"), pixel); });
+}
+
 template <typename N>
-static std::size_t print_pixels(typename PixelSelector<N>::iterator first_pixel,
-                                typename PixelSelector<N>::iterator last_pixel,
-                                const std::shared_ptr<Weights>& weights) {
-  std::size_t nnz = 0;
-  if (weights != nullptr) {
-    const auto sel = Balancer<N>(first_pixel, last_pixel, weights);
-    std::for_each(sel.begin(), sel.end(), [&](const auto& pixel) {
-      ++nnz;
-      fmt::print(FMT_COMPILE("{:bedpe}\t{}\n"), pixel.coords, pixel.count);
-    });
-  } else {
-    std::for_each(first_pixel, last_pixel, [&](const auto& pixel) {
-      ++nnz;
-      fmt::print(FMT_COMPILE("{:bedpe}\t{}\n"), pixel.coords, pixel.count);
-    });
-  }
-
-  return nnz;
+static void dump(const File& cooler, std::string_view range1, std::string_view range2) {
+  auto selector = cooler.fetch<N>(range1, range2);
+  print_pixels(selector.begin(), selector.end());
 }
 
-static std::size_t dump(const File& cooler, const std::string& coord1, const std::string& coord2,
-                        const std::shared_ptr<Weights>& weights) {
-  if (cooler.has_integral_pixels()) {
-    auto selector = cooler.fetch<std::int64_t>(coord1, coord2);
-    return print_pixels<std::int64_t>(selector.begin(), selector.end(), weights);
-  }
-
-  auto selector = cooler.fetch<double>(coord1, coord2);
-  return print_pixels<double>(selector.begin(), selector.end(), weights);
+template <typename N>
+static void dump(const File& cooler) {
+  print_pixels(cooler.begin<N>(), cooler.end<N>());
 }
 
-static std::size_t dump(const File& cooler, const std::shared_ptr<Weights>& weights) {
-  if (cooler.has_integral_pixels()) {
-    return print_pixels<std::int64_t>(cooler.begin<std::int64_t>(), cooler.end<std::int64_t>(),
-                                      weights);
-  }
-  return print_pixels<double>(cooler.begin<double>(), cooler.end<double>(), weights);
+static void print_usage(std::string_view arg0) {
+  fmt::print(stderr,
+             FMT_STRING("Usage:   {0} my_cooler.cool [region1] [region2]\n"
+                        "Example: {0} my_cooler.cool\n"
+                        "Example: {0} my_cooler.mcool::/resolutions/10000\n"
+                        "Example: {0} my_cooler.cool chr1\n"
+                        "Example: {0} my_cooler.cool chr1 chr2\n"
+                        "Example: {0} my_cooler.cool chr1:50000-100000\n"
+                        "Example: {0} my_cooler.cool chr1:50000-100000 chr2\n"),
+             arg0);
 }
 
 int main(int argc, char** argv) {
-  if (argc < 3) {
-    fmt::print(stderr,
-               FMT_STRING("Usage:   {0} my_cooler.cool balancing [region1] [region2]\n"
-                          "Example: {0} my_cooler.cool raw\n"
-                          "Example: {0} my_cooler.cool weight\n"
-                          "Example: {0} my_cooler.mcool::/resolutions/10000 raw\n"
-                          "Example: {0} my_cooler.cool raw chr1\n"
-                          "Example: {0} my_cooler.cool raw chr1 chr2\n"
-                          "Example: {0} my_cooler.cool raw chr1:50000-100000\n"
-                          "Example: {0} my_cooler.cool raw chr1:50000-100000 chr2\n"),
-               argv[0]);  // NOLINT(cppcoreguidelines-pro-bounds-pointer-arithmetic)
+  if (argc < 2) {
+    print_usage(argv[0]);  // NOLINT
     return 1;
   }
 
-  const std::string path_to_cooler = argv[1];  // NOLINT
-  const std::string balancing = argv[2];       // NOLINT
+  const std::string_view path_to_cooler = argv[1];              // NOLINT
+  const std::string_view range1 = argc < 3 ? "" : argv[2];      // NOLINT;
+  const std::string_view range2 = argc < 4 ? range1 : argv[3];  // NOLINT;
+
+  if (path_to_cooler == "--help" || path_to_cooler == "-h") {
+    print_usage(argv[0]);  // NOLINT
+    return 0;
+  }
 
   try {
-    const auto t0 = std::chrono::steady_clock::now();
-    const auto clr = File::open_read_only(path_to_cooler);
-    const auto weights =
-        balancing == "raw" ? std::shared_ptr<Weights>(nullptr) : clr.read_weights(balancing);
-    std::size_t nnz = 0;
+    const auto cooler = File::open_read_only(path_to_cooler);
+    const auto has_int_pixels = cooler.has_integral_pixels();
 
-    if (argc == 3) {
-      nnz = dump(clr, weights);
-    } else if (argc == 4) {
-      nnz = dump(clr, argv[3], argv[3], weights);  // NOLINT
+    if (range1.empty() && range2.empty()) {
+      has_int_pixels ? dump<std::int64_t>(cooler) : dump<double>(cooler);
     } else {
-      assert(argc == 5);
-      nnz = dump(clr, argv[3], argv[4], weights);  // NOLINT
+      has_int_pixels ? dump<std::int64_t>(cooler, range1, range2)
+                     : dump<double>(cooler, range1, range2);
     }
-
-    const auto t1 = std::chrono::steady_clock::now();
-
-    const auto elapsed_time_ms =
-        std::chrono::duration_cast<std::chrono::milliseconds>(t1 - t0).count();
-
-    fmt::print(stderr, FMT_STRING("Dumped {} pixels in {}s!\n"), nnz,
-               static_cast<double>(elapsed_time_ms) / 1000.0);
   } catch (const std::exception& e) {
     fmt::print(
         stderr,
-        FMT_STRING("The following error occurred while running coolerpp_dump on file {}: {}\n"),
+        FMT_STRING("The following error occurred while running coolerpp_dump on URI \"{}\": {}\n"),
         path_to_cooler, e.what());
     return 1;
   }
