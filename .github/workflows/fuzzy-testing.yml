@@ -225,7 +225,7 @@ jobs:
       - name: Install test dependencies
         run: |
           apt-get update
-          apt-get install -y python3-pip
+          apt-get install -y python3-pip zstd
           pip install --no-cache-dir 'cooler>=0.9.1'
 
       - name: Download coolerpp_dump
