@@ -20,7 +20,7 @@
 
 namespace coolerpp::internal {
 
-template <class N>
+template <typename N>
 inline void throw_except_from_errc(std::string_view tok, std::size_t idx,
                                    [[maybe_unused]] const N &field, const char *c, std::errc e) {
   static_assert(std::is_arithmetic<N>());
@@ -79,7 +79,7 @@ inline auto from_chars(const char *first, const char *last, long double &value) 
   return res;
 }
 
-template <class N>
+template <typename N>
 inline auto from_chars(const char *first, const char *last, N &value) noexcept {
   if constexpr (std::is_integral_v<N>) {
     return std::from_chars(first, last, value);
@@ -88,7 +88,7 @@ inline auto from_chars(const char *first, const char *last, N &value) noexcept {
   }
 }
 
-template <class N>
+template <typename N>
 inline void parse_numeric_or_throw(std::string_view tok, N &field) {
   const auto *first = tok.data();
   const auto *last = first + tok.size();  // NOLINT
@@ -98,7 +98,7 @@ inline void parse_numeric_or_throw(std::string_view tok, N &field) {
   }
 }
 
-template <class N>
+template <typename N>
 inline N parse_numeric_or_throw(std::string_view tok) {
   N field{};
   parse_numeric_or_throw(tok, field);

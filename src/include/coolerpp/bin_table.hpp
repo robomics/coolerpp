@@ -52,9 +52,9 @@ class BinTableLazy {
 
   BinTableLazy() = default;
   BinTableLazy(ChromosomeSet chroms, std::uint32_t bin_size);
-  template <class ChromIt>
+  template <typename ChromIt>
   BinTableLazy(ChromIt first_chrom, ChromIt last_chrom, std::uint32_t bin_size);
-  template <class ChromNameIt, class ChromSizeIt>
+  template <typename ChromNameIt, typename ChromSizeIt>
   BinTableLazy(ChromNameIt first_chrom_name, ChromNameIt last_chrom_name,
                ChromSizeIt first_chrom_size, std::uint32_t bin_size);
 
@@ -140,7 +140,7 @@ namespace fmt {
 template <>
 struct formatter<coolerpp::Bin> {
   constexpr auto parse(format_parse_context &ctx) -> decltype(ctx.begin());
-  template <class FormatContext>
+  template <typename FormatContext>
   auto format(const coolerpp::Bin &b, FormatContext &ctx) const -> decltype(ctx.out());
 };
 }  // namespace fmt

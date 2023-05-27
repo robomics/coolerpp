@@ -10,7 +10,7 @@
 
 namespace coolerpp {
 
-template <class PixelT, class>
+template <typename PixelT, typename>
 inline StandardAttributes StandardAttributes::init(std::uint32_t bin_size_) {
   StandardAttributes attrs{};
   attrs.bin_size = bin_size_;

@@ -77,7 +77,7 @@ template <>
 struct fmt::formatter<coolerpp::utils::ValidationStatusCooler> {
   constexpr auto parse(format_parse_context& ctx) -> decltype(ctx.begin());
 
-  template <class FormatContext>
+  template <typename FormatContext>
   inline auto format(const coolerpp::utils::ValidationStatusCooler& s, FormatContext& ctx) const
       -> decltype(ctx.out());
 };
@@ -86,7 +86,7 @@ template <>
 struct fmt::formatter<coolerpp::utils::ValidationStatusMultiresCooler> {
   constexpr auto parse(format_parse_context& ctx) -> decltype(ctx.begin());
 
-  template <class FormatContext>
+  template <typename FormatContext>
   inline auto format(const coolerpp::utils::ValidationStatusMultiresCooler& s,
                      FormatContext& ctx) const -> decltype(ctx.out());
 };
@@ -95,7 +95,7 @@ template <>
 struct fmt::formatter<coolerpp::utils::ValidationStatusScool> {
   constexpr auto parse(format_parse_context& ctx) -> decltype(ctx.begin());
 
-  template <class FormatContext>
+  template <typename FormatContext>
   inline auto format(const coolerpp::utils::ValidationStatusScool& s, FormatContext& ctx) const
       -> decltype(ctx.out());
 };

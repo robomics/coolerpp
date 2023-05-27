@@ -57,7 +57,7 @@ inline Dataset::Dataset(RootGroup root_group, std::string_view path_to_dataset,
                         const HighFive::DataSetAccessProps &aprops)
     : Dataset(root_group, root_group().getDataSet(std::string{path_to_dataset}, aprops)) {}
 
-template <class T, class>
+template <typename T, typename>
 inline Dataset::Dataset(RootGroup root_group, std::string_view path_to_dataset,
                         [[maybe_unused]] const T &type, std::size_t max_dim,
                         const HighFive::DataSetAccessProps &aprops,
@@ -126,7 +126,7 @@ inline void Dataset::throw_out_of_range_excp(std::size_t offset, std::size_t n) 
                   this->uri(), offset, offset + n, this->size()));
 }
 
-template <class T>
+template <typename T>
 inline auto Dataset::make_iterator_at_offset(std::size_t offset, std::size_t chunk_size) const
     -> iterator<T> {
   return iterator<T>(*this, offset, chunk_size);

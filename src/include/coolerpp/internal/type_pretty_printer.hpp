@@ -10,7 +10,7 @@
 namespace coolerpp::internal {
 // Source: https://stackoverflow.com/a/56600402
 
-template <class T>
+template <typename T>
 [[nodiscard]] constexpr std::string_view type_name();
 
 template <>
@@ -22,7 +22,7 @@ namespace detail {
 
 using type_name_prober = void;
 
-template <class T>
+template <typename T>
 constexpr std::string_view wrapped_type_name() {
 #ifdef __clang__
   return __PRETTY_FUNCTION__;
@@ -46,7 +46,7 @@ constexpr std::size_t wrapped_type_name_suffix_length() {
 
 }  // namespace detail
 
-template <class T>
+template <typename T>
 constexpr std::string_view type_name() {
   constexpr auto wrapped_name = detail::wrapped_type_name<T>();
   constexpr auto prefix_length = detail::wrapped_type_name_prefix_length();

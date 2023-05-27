@@ -22,7 +22,7 @@
 
 namespace coolerpp {
 
-template <class T>
+template <typename T>
 inline Dataset::iterator<T>::iterator(const Dataset &dset, std::size_t h5_offset,
                                       std::size_t chunk_size, bool init)
     : _dset(&dset),
@@ -34,39 +34,39 @@ inline Dataset::iterator<T>::iterator(const Dataset &dset, std::size_t h5_offset
   }
 }
 
-template <class T>
+template <typename T>
 constexpr bool Dataset::iterator<T>::operator==(const iterator &other) const noexcept {
   assert(this->_dset == other._dset);
   return this->_h5_offset == other._h5_offset;
 }
-template <class T>
+template <typename T>
 constexpr bool Dataset::iterator<T>::operator!=(const iterator &other) const noexcept {
   return !(*this == other);
 }
 
-template <class T>
+template <typename T>
 constexpr bool Dataset::iterator<T>::operator<(const iterator &other) const noexcept {
   assert(this->_dset == other._dset);
   return this->_h5_offset < other._h5_offset;
 }
-template <class T>
+template <typename T>
 constexpr bool Dataset::iterator<T>::operator<=(const iterator &other) const noexcept {
   assert(this->_dset == other._dset);
   return this->_h5_offset <= other._h5_offset;
 }
 
-template <class T>
+template <typename T>
 constexpr bool Dataset::iterator<T>::operator>(const iterator &other) const noexcept {
   assert(this->_dset == other._dset);
   return this->_h5_offset > other._h5_offset;
 }
-template <class T>
+template <typename T>
 constexpr bool Dataset::iterator<T>::operator>=(const iterator &other) const noexcept {
   assert(this->_dset == other._dset);
   return this->_h5_offset >= other._h5_offset;
 }
 
-template <class T>
+template <typename T>
 inline auto Dataset::iterator<T>::operator*() const -> value_type {
   if (!this->_buff || this->_h5_offset >= this->_h5_chunk_start + this->_buff->size()) {
     // Read first chunk
@@ -87,17 +87,17 @@ inline auto Dataset::iterator<T>::operator*() const -> value_type {
   return (*this->_buff)[this->_h5_offset - this->_h5_chunk_start];
 }
 
-template <class T>
+template <typename T>
 inline auto Dataset::iterator<T>::operator[](std::size_t i) const -> value_type {
   return *(*this + i);
 }
 
-template <class T>
+template <typename T>
 inline auto Dataset::iterator<T>::operator++() -> iterator & {
   return (*this) += 1;
 }
 
-template <class T>
+template <typename T>
 inline auto Dataset::iterator<T>::operator++(int) -> iterator {
   auto it = *this;
   std::ignore = ++(*this);
@@ -107,7 +107,7 @@ inline auto Dataset::iterator<T>::operator++(int) -> iterator {
   return it;
 }
 
-template <class T>
+template <typename T>
 inline auto Dataset::iterator<T>::operator+=(std::size_t i) -> iterator & {
   assert(this->_dset);
   assert(this->_h5_offset + i <= this->_dset->size());
@@ -115,7 +115,7 @@ inline auto Dataset::iterator<T>::operator+=(std::size_t i) -> iterator & {
   return *this;
 }
 
-template <class T>
+template <typename T>
 inline auto Dataset::iterator<T>::operator+(std::size_t i) const -> iterator {
   assert(this->_dset);
   assert(this->_buff);
@@ -130,13 +130,13 @@ inline auto Dataset::iterator<T>::operator+(std::size_t i) const -> iterator {
   return it += i;
 }
 
-template <class T>
+template <typename T>
 inline auto Dataset::iterator<T>::operator--() -> iterator & {
   assert(this->_h5_offset != 0);
   return (*this) -= 1;
 }
 
-template <class T>
+template <typename T>
 inline auto Dataset::iterator<T>::operator--(int) -> iterator {
   auto it = *this;
   std::ignore = --(*this);
@@ -147,14 +147,14 @@ inline auto Dataset::iterator<T>::operator--(int) -> iterator {
   return it;
 }
 
-template <class T>
+template <typename T>
 inline auto Dataset::iterator<T>::operator-=(std::size_t i) -> iterator & {
   assert(this->_h5_offset >= i);
   this->_h5_offset -= i;
   return *this;
 }
 
-template <class T>
+template <typename T>
 inline auto Dataset::iterator<T>::operator-(std::size_t i) const -> iterator {
   assert(this->_h5_offset >= i);
   const auto new_offset = this->_h5_offset - i;
@@ -167,28 +167,28 @@ inline auto Dataset::iterator<T>::operator-(std::size_t i) const -> iterator {
   return iterator(*this->_dset, new_offset);
 }
 
-template <class T>
+template <typename T>
 inline auto Dataset::iterator<T>::operator-(const iterator &other) const -> difference_type {
   return static_cast<difference_type>(this->_h5_offset) -
          static_cast<difference_type>(other._h5_offset);
 }
 
-template <class T>
+template <typename T>
 constexpr std::uint64_t Dataset::iterator<T>::h5_offset() const noexcept {
   return this->_h5_offset;
 }
 
-template <class T>
+template <typename T>
 constexpr std::size_t Dataset::iterator<T>::underlying_buff_capacity() const noexcept {
   return this->_buff_capacity;
 }
 
-template <class T>
+template <typename T>
 constexpr const Dataset &Dataset::iterator<T>::dataset() const noexcept {
   return *this->_dset;
 }
 
-template <class T>
+template <typename T>
 inline void Dataset::iterator<T>::read_chunk_at_offset(std::size_t new_offset) const {
   assert(this->_dset);
 
@@ -210,7 +210,7 @@ inline void Dataset::iterator<T>::read_chunk_at_offset(std::size_t new_offset) c
   this->_h5_chunk_start = new_offset;
 }
 
-template <class T>
+template <typename T>
 constexpr auto Dataset::iterator<T>::make_end_iterator(const Dataset &dset, std::size_t chunk_size)
     -> iterator {
   iterator it{};

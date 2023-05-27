@@ -85,11 +85,11 @@ inline BinTableLazy::BinTableLazy(ChromosomeSet chroms, std::uint32_t bin_size)
   assert(bin_size != 0);
 }
 
-template <class ChromIt>
+template <typename ChromIt>
 inline BinTableLazy::BinTableLazy(ChromIt first_chrom, ChromIt last_chrom, std::uint32_t bin_size)
     : BinTableLazy(ChromosomeSet(first_chrom, last_chrom), bin_size) {}
 
-template <class ChromNameIt, class ChromSizeIt>
+template <typename ChromNameIt, typename ChromSizeIt>
 inline BinTableLazy::BinTableLazy(ChromNameIt first_chrom_name, ChromNameIt last_chrom_name,
                                   ChromSizeIt first_chrom_size, std::uint32_t bin_size)
     : BinTableLazy(ChromosomeSet(first_chrom_name, last_chrom_name, first_chrom_size), bin_size) {}
@@ -379,7 +379,7 @@ constexpr auto fmt::formatter<coolerpp::Bin>::parse(format_parse_context &ctx)
   return ctx.end();
 }
 
-template <class FormatContext>
+template <typename FormatContext>
 inline auto fmt::formatter<coolerpp::Bin>::format(const coolerpp::Bin &b, FormatContext &ctx) const
     -> decltype(ctx.out()) {
   return fmt::format_to(ctx.out(), FMT_STRING("{}:{}-{}"), b.chrom.name, b.start, b.end);

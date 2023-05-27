@@ -65,7 +65,7 @@ class PixelCoordinates {
   [[nodiscard]] std::uint32_t bin_size() const noexcept;
 };
 
-template <class N>
+template <typename N>
 struct Pixel {
   static_assert(std::is_arithmetic_v<N>);
   using Coordinates = PixelCoordinates;
