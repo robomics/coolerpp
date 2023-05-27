@@ -132,7 +132,7 @@ jobs:
   build-project:
     runs-on: ubuntu-latest
     container:
-      image: conanio/clang14-ubuntu16.04:2.0.4
+      image: conanio/clang14-ubuntu16.04:2.0.6
       options: "--user=root"
 
     env:

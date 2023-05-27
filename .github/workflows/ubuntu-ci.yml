@@ -108,7 +108,7 @@ jobs:
       matrix: ${{ fromJSON(needs.matrix-factory.outputs.matrix) }}
 
     container:
-      image: ${{ matrix.image }}:2.0.4
+      image: ${{ matrix.image }}:2.0.6
       options: "--user=root"
 
     env:
