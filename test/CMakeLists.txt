@@ -14,6 +14,7 @@ add_executable(coolerpp_test_main)
 target_sources(
   coolerpp_test_main
   PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/units/attribute_test.cpp
+          ${CMAKE_CURRENT_SOURCE_DIR}/units/balancing_test.cpp
           ${CMAKE_CURRENT_SOURCE_DIR}/units/bin_table_test.cpp
           ${CMAKE_CURRENT_SOURCE_DIR}/units/chromosome_test.cpp
           ${CMAKE_CURRENT_SOURCE_DIR}/units/cooler_test.cpp

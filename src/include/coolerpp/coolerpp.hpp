@@ -24,6 +24,7 @@ DISABLE_WARNING_POP
 #include <variant>
 #include <vector>
 
+#include "coolerpp/balancing.hpp"
 #include "coolerpp/bin_table.hpp"
 #include "coolerpp/chromosome.hpp"
 #include "coolerpp/dataset.hpp"
@@ -93,6 +94,7 @@ class File {
   RootGroup _root_group{};
   GroupMap _groups{};
   DatasetMap _datasets{};
+  mutable tsl::hopscotch_map<std::string, std::shared_ptr<Weights>> _weights{};
   StandardAttributes _attrs{StandardAttributes::init(0)};
   internal::NumericVariant _pixel_variant{};
   std::shared_ptr<const BinTable> _bins{};
@@ -199,6 +201,11 @@ class File {
   [[nodiscard]] PixelSelector<N> fetch(std::string_view chrom1, std::uint32_t start1,
                                        std::uint32_t end1, std::string_view chrom2,
                                        std::uint32_t start2, std::uint32_t end2) const;
+
+  std::shared_ptr<Weights> read_weights(std::string_view name) const;
+  std::shared_ptr<Weights> read_weights(std::string_view name, Weights::Type type) const;
+
+  bool purge_weights(std::string_view name = "");
 
   void flush();
 

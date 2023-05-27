@@ -128,6 +128,48 @@ inline PixelSelector<N> File::fetch(PixelCoordinates coord1, PixelCoordinates co
   // clang-format on
 }
 
+inline std::shared_ptr<Weights> File::read_weights(std::string_view name) const {
+  if (name.empty()) {
+    throw std::runtime_error("weight dataset name is empty");
+  }
+
+  return this->read_weights(name, Weights::infer_type(name));
+}
+
+inline std::shared_ptr<Weights> File::read_weights(std::string_view name,
+                                                   Weights::Type type) const {
+  if (name.empty()) {
+    throw std::runtime_error("weight dataset name is empty");
+  }
+
+  const auto dset_path =
+      fmt::format(FMT_STRING("{}/{}"), this->_groups.at("bins").group.getPath(), name);
+  if (const auto it = this->_weights.find(dset_path); it != this->_weights.end()) {
+    return it->second;
+  }
+
+  if (!this->_root_group().exist(dset_path)) {
+    throw std::runtime_error(
+        fmt::format(FMT_STRING("unable to read \"{}\" weights: dataset \"{}\" does not exist"),
+                    name, dset_path));
+  }
+
+  const auto node = this->_weights.emplace(
+      name, std::make_shared<Weights>(*this->_bins, Dataset{this->_root_group, dset_path}, type));
+  return node.first->second;
+}
+
+inline bool File::purge_weights(std::string_view name) {
+  if (this->_weights.empty()) {
+    return false;
+  }
+  if (name == "") {
+    this->_weights.clear();
+    return true;
+  }
+  return this->_weights.erase(std::string{name});
+}
+
 inline auto File::open_root_group(const HighFive::File &f, std::string_view uri) -> RootGroup {
   [[maybe_unused]] HighFive::SilenceHDF5 silencer{};  // NOLINT
   return {f.getGroup(parse_cooler_uri(uri).group_path)};

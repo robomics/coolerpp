@@ -54,8 +54,8 @@ class PixelSelector {
                 const Dataset &pixels_bin2_id, const Dataset &pixels_count, PixelCoordinates coord1,
                 PixelCoordinates coord2) noexcept;
 
-  [[nodiscard]] bool operator==(const PixelSelector<N>& other) const noexcept;
-  [[nodiscard]] bool operator!=(const PixelSelector<N>& other) const noexcept;
+  [[nodiscard]] bool operator==(const PixelSelector<N> &other) const noexcept;
+  [[nodiscard]] bool operator!=(const PixelSelector<N> &other) const noexcept;
 
   [[nodiscard]] auto begin() const -> iterator;
   [[nodiscard]] auto end() const -> iterator;
@@ -66,7 +66,7 @@ class PixelSelector {
   [[nodiscard]] constexpr const PixelCoordinates &coord1() const noexcept;
   [[nodiscard]] constexpr const PixelCoordinates &coord2() const noexcept;
 
-  [[nodiscard]] static PixelCoordinates parse_query(const std::shared_ptr<const BinTableLazy> bins,
+  [[nodiscard]] static PixelCoordinates parse_query(std::shared_ptr<const BinTableLazy> bins,
                                                     std::string_view query);
 
   class iterator {

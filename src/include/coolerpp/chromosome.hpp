@@ -142,8 +142,8 @@ class ChromosomeSet {
   [[nodiscard]] bool operator==(const ChromosomeSet& other) const;
   [[nodiscard]] bool operator!=(const ChromosomeSet& other) const;
 
-  const Chromosome& find_longest_chromosome() const;
-  const Chromosome& find_chromosome_with_longest_name() const;
+  [[nodiscard]] const Chromosome& find_longest_chromosome() const;
+  [[nodiscard]] const Chromosome& find_chromosome_with_longest_name() const;
 
  private:
   void validate_chrom_id(std::uint32_t chrom_id) const;

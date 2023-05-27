@@ -15,6 +15,7 @@ add_library(Coolerpp::Coolerpp ALIAS coolerpp)
 target_sources(
   coolerpp
   INTERFACE ${CMAKE_CURRENT_SOURCE_DIR}/attribute_impl.hpp
+            ${CMAKE_CURRENT_SOURCE_DIR}/balancing_impl.hpp
             ${CMAKE_CURRENT_SOURCE_DIR}/bin_table_impl.hpp
             ${CMAKE_CURRENT_SOURCE_DIR}/chromosome_impl.hpp
             ${CMAKE_CURRENT_SOURCE_DIR}/coolerpp_accessors_impl.hpp
