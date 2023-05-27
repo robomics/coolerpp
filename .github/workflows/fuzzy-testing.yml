@@ -50,8 +50,8 @@ jobs:
     name: Preprocess test dataset
     runs-on: ubuntu-latest
     outputs:
-      cache-key: ${{ steps.generate-cache-key.outputs.key }}
-      cooler-uri: ${{ steps.remove-unused-res.outputs.uri }}
+      cache-key: ${{ steps.collect-metadata.outputs.key }}
+      cooler-uri: ${{ steps.collect-metadata.outputs.uri }}
 
     steps:
       - name: Collect metadata
