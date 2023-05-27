@@ -27,12 +27,12 @@
 
 namespace coolerpp {
 
-template <class ParentObj>
+template <typename ParentObj>
 inline bool Attribute::exists(ParentObj& h5obj, std::string_view key) {
   return h5obj.hasAttribute(std::string{key});
 }
 
-template <class T, class ParentObj>
+template <typename T, typename ParentObj>
 inline void Attribute::write(ParentObj& h5obj, std::string_view key, const T& value,
                              bool overwrite_if_exists) {
   [[maybe_unused]] HighFive::SilenceHDF5 silencer{};  // NOLINT
@@ -43,7 +43,7 @@ inline void Attribute::write(ParentObj& h5obj, std::string_view key, const T& va
   h5obj.createAttribute(key_, value);
 }
 
-template <class T, class ParentObj>
+template <typename T, typename ParentObj>
 inline T Attribute::read(const ParentObj& h5obj, std::string_view key) {
   try {
     auto attrv = Attribute::read(h5obj, key, false);
@@ -69,7 +69,7 @@ inline T Attribute::read(const ParentObj& h5obj, std::string_view key) {
   }
 }
 
-template <class ParentObj>
+template <typename ParentObj>
 inline auto Attribute::read(const ParentObj& h5obj, std::string_view key, bool missing_ok)
     -> AttributeVar {
   [[maybe_unused]] HighFive::SilenceHDF5 silencer{};  // NOLINT
@@ -87,14 +87,14 @@ inline auto Attribute::read(const ParentObj& h5obj, std::string_view key, bool m
   return attr;
 }
 
-template <class T, class ParentObj>
+template <typename T, typename ParentObj>
 inline std::vector<T> Attribute::read_vector(const ParentObj& h5obj, std::string_view key) {
   std::vector<T> buff;
   Attribute::read_vector(h5obj, key, buff);
   return buff;
 }
 
-template <class T, class ParentObj>
+template <typename T, typename ParentObj>
 inline void Attribute::read_vector(const ParentObj& h5obj, std::string_view key,
                                    std::vector<T>& buff) {
   [[maybe_unused]] HighFive::SilenceHDF5 silencer{};  // NOLINT
@@ -120,7 +120,7 @@ inline auto Attribute::read_variant(const HighFive::Attribute& attr) -> Attribut
   return std::monostate();
 }
 
-template <class T1, class Tout, class Tin>
+template <typename T1, typename Tout, typename Tin>
 // NOLINTNEXTLINE(readability-function-cognitive-complexity)
 inline Tout Attribute::numeric_converter(T1& buff) {
   static_assert(!std::is_same_v<Tin, std::monostate>);

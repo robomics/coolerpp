@@ -32,7 +32,7 @@
 
 namespace coolerpp {
 
-template <class InputIt>
+template <typename InputIt>
 inline void init_mcool(std::string_view file_path, InputIt first_resolution,
                        InputIt last_resolution, bool force_overwrite) {
   using I = remove_cvref_t<decltype(*first_resolution)>;
@@ -56,7 +56,7 @@ inline void init_mcool(std::string_view file_path, bool force_overwrite) {
   init_mcool(file_path, buff.begin(), buff.end(), force_overwrite);
 }
 
-// template <class ChromSizeInputIt, class CellIDInputIt>
+// template <typename ChromSizeInputIt, typename CellIDInputIt>
 // inline void init_scool(std::string_view file_path, ChromSizeInputIt first_chrom,
 //                        ChromSizeInputIt last_chrom, CellIDInputIt first_cell_id,
 //                        CellIDInputIt last_cell_id, std::uint32_t bin_size, bool force_overwrite)
@@ -94,7 +94,7 @@ inline File::File(std::string_view uri, unsigned mode, bool validate)
   }
 }
 
-template <class PixelT>
+template <typename PixelT>
 inline File::File(std::string_view uri, ChromosomeSet chroms, [[maybe_unused]] PixelT pixel,
                   StandardAttributes attributes)
     : _mode(HighFive::File::ReadWrite),
@@ -120,7 +120,7 @@ inline File File::open_read_only(std::string_view uri, bool validate) {
   return File(uri, HighFive::File::ReadOnly, validate);
 }
 
-template <class PixelT>
+template <typename PixelT>
 inline File File::create_new_cooler(std::string_view uri, const ChromosomeSet &chroms,
                                     std::uint32_t bin_size, bool overwrite_if_exists,
                                     StandardAttributes attributes) {
@@ -195,7 +195,7 @@ inline void File::open(std::string_view uri, bool validate) {
   *this = File::open_read_only(uri, validate);
 }
 
-template <class PixelT>
+template <typename PixelT>
 inline void File::create(std::string_view uri, const coolerpp::ChromosomeSet &chroms,
                          std::uint32_t bin_size, bool overwrite_if_exists,
                          coolerpp::StandardAttributes attributes) {
@@ -262,7 +262,7 @@ inline auto File::open_or_create_root_group(HighFive::File &f, std::string_view 
 }
 
 namespace internal {
-template <class Variant, std::size_t i = 0>
+template <typename Variant, std::size_t i = 0>
 [[nodiscard]] inline Variant read_pixel_variant(const HighFive::DataSet &dset) {
   if constexpr (i < std::variant_size_v<Variant>) {
     using T = std::variant_alternative_t<i, Variant>;
@@ -290,7 +290,7 @@ inline internal::NumericVariant File::detect_pixel_type(const RootGroup &root_gr
   return internal::read_pixel_variant<internal::NumericVariant>(dset);
 }
 
-template <class N, bool cis>
+template <typename N, bool cis>
 inline void File::update_pixel_sum(N partial_sum) {
   static_assert(std::is_arithmetic_v<N>);
 

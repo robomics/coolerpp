@@ -30,27 +30,27 @@ struct Attribute {
   Attribute() = delete;
 
   // ParentObj e.g. DataSet, Group
-  template <class ParentObj>
+  template <typename ParentObj>
   [[nodiscard]] static bool exists(ParentObj& h5obj, std::string_view key);
 
-  template <class T, class ParentObj>
+  template <typename T, typename ParentObj>
   static void write(ParentObj& h5obj, std::string_view key, const T& value,
                     bool overwrite_if_exists = false);
-  template <class ParentObj>
+  template <typename ParentObj>
   [[nodiscard]] static auto read(const ParentObj& h5obj, std::string_view key,
                                  bool missing_ok = false) -> AttributeVar;
-  template <class T, class ParentObj>
+  template <typename T, typename ParentObj>
   [[nodiscard]] static T read(const ParentObj& h5obj, std::string_view key);
 
-  template <class T, class ParentObj>
+  template <typename T, typename ParentObj>
   [[nodiscard]] static std::vector<T> read_vector(const ParentObj& h5obj, std::string_view key);
-  template <class T, class ParentObj>
+  template <typename T, typename ParentObj>
   static void read_vector(const ParentObj& h5obj, std::string_view key, std::vector<T>& buff);
 
  private:
   template <std::size_t i = 1>  // i = 1 skips T=monostate
   [[nodiscard]] static auto read_variant(const HighFive::Attribute& attr) -> AttributeVar;
-  template <class T1, class Tout, class Tin = remove_cvref_t<T1>>
+  template <typename T1, typename Tout, typename Tin = remove_cvref_t<T1>>
   [[nodiscard]] static Tout numeric_converter(T1& buff);
 };
 }  // namespace coolerpp
