@@ -24,7 +24,6 @@
 #include "coolerpp/dataset.hpp"
 #include "coolerpp/group.hpp"
 #include "coolerpp/internal/numeric_utils.hpp"
-#include "coolerpp/internal/prime_number_table.hpp"
 #include "coolerpp/internal/type_pretty_printer.hpp"
 #include "coolerpp/internal/variant_buff.hpp"
 #include "coolerpp/uri.hpp"
@@ -73,12 +72,13 @@ inline void init_mcool(std::string_view file_path, bool force_overwrite) {
 //
 // }
 
-inline File::File(std::string_view uri, unsigned mode, bool validate)
+inline File::File(std::string_view uri, unsigned mode, std::size_t small_cache_size,
+                  std::size_t large_cache_size, double w0, bool validate)
     : _mode(mode),
       _fp(std::make_unique<HighFive::File>(open_file(uri, _mode, validate))),
       _root_group(open_root_group(*_fp, uri)),
       _groups(open_groups(_root_group)),
-      _datasets(open_datasets(_root_group)),
+      _datasets(open_datasets(_root_group, small_cache_size, large_cache_size, w0)),
       _attrs(read_standard_attributes(_root_group)),
       _pixel_variant(detect_pixel_type(_root_group)),
       _bins(std::make_shared<BinTable>(
@@ -96,12 +96,14 @@ inline File::File(std::string_view uri, unsigned mode, bool validate)
 
 template <typename PixelT>
 inline File::File(std::string_view uri, ChromosomeSet chroms, [[maybe_unused]] PixelT pixel,
-                  StandardAttributes attributes)
+                  StandardAttributes attributes, std::size_t small_cache_size,
+                  std::size_t large_cache_size, double w0)
     : _mode(HighFive::File::ReadWrite),
       _fp(std::make_unique<HighFive::File>(open_file(uri, _mode, false))),
       _root_group(open_or_create_root_group(*_fp, uri)),
       _groups(create_groups(_root_group)),
-      _datasets(create_datasets<PixelT>(_root_group, chroms)),
+      _datasets(
+          create_datasets<PixelT>(_root_group, chroms, small_cache_size, large_cache_size, w0)),
       _attrs(std::move(attributes)),
       _pixel_variant(PixelT(0)),
       _bins(std::make_shared<const BinTable>(std::move(chroms), this->bin_size())),
@@ -117,7 +119,17 @@ inline File::File(std::string_view uri, ChromosomeSet chroms, [[maybe_unused]] P
 }
 
 inline File File::open_read_only(std::string_view uri, bool validate) {
-  return File(uri, HighFive::File::ReadOnly, validate);
+  return File::open_read_only_random_access(uri, validate);
+}
+
+inline File File::open_read_only_random_access(std::string_view uri, bool validate) {
+  return File(uri, HighFive::File::ReadOnly, DEFAULT_HDF5_SMALL_CACHE_SIZE,
+              DEFAULT_HDF5_LARGE_CACHE_SIZE, DEFAULT_HDF5_CACHE_W0, validate);
+}
+
+inline File File::open_read_only_read_once(std::string_view uri, bool validate) {
+  return File(uri, HighFive::File::ReadOnly, DEFAULT_HDF5_SMALL_CACHE_SIZE,
+              DEFAULT_HDF5_SMALL_CACHE_SIZE, 1.0, validate);
 }
 
 template <typename PixelT>
