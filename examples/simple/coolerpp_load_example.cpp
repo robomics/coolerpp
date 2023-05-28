@@ -17,7 +17,7 @@
 
 using namespace coolerpp;
 
-struct BEDPE {
+struct BG2 {
   std::string chrom1{};
   std::uint32_t start1{};
   std::uint32_t end1{};
@@ -27,11 +27,11 @@ struct BEDPE {
 
   std::int32_t count{};
 
-  /// Construct a BEDPE object from a tab-separated line
+  /// Construct a BG2 object from a tab-separated line
   //
   // Example line:
   // chr1	5000	10000	chr1	87650000	87655000	1
-  explicit BEDPE(std::string_view line, std::string_view delim = "\t") {
+  explicit BG2(std::string_view line, std::string_view delim = "\t") {
     auto next_token = [&]() {
       assert(!line.empty());
       const auto pos = line.find(delim);
@@ -99,7 +99,7 @@ struct BEDPE {
       if (buffer.size() == batch_size) {
         return true;
       }
-      buffer.emplace_back(BEDPE(line).to_pixel(bins));
+      buffer.emplace_back(BG2(line).to_pixel(bins));
     }
     return false;
 

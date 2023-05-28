@@ -2,4 +2,5 @@
 #
 # SPDX-License-Identifier: MIT
 
+add_subdirectory(advanced)
 add_subdirectory(simple)
