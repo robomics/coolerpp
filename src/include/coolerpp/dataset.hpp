@@ -227,6 +227,8 @@ class Dataset {
     using reference = value_type &;
     using iterator_category = std::random_access_iterator_tag;
 
+    enum OverlapStatus { UPSTREAM, OVERLAPPING, DOWNSTEAM, UNINITIALIZED };
+
     iterator() = default;
 
     [[nodiscard]] constexpr bool operator==(const iterator &other) const noexcept;

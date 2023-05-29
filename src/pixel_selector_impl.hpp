@@ -409,8 +409,11 @@ inline auto PixelSelector<N, CHUNK_SIZE>::iterator::operator++() -> iterator & {
   return *this;
 }
 
-template <typename N>
-inline auto PixelSelector<N>::iterator::operator++(int) -> iterator {
+template <typename N, std::size_t CHUNK_SIZE>
+inline auto PixelSelector<N, CHUNK_SIZE>::iterator::operator++(int) -> iterator {
+  if (this->_bin1_id_it.underlying_buff_num_available_fwd() <= 1) {
+    this->refresh();
+  }
   auto it = *this;
   std::ignore = ++(*this);
   return it;
@@ -577,6 +580,21 @@ inline void PixelSelector<N, CHUNK_SIZE>::iterator::jump_at_end() {
   this->_bin1_id_it -= offset;
   this->_bin2_id_it -= offset;
   this->_count_it -= offset;
+}
+
+template <typename N, std::size_t CHUNK_SIZE>
+inline void PixelSelector<N, CHUNK_SIZE>::iterator::refresh() {
+  const auto h5_offset = this->_bin1_id_it.h5_offset();
+
+  const auto &bin1_dset = this->_bin1_id_it.dataset();
+  const auto &bin2_dset = this->_bin2_id_it.dataset();
+  const auto &count_dset = this->_count_it.dataset();
+
+  this->_bin1_id_it =
+      bin1_dset.template make_iterator_at_offset<std::uint64_t, CHUNK_SIZE>(h5_offset);
+  this->_bin2_id_it =
+      bin2_dset.template make_iterator_at_offset<std::uint64_t, CHUNK_SIZE>(h5_offset);
+  this->_count_it = count_dset.template make_iterator_at_offset<N, CHUNK_SIZE>(h5_offset);
 }
 
 }  // namespace coolerpp

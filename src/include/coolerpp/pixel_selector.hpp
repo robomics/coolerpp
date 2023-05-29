@@ -136,6 +136,7 @@ class PixelSelector {
     [[nodiscard]] bool discard() const;
     [[nodiscard]] std::size_t h5_offset() const noexcept;
     void jump_at_end();
+    void refresh();
   };
 };
 

@@ -36,7 +36,7 @@ inline HighFive::DataSetAccessProps Dataset::generate_default_dset_access_props(
   assert(chunk_size != 0);
   assert(cache_size != 0);
   // https://docs.hdfgroup.org/hdf5/v1_12/group___d_a_p_l.html#ga104d00442c31714ee073dee518f661f
-  constexpr double w0 = 0.75;                                         // default as of HDF5 v12.1
+  constexpr double w0 = 0.75;  // default as of HDF5 v12.1
   const auto num_chunks = (std::max)(std::size_t(1), cache_size / chunk_size);
   constexpr auto &prime_number_table = internal::prime_number_table;  // NOLINT
 

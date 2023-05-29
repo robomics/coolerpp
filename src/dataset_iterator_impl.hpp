@@ -66,17 +66,23 @@ constexpr bool Dataset::iterator<T, CHUNK_SIZE>::operator>=(const iterator &othe
   return this->_h5_offset >= other._h5_offset;
 }
 
-template <typename T>
-inline auto Dataset::iterator<T>::operator*() const -> value_type {
-  if (!this->_buff || this->_h5_offset >= this->_h5_chunk_start + this->_buff->size()) {
-    // Read first chunk
-    this->read_chunk_at_offset(this->_h5_offset);
-  } else if (this->_h5_offset - this->_h5_chunk_start >= this->_buff->size()) {
-    // Iterator was decremented one or more times since the last dereference, thus we assume the
-    // iterator is being used to traverse the dataset backward
-    this->_h5_chunk_start =
-        this->_h5_offset - (std::min)(this->_buff->size() - 1, this->_h5_offset);
-    this->read_chunk_at_offset(this->_h5_chunk_start);
+template <typename T, std::size_t CHUNK_SIZE>
+inline auto Dataset::iterator<T, CHUNK_SIZE>::operator*() const -> value_type {
+  switch (this->underlying_buff_status()) {
+    case OVERLAPPING:
+      break;
+    case UNINITIALIZED:
+      [[fallthrough]];
+    case DOWNSTEAM:
+      // Read first chunk
+      this->read_chunk_at_offset(this->_h5_offset);
+      break;
+    case UPSTREAM:
+      // Iterator was decremented one or more times since the last dereference, thus we assume the
+      // iterator is being used to traverse the dataset backward
+      this->_h5_chunk_start =
+          this->_h5_offset - (std::min)(this->_buff->size() - 1, this->_h5_offset);
+      this->read_chunk_at_offset(this->_h5_chunk_start);
   }
 
   assert(this->_buff);
@@ -184,8 +190,57 @@ constexpr std::size_t Dataset::iterator<T, CHUNK_SIZE>::underlying_buff_capacity
   return this->_buff_capacity;
 }
 
-template <typename T>
-constexpr const Dataset &Dataset::iterator<T>::dataset() const noexcept {
+template <typename T, std::size_t CHUNK_SIZE>
+constexpr std::size_t Dataset::iterator<T, CHUNK_SIZE>::lower_bound() const noexcept {
+  return this->_h5_chunk_start;
+}
+
+template <typename T, std::size_t CHUNK_SIZE>
+constexpr std::size_t Dataset::iterator<T, CHUNK_SIZE>::upper_bound() const noexcept {
+  if (this->_buff) {
+    return this->_h5_chunk_start + this->_buff->size();
+  }
+  return this->_h5_chunk_start + this->_buff_capacity;
+}
+
+template <typename T, std::size_t CHUNK_SIZE>
+constexpr auto Dataset::iterator<T, CHUNK_SIZE>::underlying_buff_status() const noexcept
+    -> OverlapStatus {
+  if (!this->_buff) {
+    return UNINITIALIZED;
+  }
+
+  if (this->_h5_offset >= this->upper_bound()) {
+    return DOWNSTEAM;
+  }
+
+  if (this->_h5_offset - this->lower_bound() >= this->_buff->size()) {
+    return UPSTREAM;
+  }
+
+  return OVERLAPPING;
+}
+
+template <typename T, std::size_t CHUNK_SIZE>
+constexpr std::size_t Dataset::iterator<T, CHUNK_SIZE>::underlying_buff_num_available_rev()
+    const noexcept {
+  if (this->underlying_buff_status() != OVERLAPPING) {
+    return 0;
+  }
+  return this->_h5_offset - this->lower_bound();
+}
+
+template <typename T, std::size_t CHUNK_SIZE>
+constexpr std::size_t Dataset::iterator<T, CHUNK_SIZE>::underlying_buff_num_available_fwd()
+    const noexcept {
+  if (this->underlying_buff_status() != OVERLAPPING) {
+    return 0;
+  }
+  return this->upper_bound() - this->_h5_offset;
+}
+
+template <typename T, std::size_t CHUNK_SIZE>
+constexpr const Dataset &Dataset::iterator<T, CHUNK_SIZE>::dataset() const noexcept {
   return *this->_dset;
 }
 
