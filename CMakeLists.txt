@@ -115,6 +115,10 @@ target_compile_features(coolerpp_project_options INTERFACE cxx_std_${CMAKE_CXX_S
 # Tweak fmt
 target_compile_definitions(coolerpp_project_options INTERFACE FMT_ENFORCE_COMPILE_STRING)
 
+option(COOLERPP_ENABLE_TESTING "Build unit tests" ON)
+option(COOLERPP_BUILD_EXAMPLES "Build examples" ON)
+option(COOLERPP_BUILD_BENCHMARKS "Build benchmarks" ON)
+
 add_subdirectory(src)
 
 if(COOLERPP_ENABLE_TESTING)
@@ -124,8 +128,12 @@ if(COOLERPP_ENABLE_TESTING)
   add_subdirectory(test)
 endif()
 
-option(COOLERPP_BUILD_EXAMPLES "Build examples" ON)
 if(COOLERPP_BUILD_EXAMPLES)
   message("Building examples.")
   add_subdirectory(examples)
+endif()
+
+if(COOLERPP_BUILD_BENCHMARKS)
+  message("Building benchmarks.")
+  add_subdirectory(benchmarks)
 endif()
