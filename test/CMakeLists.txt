@@ -52,7 +52,8 @@ catch_discover_tests(
   OUTPUT_DIR
   ${CMAKE_CURRENT_SOURCE_DIR}/Testing/
   EXTRA_ARGS
-  --success)
+  --success
+  --skip-benchmarks)
 
 catch_discover_tests(
   coolerpp_test_main
@@ -63,7 +64,8 @@ catch_discover_tests(
   WORKING_DIRECTORY
   ${CMAKE_CURRENT_SOURCE_DIR}/../
   EXTRA_ARGS
-  --success)
+  --success
+  --skip-benchmarks)
 
 catch_discover_tests(
   coolerpp_test_main
@@ -74,4 +76,5 @@ catch_discover_tests(
   WORKING_DIRECTORY
   ${CMAKE_CURRENT_SOURCE_DIR}/../
   EXTRA_ARGS
-  --success)
+  --success
+  --skip-benchmarks)
