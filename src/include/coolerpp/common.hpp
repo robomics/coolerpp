@@ -24,8 +24,9 @@ inline constexpr std::string_view MCOOL_MAGIC{"HDF5::MCOOL"};
 inline constexpr std::string_view SCOOL_MAGIC{"HDF5::SCOOL"};
 
 inline constexpr std::uint_fast8_t DEFAULT_COMPRESSION_LEVEL = 6;
-inline constexpr std::size_t DEFAULT_HDF5_CHUNK_SIZE = 64ULL << 10U;   // 64KB
-inline constexpr std::size_t DEFAULT_HDF5_CACHE_SIZE = 256ULL << 20U;  // 256MB
+inline constexpr std::size_t DEFAULT_HDF5_CHUNK_SIZE = 64ULL << 10U;                    // 64KB
+inline constexpr std::size_t DEFAULT_HDF5_CACHE_SIZE = 4ULL << 20U;                     // 4MB
+inline constexpr std::size_t DEFAULT_HDF5_DATASET_ITERATOR_BUFFER_SIZE = 32ULL << 10U;  // 32K
 
 // clang-format off
 inline constexpr std::array<std::string_view, 4> MANDATORY_GROUP_NAMES{

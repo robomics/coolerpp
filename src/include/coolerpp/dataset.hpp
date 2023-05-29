@@ -48,16 +48,16 @@ class Dataset {
   mutable internal::VariantBuffer _buff{};
 
  public:
-  template <typename T>
+  template <typename T, std::size_t CHUNK_SIZE = DEFAULT_HDF5_DATASET_ITERATOR_BUFFER_SIZE>
   class iterator;
-  template <typename T>
-  using const_iterator = iterator<T>;
+  template <typename T, std::size_t CHUNK_SIZE = DEFAULT_HDF5_DATASET_ITERATOR_BUFFER_SIZE>
+  using const_iterator = iterator<T, CHUNK_SIZE>;
 
   [[nodiscard]] static HighFive::DataSetCreateProps generate_default_dset_create_props(
       std::uint_fast8_t compression_lvl = DEFAULT_COMPRESSION_LEVEL,
-      std::size_t chunk_size = DEFAULT_HDF5_CHUNK_SIZE);
+      std::size_t CHUNK_SIZE = DEFAULT_HDF5_CHUNK_SIZE);
   [[nodiscard]] static HighFive::DataSetAccessProps generate_default_dset_access_props(
-      std::size_t chunk_size = DEFAULT_HDF5_CHUNK_SIZE,
+      std::size_t CHUNK_SIZE = DEFAULT_HDF5_CHUNK_SIZE,
       std::size_t cache_size = DEFAULT_HDF5_CACHE_SIZE);
 
   Dataset() = default;
@@ -176,20 +176,18 @@ class Dataset {
 
   [[nodiscard]] bool has_attribute(std::string_view key) const;
 
-  template <typename T>
-  [[nodiscard]] auto begin() const -> iterator<T>;
-  template <typename T>
-  [[nodiscard]] auto end() const -> iterator<T>;
+  template <typename T, std::size_t CHUNK_SIZE = DEFAULT_HDF5_DATASET_ITERATOR_BUFFER_SIZE>
+  [[nodiscard]] auto begin() const -> iterator<T, CHUNK_SIZE>;
+  template <typename T, std::size_t CHUNK_SIZE = DEFAULT_HDF5_DATASET_ITERATOR_BUFFER_SIZE>
+  [[nodiscard]] auto end() const -> iterator<T, CHUNK_SIZE>;
 
-  template <typename T>
-  [[nodiscard]] auto cbegin() const -> iterator<T>;
-  template <typename T>
-  [[nodiscard]] auto cend() const -> iterator<T>;
+  template <typename T, std::size_t CHUNK_SIZE = DEFAULT_HDF5_DATASET_ITERATOR_BUFFER_SIZE>
+  [[nodiscard]] auto cbegin() const -> iterator<T, CHUNK_SIZE>;
+  template <typename T, std::size_t CHUNK_SIZE = DEFAULT_HDF5_DATASET_ITERATOR_BUFFER_SIZE>
+  [[nodiscard]] auto cend() const -> iterator<T, CHUNK_SIZE>;
 
-  template <typename T>
-  [[nodiscard]] auto make_iterator_at_offset(std::size_t offset,
-                                             std::size_t chunk_size = 64 * 1024) const
-      -> iterator<T>;
+  template <typename T, std::size_t CHUNK_SIZE = DEFAULT_HDF5_DATASET_ITERATOR_BUFFER_SIZE>
+  [[nodiscard]] auto make_iterator_at_offset(std::size_t offset) const -> iterator<T, CHUNK_SIZE>;
 
   [[nodiscard]] static std::pair<std::string, std::string> parse_uri(std::string_view uri);
 
@@ -210,8 +208,9 @@ class Dataset {
   [[nodiscard]] HighFive::DataType get_h5type() const;
 
  public:
-  template <typename T>
+  template <typename T, std::size_t CHUNK_SIZE>
   class iterator {
+    static_assert(CHUNK_SIZE != 0);
     friend Dataset;
     mutable std::shared_ptr<std::vector<T>> _buff{};
     const Dataset *_dset{};
@@ -219,8 +218,7 @@ class Dataset {
     mutable std::size_t _h5_chunk_start{};
     std::size_t _h5_offset{};
 
-    explicit iterator(const Dataset &dset, std::size_t h5_offset = 0,
-                      std::size_t chunk_size = 64 * 1024, bool init = true);
+    explicit iterator(const Dataset &dset, std::size_t h5_offset = 0, bool init = true);
 
    public:
     using difference_type = std::ptrdiff_t;
@@ -257,14 +255,19 @@ class Dataset {
     [[nodiscard]] constexpr std::uint64_t h5_offset() const noexcept;
     [[nodiscard]] constexpr std::size_t underlying_buff_capacity() const noexcept;
 
+    [[nodiscard]] constexpr std::size_t lower_bound() const noexcept;
+    [[nodiscard]] constexpr std::size_t upper_bound() const noexcept;
+
+    [[nodiscard]] constexpr auto underlying_buff_status() const noexcept -> OverlapStatus;
+    [[nodiscard]] constexpr std::size_t underlying_buff_num_available_rev() const noexcept;
+    [[nodiscard]] constexpr std::size_t underlying_buff_num_available_fwd() const noexcept;
+
     constexpr const Dataset &dataset() const noexcept;
 
    private:
     void read_chunk_at_offset(std::size_t new_offset) const;
 
-    [[nodiscard]] static constexpr auto make_end_iterator(const Dataset &dset,
-                                                          std::size_t chunk_size = 64 * 1024)
-        -> iterator;
+    [[nodiscard]] static constexpr auto make_end_iterator(const Dataset &dset) -> iterator;
   };
 };
 DISABLE_WARNING_POP

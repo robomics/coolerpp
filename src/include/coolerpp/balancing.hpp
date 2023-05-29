@@ -39,21 +39,21 @@ class Weights {
   [[nodiscard]] static auto infer_type(const Dataset &dset) -> Type;
 };
 
-template <typename N>
+template <typename N, std::size_t CHUNK_SIZE = DEFAULT_HDF5_DATASET_ITERATOR_BUFFER_SIZE>
 class Balancer {
  public:
   class iterator;
 
  private:
-  typename PixelSelector<N>::iterator _first;
-  typename PixelSelector<N>::iterator _last;
+  typename PixelSelector<N, CHUNK_SIZE>::iterator _first;
+  typename PixelSelector<N, CHUNK_SIZE>::iterator _last;
   std::shared_ptr<Weights> _weights;
 
  public:
   Balancer() = delete;
-  Balancer(const PixelSelector<N> &selector, std::shared_ptr<Weights> weights);
-  Balancer(typename PixelSelector<N>::iterator first, typename PixelSelector<N>::iterator last,
-           std::shared_ptr<Weights> weights);
+  Balancer(const PixelSelector<N, CHUNK_SIZE> &selector, std::shared_ptr<Weights> weights);
+  Balancer(typename PixelSelector<N, CHUNK_SIZE>::iterator first,
+           typename PixelSelector<N, CHUNK_SIZE>::iterator last, std::shared_ptr<Weights> weights);
 
   [[nodiscard]] Weights::Type type() const noexcept;
 
@@ -64,7 +64,7 @@ class Balancer {
   [[nodiscard]] auto cend() const -> iterator;
 
   class iterator {
-    typename PixelSelector<N>::iterator _it{};
+    typename PixelSelector<N, CHUNK_SIZE>::iterator _it{};
     std::shared_ptr<Weights> _weights{};
 
    public:
@@ -76,7 +76,7 @@ class Balancer {
     using iterator_category = std::forward_iterator_tag;
 
     iterator() = default;
-    iterator(typename PixelSelector<N>::iterator it, std::shared_ptr<Weights> weights);
+    iterator(typename PixelSelector<N, CHUNK_SIZE>::iterator it, std::shared_ptr<Weights> weights);
 
     [[nodiscard]] constexpr bool operator==(const iterator &other) const noexcept;
     [[nodiscard]] constexpr bool operator!=(const iterator &other) const noexcept;

@@ -22,11 +22,11 @@
 
 namespace coolerpp {
 
-template <typename T>
-inline Dataset::iterator<T>::iterator(const Dataset &dset, std::size_t h5_offset,
-                                      std::size_t chunk_size, bool init)
+template <typename T, std::size_t CHUNK_SIZE>
+inline Dataset::iterator<T, CHUNK_SIZE>::iterator(const Dataset &dset, std::size_t h5_offset,
+                                                  bool init)
     : _dset(&dset),
-      _buff_capacity((std::min)(chunk_size, dset.size())),
+      _buff_capacity((std::min)(CHUNK_SIZE, dset.size())),
       _h5_chunk_start(h5_offset),
       _h5_offset(h5_offset) {
   if (init) {
@@ -34,34 +34,34 @@ inline Dataset::iterator<T>::iterator(const Dataset &dset, std::size_t h5_offset
   }
 }
 
-template <typename T>
-constexpr bool Dataset::iterator<T>::operator==(const iterator &other) const noexcept {
+template <typename T, std::size_t CHUNK_SIZE>
+constexpr bool Dataset::iterator<T, CHUNK_SIZE>::operator==(const iterator &other) const noexcept {
   assert(this->_dset == other._dset);
   return this->_h5_offset == other._h5_offset;
 }
-template <typename T>
-constexpr bool Dataset::iterator<T>::operator!=(const iterator &other) const noexcept {
+template <typename T, std::size_t CHUNK_SIZE>
+constexpr bool Dataset::iterator<T, CHUNK_SIZE>::operator!=(const iterator &other) const noexcept {
   return !(*this == other);
 }
 
-template <typename T>
-constexpr bool Dataset::iterator<T>::operator<(const iterator &other) const noexcept {
+template <typename T, std::size_t CHUNK_SIZE>
+constexpr bool Dataset::iterator<T, CHUNK_SIZE>::operator<(const iterator &other) const noexcept {
   assert(this->_dset == other._dset);
   return this->_h5_offset < other._h5_offset;
 }
-template <typename T>
-constexpr bool Dataset::iterator<T>::operator<=(const iterator &other) const noexcept {
+template <typename T, std::size_t CHUNK_SIZE>
+constexpr bool Dataset::iterator<T, CHUNK_SIZE>::operator<=(const iterator &other) const noexcept {
   assert(this->_dset == other._dset);
   return this->_h5_offset <= other._h5_offset;
 }
 
-template <typename T>
-constexpr bool Dataset::iterator<T>::operator>(const iterator &other) const noexcept {
+template <typename T, std::size_t CHUNK_SIZE>
+constexpr bool Dataset::iterator<T, CHUNK_SIZE>::operator>(const iterator &other) const noexcept {
   assert(this->_dset == other._dset);
   return this->_h5_offset > other._h5_offset;
 }
-template <typename T>
-constexpr bool Dataset::iterator<T>::operator>=(const iterator &other) const noexcept {
+template <typename T, std::size_t CHUNK_SIZE>
+constexpr bool Dataset::iterator<T, CHUNK_SIZE>::operator>=(const iterator &other) const noexcept {
   assert(this->_dset == other._dset);
   return this->_h5_offset >= other._h5_offset;
 }
@@ -87,18 +87,18 @@ inline auto Dataset::iterator<T>::operator*() const -> value_type {
   return (*this->_buff)[this->_h5_offset - this->_h5_chunk_start];
 }
 
-template <typename T>
-inline auto Dataset::iterator<T>::operator[](std::size_t i) const -> value_type {
+template <typename T, std::size_t CHUNK_SIZE>
+inline auto Dataset::iterator<T, CHUNK_SIZE>::operator[](std::size_t i) const -> value_type {
   return *(*this + i);
 }
 
-template <typename T>
-inline auto Dataset::iterator<T>::operator++() -> iterator & {
+template <typename T, std::size_t CHUNK_SIZE>
+inline auto Dataset::iterator<T, CHUNK_SIZE>::operator++() -> iterator & {
   return (*this) += 1;
 }
 
-template <typename T>
-inline auto Dataset::iterator<T>::operator++(int) -> iterator {
+template <typename T, std::size_t CHUNK_SIZE>
+inline auto Dataset::iterator<T, CHUNK_SIZE>::operator++(int) -> iterator {
   auto it = *this;
   std::ignore = ++(*this);
   if (this->_h5_offset > this->_h5_chunk_start + this->_buff_capacity) {
@@ -107,16 +107,16 @@ inline auto Dataset::iterator<T>::operator++(int) -> iterator {
   return it;
 }
 
-template <typename T>
-inline auto Dataset::iterator<T>::operator+=(std::size_t i) -> iterator & {
+template <typename T, std::size_t CHUNK_SIZE>
+inline auto Dataset::iterator<T, CHUNK_SIZE>::operator+=(std::size_t i) -> iterator & {
   assert(this->_dset);
   assert(this->_h5_offset + i <= this->_dset->size());
   this->_h5_offset += i;
   return *this;
 }
 
-template <typename T>
-inline auto Dataset::iterator<T>::operator+(std::size_t i) const -> iterator {
+template <typename T, std::size_t CHUNK_SIZE>
+inline auto Dataset::iterator<T, CHUNK_SIZE>::operator+(std::size_t i) const -> iterator {
   assert(this->_dset);
   assert(this->_buff);
   const auto new_offset = this->_h5_offset + i;
@@ -130,14 +130,14 @@ inline auto Dataset::iterator<T>::operator+(std::size_t i) const -> iterator {
   return it += i;
 }
 
-template <typename T>
-inline auto Dataset::iterator<T>::operator--() -> iterator & {
+template <typename T, std::size_t CHUNK_SIZE>
+inline auto Dataset::iterator<T, CHUNK_SIZE>::operator--() -> iterator & {
   assert(this->_h5_offset != 0);
   return (*this) -= 1;
 }
 
-template <typename T>
-inline auto Dataset::iterator<T>::operator--(int) -> iterator {
+template <typename T, std::size_t CHUNK_SIZE>
+inline auto Dataset::iterator<T, CHUNK_SIZE>::operator--(int) -> iterator {
   auto it = *this;
   std::ignore = --(*this);
   if (this->_h5_offset < this->_h5_chunk_start) {
@@ -147,15 +147,15 @@ inline auto Dataset::iterator<T>::operator--(int) -> iterator {
   return it;
 }
 
-template <typename T>
-inline auto Dataset::iterator<T>::operator-=(std::size_t i) -> iterator & {
+template <typename T, std::size_t CHUNK_SIZE>
+inline auto Dataset::iterator<T, CHUNK_SIZE>::operator-=(std::size_t i) -> iterator & {
   assert(this->_h5_offset >= i);
   this->_h5_offset -= i;
   return *this;
 }
 
-template <typename T>
-inline auto Dataset::iterator<T>::operator-(std::size_t i) const -> iterator {
+template <typename T, std::size_t CHUNK_SIZE>
+inline auto Dataset::iterator<T, CHUNK_SIZE>::operator-(std::size_t i) const -> iterator {
   assert(this->_h5_offset >= i);
   const auto new_offset = this->_h5_offset - i;
   if (new_offset >= this->_h5_chunk_start) {
@@ -167,19 +167,20 @@ inline auto Dataset::iterator<T>::operator-(std::size_t i) const -> iterator {
   return iterator(*this->_dset, new_offset);
 }
 
-template <typename T>
-inline auto Dataset::iterator<T>::operator-(const iterator &other) const -> difference_type {
+template <typename T, std::size_t CHUNK_SIZE>
+inline auto Dataset::iterator<T, CHUNK_SIZE>::operator-(const iterator &other) const
+    -> difference_type {
   return static_cast<difference_type>(this->_h5_offset) -
          static_cast<difference_type>(other._h5_offset);
 }
 
-template <typename T>
-constexpr std::uint64_t Dataset::iterator<T>::h5_offset() const noexcept {
+template <typename T, std::size_t CHUNK_SIZE>
+constexpr std::uint64_t Dataset::iterator<T, CHUNK_SIZE>::h5_offset() const noexcept {
   return this->_h5_offset;
 }
 
-template <typename T>
-constexpr std::size_t Dataset::iterator<T>::underlying_buff_capacity() const noexcept {
+template <typename T, std::size_t CHUNK_SIZE>
+constexpr std::size_t Dataset::iterator<T, CHUNK_SIZE>::underlying_buff_capacity() const noexcept {
   return this->_buff_capacity;
 }
 
@@ -188,8 +189,8 @@ constexpr const Dataset &Dataset::iterator<T>::dataset() const noexcept {
   return *this->_dset;
 }
 
-template <typename T>
-inline void Dataset::iterator<T>::read_chunk_at_offset(std::size_t new_offset) const {
+template <typename T, std::size_t CHUNK_SIZE>
+inline void Dataset::iterator<T, CHUNK_SIZE>::read_chunk_at_offset(std::size_t new_offset) const {
   assert(this->_dset);
 
   if (new_offset == this->_dset->size()) {
@@ -210,12 +211,12 @@ inline void Dataset::iterator<T>::read_chunk_at_offset(std::size_t new_offset) c
   this->_h5_chunk_start = new_offset;
 }
 
-template <typename T>
-constexpr auto Dataset::iterator<T>::make_end_iterator(const Dataset &dset, std::size_t chunk_size)
+template <typename T, std::size_t CHUNK_SIZE>
+constexpr auto Dataset::iterator<T, CHUNK_SIZE>::make_end_iterator(const Dataset &dset)
     -> iterator {
   iterator it{};
   it._buff = nullptr;
-  it._buff_capacity = (std::min)(chunk_size, dset.size());
+  it._buff_capacity = (std::min)(CHUNK_SIZE, dset.size());
   it._dset = &dset;
   it._h5_offset = dset.size();
   it._h5_chunk_start = it._h5_offset;

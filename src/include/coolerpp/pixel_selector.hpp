@@ -17,7 +17,7 @@ namespace coolerpp {
 class BinTableLazy;
 class Index;
 
-template <typename N>
+template <typename N, std::size_t CHUNK_SIZE = DEFAULT_HDF5_DATASET_ITERATOR_BUFFER_SIZE>
 class PixelSelector {
   static_assert(std::is_arithmetic_v<N>);
 
@@ -25,8 +25,6 @@ class PixelSelector {
   class iterator;
 
  private:
-  static constexpr std::size_t chunk_size = 4096ULL << 10U;
-
   std::shared_ptr<PixelCoordinates> _coord1{};
   std::shared_ptr<PixelCoordinates> _coord2{};
   std::shared_ptr<const Index> _index{};
@@ -54,8 +52,10 @@ class PixelSelector {
                 const Dataset &pixels_bin2_id, const Dataset &pixels_count, PixelCoordinates coord1,
                 PixelCoordinates coord2) noexcept;
 
-  [[nodiscard]] bool operator==(const PixelSelector<N> &other) const noexcept;
-  [[nodiscard]] bool operator!=(const PixelSelector<N> &other) const noexcept;
+  template <std::size_t CHUNK_SIZE_OTHER>
+  [[nodiscard]] bool operator==(const PixelSelector<N, CHUNK_SIZE_OTHER> &other) const noexcept;
+  template <std::size_t CHUNK_SIZE_OTHER>
+  [[nodiscard]] bool operator!=(const PixelSelector<N, CHUNK_SIZE_OTHER> &other) const noexcept;
 
   [[nodiscard]] auto begin() const -> iterator;
   [[nodiscard]] auto end() const -> iterator;
@@ -70,16 +70,16 @@ class PixelSelector {
                                                     std::string_view query);
 
   class iterator {
-    friend PixelSelector<N>;
+    friend PixelSelector<N, CHUNK_SIZE>;
     std::shared_ptr<const Index> _index{};
 
     std::shared_ptr<PixelCoordinates> _coord1{};
     std::shared_ptr<PixelCoordinates> _coord2{};
 
-    Dataset::iterator<std::uint64_t> _bin1_id_it{};
-    Dataset::iterator<std::uint64_t> _bin2_id_it{};
-    Dataset::iterator<std::uint64_t> _bin2_id_last{};
-    Dataset::iterator<N> _count_it{};
+    Dataset::iterator<std::uint64_t, CHUNK_SIZE> _bin1_id_it{};
+    Dataset::iterator<std::uint64_t, CHUNK_SIZE> _bin2_id_it{};
+    Dataset::iterator<std::uint64_t, CHUNK_SIZE> _bin2_id_last{};
+    Dataset::iterator<N, CHUNK_SIZE> _count_it{};
 
     explicit iterator(std::shared_ptr<const Index> index, const Dataset &pixels_bin1_id,
                       const Dataset &pixels_bin2_id, const Dataset &pixels_count);

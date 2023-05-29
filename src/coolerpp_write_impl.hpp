@@ -31,8 +31,7 @@
 namespace coolerpp {
 
 template <typename PixelIt, typename>
-inline void File::append_pixels(PixelIt first_pixel, PixelIt last_pixel, bool validate,
-                                [[maybe_unused]] std::size_t chunk_size) {
+inline void File::append_pixels(PixelIt first_pixel, PixelIt last_pixel, bool validate) {
   using PixelT = typename std::iterator_traits<PixelIt>::value_type;
   using T = decltype(std::declval<PixelT>().count);
 
@@ -189,7 +188,7 @@ inline void File::write_standard_attributes(RootGroup &root_grp,
   Attribute::write(root_grp(), "bin-type", *attributes.bin_type);            // NOLINT
   Attribute::write(root_grp(), "creation-date", *attributes.creation_date);  // NOLINT
   Attribute::write(root_grp(), "format", std::string{COOL_MAGIC});
-  Attribute::write(root_grp(), "format-url", *attributes.format_url);  // NOLINT
+  Attribute::write(root_grp(), "format-url", *attributes.format_url);        // NOLINT
   if (!skip_sentinel_attr) {
     static_assert(internal::SENTINEL_ATTR_NAME == "format-version");
     Attribute::write(root_grp(), "format-version", attributes.format_version);

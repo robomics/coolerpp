@@ -177,31 +177,31 @@ class File {
   [[nodiscard]] bool has_float_pixels() const noexcept;
 
   template <typename PixelIt, typename = std::enable_if_t<is_iterable_v<PixelIt>>>
-  void append_pixels(PixelIt first_pixel, PixelIt last_pixel, bool validate = false,
-                     std::size_t chunk_size = 64 * 1024);
+  void append_pixels(PixelIt first_pixel, PixelIt last_pixel, bool validate = false);
 
-  template <typename N>
-  [[nodiscard]] typename PixelSelector<N>::iterator begin() const;
-  template <typename N>
-  [[nodiscard]] typename PixelSelector<N>::iterator end() const;
+  template <typename N, std::size_t CHUNK_SIZE = DEFAULT_HDF5_DATASET_ITERATOR_BUFFER_SIZE>
+  [[nodiscard]] typename PixelSelector<N, CHUNK_SIZE>::iterator begin() const;
+  template <typename N, std::size_t CHUNK_SIZE = DEFAULT_HDF5_DATASET_ITERATOR_BUFFER_SIZE>
+  [[nodiscard]] typename PixelSelector<N, CHUNK_SIZE>::iterator end() const;
 
-  template <typename N>
-  [[nodiscard]] typename PixelSelector<N>::iterator cbegin() const;
-  template <typename N>
-  [[nodiscard]] typename PixelSelector<N>::iterator cend() const;
+  template <typename N, std::size_t CHUNK_SIZE = DEFAULT_HDF5_DATASET_ITERATOR_BUFFER_SIZE>
+  [[nodiscard]] typename PixelSelector<N, CHUNK_SIZE>::iterator cbegin() const;
+  template <typename N, std::size_t CHUNK_SIZE = DEFAULT_HDF5_DATASET_ITERATOR_BUFFER_SIZE>
+  [[nodiscard]] typename PixelSelector<N, CHUNK_SIZE>::iterator cend() const;
 
-  template <typename N>
-  [[nodiscard]] PixelSelector<N> fetch(std::string_view query) const;
-  template <typename N>
-  [[nodiscard]] PixelSelector<N> fetch(std::string_view chrom, std::uint32_t start,
-                                       std::uint32_t end) const;
+  template <typename N, std::size_t CHUNK_SIZE = DEFAULT_HDF5_DATASET_ITERATOR_BUFFER_SIZE>
+  [[nodiscard]] PixelSelector<N, CHUNK_SIZE> fetch(std::string_view query) const;
+  template <typename N, std::size_t CHUNK_SIZE = DEFAULT_HDF5_DATASET_ITERATOR_BUFFER_SIZE>
+  [[nodiscard]] PixelSelector<N, CHUNK_SIZE> fetch(std::string_view chrom, std::uint32_t start,
+                                                   std::uint32_t end) const;
 
-  template <typename N>
-  [[nodiscard]] PixelSelector<N> fetch(std::string_view range1, std::string_view range2) const;
-  template <typename N>
-  [[nodiscard]] PixelSelector<N> fetch(std::string_view chrom1, std::uint32_t start1,
-                                       std::uint32_t end1, std::string_view chrom2,
-                                       std::uint32_t start2, std::uint32_t end2) const;
+  template <typename N, std::size_t CHUNK_SIZE = DEFAULT_HDF5_DATASET_ITERATOR_BUFFER_SIZE>
+  [[nodiscard]] PixelSelector<N, CHUNK_SIZE> fetch(std::string_view range1,
+                                                   std::string_view range2) const;
+  template <typename N, std::size_t CHUNK_SIZE = DEFAULT_HDF5_DATASET_ITERATOR_BUFFER_SIZE>
+  [[nodiscard]] PixelSelector<N, CHUNK_SIZE> fetch(std::string_view chrom1, std::uint32_t start1,
+                                                   std::uint32_t end1, std::string_view chrom2,
+                                                   std::uint32_t start2, std::uint32_t end2) const;
 
   std::shared_ptr<Weights> read_weights(std::string_view name) const;
   std::shared_ptr<Weights> read_weights(std::string_view name, Weights::Type type) const;
@@ -297,10 +297,11 @@ class File {
   void validate_pixel_type() const noexcept;
 
   // IMPORTANT: the private fetch() methods interpret queries as open-open
-  template <typename N>
-  [[nodiscard]] PixelSelector<N> fetch(PixelCoordinates query) const;
-  template <typename N>
-  [[nodiscard]] PixelSelector<N> fetch(PixelCoordinates coord1, PixelCoordinates coord2) const;
+  template <typename N, std::size_t CHUNK_SIZE>
+  [[nodiscard]] PixelSelector<N, CHUNK_SIZE> fetch(PixelCoordinates query) const;
+  template <typename N, std::size_t CHUNK_SIZE>
+  [[nodiscard]] PixelSelector<N, CHUNK_SIZE> fetch(PixelCoordinates coord1,
+                                                   PixelCoordinates coord2) const;
 };
 
 }  // namespace coolerpp

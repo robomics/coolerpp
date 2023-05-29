@@ -127,36 +127,36 @@ inline bool File::has_float_pixels() const noexcept {
   // clang-format on
 }
 
-template <typename N>
-inline typename PixelSelector<N>::iterator File::begin() const {
+template <typename N, std::size_t CHUNK_SIZE>
+inline typename PixelSelector<N, CHUNK_SIZE>::iterator File::begin() const {
   // clang-format off
-  return PixelSelector<N>(this->_index,
-                          this->dataset("pixels/bin1_id"),
-                          this->dataset("pixels/bin2_id"),
-                          this->dataset("pixels/count"))
-      .begin();
+  return PixelSelector<N, CHUNK_SIZE>(this->_index,
+                                      this->dataset("pixels/bin1_id"),
+                                      this->dataset("pixels/bin2_id"),
+                                      this->dataset("pixels/count")
+  ).begin();
   // clang-format on
 }
 
-template <typename N>
-inline typename PixelSelector<N>::iterator File::cbegin() const {
-  return this->begin<N>();
+template <typename N, std::size_t CHUNK_SIZE>
+inline typename PixelSelector<N, CHUNK_SIZE>::iterator File::cbegin() const {
+  return this->begin<N, CHUNK_SIZE>();
 }
 
-template <typename N>
-inline typename PixelSelector<N>::iterator File::end() const {
+template <typename N, std::size_t CHUNK_SIZE>
+inline typename PixelSelector<N, CHUNK_SIZE>::iterator File::end() const {
   // clang-format off
-  return PixelSelector<N>(this->_index,
-                          this->dataset("pixels/bin1_id"),
-                          this->dataset("pixels/bin2_id"),
-                          this->dataset("pixels/count"))
-      .end();
+  return PixelSelector<N, CHUNK_SIZE>(this->_index,
+                                      this->dataset("pixels/bin1_id"),
+                                      this->dataset("pixels/bin2_id"),
+                                      this->dataset("pixels/count")
+  ).end();
   // clang-format on
 }
 
-template <typename N>
-inline typename PixelSelector<N>::iterator File::cend() const {
-  return this->end<N>();
+template <typename N, std::size_t CHUNK_SIZE>
+inline typename PixelSelector<N, CHUNK_SIZE>::iterator File::cend() const {
+  return this->end<N, CHUNK_SIZE>();
 }
 
 inline auto File::index() noexcept -> Index & {
