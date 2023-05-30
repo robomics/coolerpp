@@ -17,7 +17,6 @@
 #include <vector>
 
 #include "coolerpp/common.hpp"
-#include "coolerpp/internal/prime_number_table.hpp"
 #include "coolerpp/internal/type_pretty_printer.hpp"
 
 namespace coolerpp {

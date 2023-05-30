@@ -233,6 +233,19 @@ TEST_CASE("Coolerpp: file ctors", "[cooler][short]") {
                             Catch::Matchers::ContainsSubstring("/chroms/length shape mismatch"));
     }
   }
+
+  SECTION("open .cool custom aprops") {
+    const auto path = datadir / "cooler_test_file.cool";
+    SECTION("read-once") {
+      const auto f = File::open_read_only_read_once(path.string());
+      CHECK(std::distance(f.begin<std::int32_t>(), f.end<std::int32_t>()) == 107041);
+    }
+
+    SECTION("read-random") {
+      const auto f = File::open_read_only_random_access(path.string());
+      CHECK(std::distance(f.begin<std::int32_t>(), f.end<std::int32_t>()) == 107041);
+    }
+  }
 }
 
 // NOLINTNEXTLINE(readability-function-cognitive-complexity)
@@ -481,7 +494,7 @@ TEST_CASE("Coolerpp: write weights", "[cooler][short]") {
   std::filesystem::remove(path2);
   std::filesystem::remove(path3);
   std::filesystem::copy(path1, path2);
-  REQUIRE_THROWS(File::open_read_only(path2.string()).dataset("bins/weight"));
+  REQUIRE_FALSE(File::open_read_only(path2.string()).has_weights("weight"));
 
   const auto num_bins = File::open_read_only(path1.string()).bins().size();
 
@@ -489,8 +502,8 @@ TEST_CASE("Coolerpp: write weights", "[cooler][short]") {
     const std::vector<double> weights(num_bins, 1.23);
     File::write_weights(path2.string(), "weight", weights.begin(), weights.end());
 
-    auto f = File::open_read_only(path2.string());
-    CHECK(f.dataset("bins/weight").size() == num_bins);
+    const auto w = *File::open_read_only(path2.string()).read_weights("weight");
+    CHECK(w().size() == weights.size());
   }
 
   SECTION("incorrect shape") {
