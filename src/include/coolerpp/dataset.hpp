@@ -58,7 +58,7 @@ class Dataset {
       std::size_t chunk_size = DEFAULT_HDF5_CHUNK_SIZE);
   [[nodiscard]] static HighFive::DataSetAccessProps generate_default_dset_access_props(
       std::size_t chunk_size = DEFAULT_HDF5_CHUNK_SIZE,
-      std::size_t cache_size = DEFAULT_HDF5_CACHE_SIZE);
+      std::size_t cache_size = DEFAULT_HDF5_LARGE_CACHE_SIZE, double w0 = DEFAULT_HDF5_CACHE_W0);
 
   Dataset() = default;
   Dataset(RootGroup root_group, HighFive::DataSet dset);

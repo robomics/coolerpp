@@ -136,6 +136,16 @@ inline std::shared_ptr<Weights> File::read_weights(std::string_view name) const 
   return this->read_weights(name, Weights::infer_type(name));
 }
 
+inline bool File::has_weights(std::string_view name) const {
+  const auto dset_path =
+      fmt::format(FMT_STRING("{}/{}"), this->_groups.at("bins").group.getPath(), name);
+  if (this->_weights.contains(dset_path)) {
+    return true;
+  }
+
+  return this->_root_group().exist(dset_path);
+}
+
 inline std::shared_ptr<Weights> File::read_weights(std::string_view name,
                                                    Weights::Type type) const {
   if (name.empty()) {
@@ -155,7 +165,12 @@ inline std::shared_ptr<Weights> File::read_weights(std::string_view name,
   }
 
   const auto node = this->_weights.emplace(
-      name, std::make_shared<Weights>(*this->_bins, Dataset{this->_root_group, dset_path}, type));
+      name, std::make_shared<Weights>(
+                *this->_bins,
+                Dataset{this->_root_group, dset_path,
+                        Dataset::generate_default_dset_access_props(
+                            DEFAULT_HDF5_CHUNK_SIZE, DEFAULT_HDF5_LARGE_CACHE_SIZE, 1.0)},
+                type));
   return node.first->second;
 }
 
@@ -190,22 +205,27 @@ inline auto File::open_groups(const RootGroup &root_grp) -> GroupMap {
   return groups;
 }
 
-inline auto File::open_datasets(const RootGroup &root_grp, std::string_view weight_dataset)
-    -> DatasetMap {
-  DatasetMap datasets(MANDATORY_DATASET_NAMES.size() + 1);
+inline auto File::open_datasets(const RootGroup &root_grp, std::size_t small_cache_size,
+                                std::size_t large_cache_size, double w0) -> DatasetMap {
+  DatasetMap datasets(MANDATORY_DATASET_NAMES.size());
+
+  const auto read_once_aprop =
+      Dataset::generate_default_dset_access_props(DEFAULT_HDF5_CHUNK_SIZE, small_cache_size, 1.0);
+  const auto default_aprop =
+      Dataset::generate_default_dset_access_props(DEFAULT_HDF5_CHUNK_SIZE, large_cache_size, w0);
 
   [[maybe_unused]] HighFive::SilenceHDF5 silencer{};  // NOLINT
   auto open_dataset = [&](const auto dataset_uri) {
-    return std::make_pair(std::string{dataset_uri}, Dataset{root_grp, dataset_uri});
+    if (dataset_uri.find("pixels") == 0) {
+      return std::make_pair(std::string{dataset_uri},
+                            Dataset{root_grp, dataset_uri, default_aprop});
+    }
+    return std::make_pair(std::string{dataset_uri},
+                          Dataset{root_grp, dataset_uri, read_once_aprop});
   };
 
   std::transform(MANDATORY_DATASET_NAMES.begin(), MANDATORY_DATASET_NAMES.end(),
                  std::inserter(datasets, datasets.begin()), open_dataset);
-
-  const auto path = fmt::format(FMT_STRING("bins/{}"), weight_dataset);
-  if (root_grp().exist(path)) {
-    datasets.emplace(open_dataset(path));
-  }
 
   return datasets;
 }

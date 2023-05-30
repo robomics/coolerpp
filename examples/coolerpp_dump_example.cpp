@@ -75,7 +75,7 @@ int main(int argc, char** argv) {
 
   try {
     const auto t0 = std::chrono::steady_clock::now();
-    const auto clr = File::open_read_only(path_to_cooler);
+    const auto clr = File::open_read_only_read_once(path_to_cooler);
     const auto weights =
         balancing == "raw" ? std::shared_ptr<Weights>(nullptr) : clr.read_weights(balancing);
     std::size_t nnz = 0;

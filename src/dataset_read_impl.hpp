@@ -211,7 +211,7 @@ inline internal::GenericVariant Dataset::read_last() const {
 template <typename T>
 inline T Dataset::read_attribute(std::string_view key) const {
   if constexpr (std::is_same_v<T, bool>) {
-    return this->_dataset.getAttribute(std::string{key}).read<bool>();
+    return static_cast<bool>(this->_dataset.getAttribute(std::string{key}).read<int>());
   } else {
     return Attribute::read<T>(this->_dataset, key);
   }
