@@ -80,7 +80,7 @@ template <typename N, std::size_t CHUNK_SIZE>
 inline PixelSelector<N, CHUNK_SIZE> File::fetch(std::string_view chrom, std::uint32_t start,
                                                 std::uint32_t end) const {
   return this->fetch<N, CHUNK_SIZE>(
-      PixelCoordinates{this->_bins, chrom, start, end - std::min(1U, end)});
+      PixelCoordinates{this->_bins, chrom, start, end - (std::min)(1U, end)});
 }
 
 template <typename N, std::size_t CHUNK_SIZE>
@@ -115,8 +115,8 @@ inline PixelSelector<N, CHUNK_SIZE> File::fetch(std::string_view chrom1, std::ui
                                       this->dataset("pixels/bin1_id"),
                                       this->dataset("pixels/bin2_id"),
                                       this->dataset("pixels/count"),
-                                      PixelCoordinates{this->_bins, chrom1, start1, end1 - std::min(1U, end1)},
-                                      PixelCoordinates{this->_bins, chrom2, start2, end2 - std::min(1U, end2)}
+                                      PixelCoordinates{this->_bins, chrom1, start1, end1 - (std::min)(1U, end1)},
+                                      PixelCoordinates{this->_bins, chrom2, start2, end2 - (std::min)(1U, end2)}
   );
   // clang-format on
 }

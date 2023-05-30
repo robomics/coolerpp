@@ -194,7 +194,7 @@ inline PixelCoordinates PixelSelector<N, CHUNK_SIZE>::parse_query(
                     query, start_pos, end_pos));
   }
 
-  end_pos -= std::min(end_pos, 1U);
+  end_pos -= (std::min)(end_pos, 1U);
   return {bins, chrom, start_pos, end_pos};
 }
 
@@ -440,7 +440,7 @@ inline void PixelSelector<N, CHUNK_SIZE>::iterator::jump_to_row(std::uint64_t bi
 
   assert(row_offset >= current_offset);
   assert(end_offset >= current_offset);
-  const auto offset = std::min(end_offset, row_offset) - current_offset;
+  const auto offset = (std::min)(end_offset, row_offset) - current_offset;
 
   this->_bin1_id_it += offset;
   this->_bin2_id_it += offset;
@@ -469,8 +469,8 @@ inline void PixelSelector<N, CHUNK_SIZE>::iterator::jump_to_col(std::uint64_t bi
   }
 
   assert(next_row_offset != 0);
-  const auto row_start_offset = std::min(current_offset, current_row_offset);
-  const auto row_end_offset = std::min(end_offset, next_row_offset - 1);
+  const auto row_start_offset = (std::min)(current_offset, current_row_offset);
+  const auto row_end_offset = (std::min)(end_offset, next_row_offset - 1);
 
   if (row_start_offset == row_end_offset) {
     return;  // Row is empty
@@ -514,7 +514,7 @@ inline void PixelSelector<N, CHUNK_SIZE>::iterator::jump_to_next_overlap() {
     const auto row = *this->_bin1_id_it;
     const auto col = *this->_bin2_id_it;
     const auto next_row = row + 1;
-    const auto next_col = std::max(next_row, this->_coord2->bin1_id());
+    const auto next_col = (std::max)(next_row, this->_coord2->bin1_id());
 
     // We may have some data left to read from the current row
     if (col < this->_coord2->bin1_id()) {

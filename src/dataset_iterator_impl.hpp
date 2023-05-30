@@ -249,7 +249,7 @@ inline void Dataset::iterator<T, CHUNK_SIZE>::read_chunk_at_offset(std::size_t n
     return;
   }
 
-  if (!this->_buff || !this->_buff.unique()) {
+  if (!this->_buff || this->_buff.use_count() > 1) {
     //  This should be fine, as copying Dataset::iterator is not thread-safe anyway
     this->_buff = std::make_shared<std::vector<T>>(CHUNK_SIZE);
   }
