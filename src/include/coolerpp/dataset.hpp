@@ -214,7 +214,6 @@ class Dataset {
     friend Dataset;
     mutable std::shared_ptr<std::vector<T>> _buff{};
     const Dataset *_dset{};
-    std::size_t _buff_capacity{};
     mutable std::size_t _h5_chunk_start{};
     std::size_t _h5_offset{};
 
