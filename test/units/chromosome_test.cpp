@@ -17,9 +17,9 @@ namespace coolerpp::test::chromosome {
 TEST_CASE("ChromosomeSet: ctors", "[chromosome][short]") {
   // clang-format off
   const std::array<Chromosome, 3> expected{
-      Chromosome{"chr1", 50001},
-      Chromosome{"chr2", 25017},
-      Chromosome{"chr3", 10000}
+      Chromosome{0, "chr1", 50001},
+      Chromosome{1, "chr2", 25017},
+      Chromosome{2, "chr3", 10000}
   };
   // clang-format on
 
@@ -44,7 +44,7 @@ TEST_CASE("ChromosomeSet: ctors", "[chromosome][short]") {
     expected_.push_back(expected.back());
 
     CHECK_THROWS_WITH(ChromosomeSet(expected_.begin(), expected_.end()),
-                      Catch::Matchers::ContainsSubstring("found duplicate chromosome"));
+                      Catch::Matchers::ContainsSubstring("found multiple entries for chromosome"));
   }
 
   SECTION("ctor w/ iterator of chrom names and sizes") {
@@ -56,7 +56,7 @@ TEST_CASE("ChromosomeSet: ctors", "[chromosome][short]") {
 
     CHECK_THROWS_WITH(
         ChromosomeSet(expected_names_.begin(), expected_names_.end(), expected_sizes_.begin()),
-        Catch::Matchers::ContainsSubstring("found duplicate chromosome"));
+        Catch::Matchers::ContainsSubstring("found multiple entries for chromosome"));
   }
 }
 
@@ -64,26 +64,27 @@ TEST_CASE("ChromosomeSet: ctors", "[chromosome][short]") {
 TEST_CASE("ChromosomeSet: lookups", "[chromosome][short]") {
   // clang-format off
   const ChromosomeSet chroms{{
-      Chromosome{"chr1", 50001},
-      Chromosome{"chr2", 25017},
-      Chromosome{"chr3", 10000}}
+      Chromosome{0, "chr1", 50001},
+      Chromosome{1, "chr2", 25017},
+      Chromosome{2, "chr3", 10000}}
   };
   // clang-format on
 
   SECTION("contains") {
-    CHECK(chroms.contains(Chromosome{"chr1", 50001}));
+    CHECK(chroms.contains(Chromosome{0, "chr1", 50001}));
     CHECK(chroms.contains(0));
     CHECK(chroms.contains("chr1"));
 
-    CHECK_FALSE(chroms.contains(Chromosome{"chr0", 50001}));
+    CHECK_FALSE(chroms.contains(Chromosome{0, "chr0", 50001}));
+    CHECK_FALSE(chroms.contains(Chromosome{3, "chr0", 50001}));
     CHECK_FALSE(chroms.contains(7));
     CHECK_FALSE(chroms.contains("chr0"));
     CHECK_FALSE(chroms.contains(""));
   }
 
   SECTION("at") {
-    CHECK(chroms.at(0) == Chromosome{"chr1", 50001});
-    CHECK(chroms.at("chr1") == Chromosome{"chr1", 50001});
+    CHECK(chroms.at(0) == Chromosome{0, "chr1", 50001});
+    CHECK(chroms.at("chr1") == Chromosome{0, "chr1", 50001});
 
     CHECK_THROWS_AS(chroms.at(3), std::out_of_range);
     CHECK_THROWS_AS(chroms.at("chr0"), std::out_of_range);
@@ -91,7 +92,7 @@ TEST_CASE("ChromosomeSet: lookups", "[chromosome][short]") {
 
   SECTION("get_id") {
     CHECK(chroms.get_id("chr1") == 0);
-    CHECK(chroms.get_id(Chromosome{"chr3", 10000}) == 2);
+    CHECK(chroms.get_id("chr3") == 2);
 
     CHECK_THROWS_AS(chroms.get_id("a"), std::out_of_range);
   }

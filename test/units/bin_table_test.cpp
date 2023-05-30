@@ -15,13 +15,13 @@
 namespace coolerpp::test::bin_table {
 
 // NOLINTNEXTLINE(readability-function-cognitive-complexity)
-TEST_CASE("BinTableLazy", "[bin-table][short]") {
+TEST_CASE("BinTable", "[bin-table][short]") {
   constexpr std::uint32_t bin_size = 5000;
   // clang-format off
-  const BinTableLazy table({
-      Chromosome{"chr1", 50001},
-      Chromosome{"chr2", 25017},
-      Chromosome{"chr3", 10000}},
+  const BinTable table({
+      Chromosome{0, "chr1", 50001},
+      Chromosome{1, "chr2", 25017},
+      Chromosome{2, "chr3", 10000}},
       bin_size);
   // clang-format on
 
@@ -32,14 +32,14 @@ TEST_CASE("BinTableLazy", "[bin-table][short]") {
   }
 
   SECTION("at") {
-    const BinTableLazy expected{{Chromosome{"chr2", 25017}}, bin_size};
+    const BinTable expected{{Chromosome{1, "chr2", 25017}}, bin_size};
 
-    CHECK(table.at(Chromosome{"chr2", 25017}) == expected);
+    CHECK(table.at(Chromosome{1, "chr2", 25017}) == expected);
     CHECK(table.at("chr2") == expected);
     CHECK(table.at(1) == expected);
     CHECK(table.at("chr1") != expected);
 
-    CHECK_THROWS_AS(table.at(Chromosome{"chr5", 1}), std::out_of_range);
+    CHECK_THROWS_AS(table.at(Chromosome{4, "chr5", 1}), std::out_of_range);
     CHECK_THROWS_AS(table.at("a"), std::out_of_range);
     CHECK_THROWS_AS(table.at(10), std::out_of_range);
   }
@@ -132,7 +132,7 @@ TEST_CASE("BinTableLazy", "[bin-table][short]") {
 
     std::size_t i = 0;
     for (const auto& [chrom, bin_start, bin_end] : table) {
-      CHECK(*concrete_table.chroms[i] == chrom);
+      CHECK(*concrete_table.chroms[i] == *chrom);
       CHECK(concrete_table.bin_starts[i] == bin_start);
       CHECK(concrete_table.bin_ends[i++] == bin_end);
     }

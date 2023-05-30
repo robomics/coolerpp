@@ -5,98 +5,84 @@
 #pragma once
 
 #include <fmt/format.h>
-#include <tsl/ordered_set.h>
+#include <tsl/hopscotch_map.h>
 
 #include <cstdint>
 #include <initializer_list>
+#include <limits>
 #include <string>
+#include <string_view>
 #include <vector>
 
 namespace coolerpp {
-struct Chromosome;
-}
 
-namespace std {
-template <>
-struct hash<coolerpp::Chromosome> {
-  size_t operator()(const coolerpp::Chromosome& k) const;
-};
-}  // namespace std
+class Chromosome {
+ private:
+  std::string _name{};
+  std::uint32_t _id{(std::numeric_limits<std::uint32_t>::max)()};
+  std::uint32_t _size{};
 
-namespace fmt {
-template <>
-struct formatter<coolerpp::Chromosome> {
-  constexpr auto parse(format_parse_context& ctx) -> decltype(ctx.begin());
-  template <typename FormatContext>
-  auto format(const coolerpp::Chromosome& c, FormatContext& ctx) const -> decltype(ctx.out());
-};
-}  // namespace fmt
-
-namespace coolerpp {
-
-namespace internal {
-struct ChromEq {
-  using is_transparent = void;
-  bool operator()(const Chromosome& a, const Chromosome& b) const noexcept;
-  bool operator()(const Chromosome& a, std::string_view b_name) const noexcept;
-  bool operator()(std::string_view a_name, const Chromosome& b) const noexcept;
-};
-
-struct ChromHasher {
-  std::size_t operator()(const Chromosome& c) const;
-  std::size_t operator()(std::string_view name) const;
-};
-}  // namespace internal
-
-struct Chromosome {
-  std::string name{};
-  std::uint32_t size{};
-
+ public:
   Chromosome() = default;
-  Chromosome(std::string name_, std::uint32_t size_) noexcept;
+  Chromosome(std::uint32_t id_, std::string name_, std::uint32_t size_) noexcept;
 
-  [[nodiscard]] bool operator<(const Chromosome& other) const noexcept;
-  [[nodiscard]] bool operator>(const Chromosome& other) const noexcept;
-  [[nodiscard]] bool operator<=(const Chromosome& other) const noexcept;
-  [[nodiscard]] bool operator>=(const Chromosome& other) const noexcept;
+  [[nodiscard]] constexpr explicit operator bool() const noexcept;
+
+  [[nodiscard]] constexpr std::uint32_t id() const noexcept;
+  [[nodiscard]] std::string_view name() const noexcept;
+  [[nodiscard]] constexpr std::uint32_t size() const noexcept;
+
+  [[nodiscard]] constexpr bool operator<(const Chromosome& other) const noexcept;
+  [[nodiscard]] constexpr bool operator>(const Chromosome& other) const noexcept;
+  [[nodiscard]] constexpr bool operator<=(const Chromosome& other) const noexcept;
+  [[nodiscard]] constexpr bool operator>=(const Chromosome& other) const noexcept;
   [[nodiscard]] bool operator==(const Chromosome& other) const noexcept;
   [[nodiscard]] bool operator!=(const Chromosome& other) const noexcept;
 
-  friend bool operator<(const Chromosome& a, std::string_view b_name) noexcept;
-  friend bool operator>(const Chromosome& a, std::string_view b_name) noexcept;
-  friend bool operator<=(const Chromosome& a, std::string_view b_name) noexcept;
-  friend bool operator>=(const Chromosome& a, std::string_view b_name) noexcept;
   friend bool operator==(const Chromosome& a, std::string_view b_name) noexcept;
   friend bool operator!=(const Chromosome& a, std::string_view b_name) noexcept;
 
-  friend bool operator<(std::string_view a_name, const Chromosome& b) noexcept;
-  friend bool operator>(std::string_view a_name, const Chromosome& b) noexcept;
-  friend bool operator<=(std::string_view a_name, const Chromosome& b) noexcept;
-  friend bool operator>=(std::string_view a_name, const Chromosome& b) noexcept;
   friend bool operator==(std::string_view a_name, const Chromosome& b) noexcept;
   friend bool operator!=(std::string_view a_name, const Chromosome& b) noexcept;
+
+  friend constexpr bool operator<(const Chromosome& a, std::uint32_t b_id) noexcept;
+  friend constexpr bool operator>(const Chromosome& a, std::uint32_t b_id) noexcept;
+  friend constexpr bool operator<=(const Chromosome& a, std::uint32_t b_id) noexcept;
+  friend constexpr bool operator>=(const Chromosome& a, std::uint32_t b_id) noexcept;
+  friend constexpr bool operator==(const Chromosome& a, std::uint32_t b_id) noexcept;
+  friend constexpr bool operator!=(const Chromosome& a, std::uint32_t b_id) noexcept;
+
+  friend constexpr bool operator<(std::uint32_t a_id, const Chromosome& b) noexcept;
+  friend constexpr bool operator>(std::uint32_t a_id, const Chromosome& b) noexcept;
+  friend constexpr bool operator<=(std::uint32_t a_id, const Chromosome& b) noexcept;
+  friend constexpr bool operator>=(std::uint32_t a_id, const Chromosome& b) noexcept;
+  friend constexpr bool operator==(std::uint32_t a_id, const Chromosome& b) noexcept;
+  friend constexpr bool operator!=(std::uint32_t a_id, const Chromosome& b) noexcept;
 };
 
 class ChromosomeSet {
-  using SetT = tsl::ordered_set<Chromosome, internal::ChromHasher, internal::ChromEq>;
-  SetT _set{};
+  using ChromBuff = std::vector<Chromosome>;
+  using ChromMap = tsl::hopscotch_map<std::string_view, const Chromosome*>;
+
+  ChromBuff _buff{};
+  ChromMap _map{};
+
+  const Chromosome* _longest_chrom{};
+  const Chromosome* _chrom_with_longest_name{};
 
  public:
-  using key_type = typename SetT::key_type;
-  using value_type = typename SetT::value_type;
-  using size_type = typename SetT::size_type;
-  using difference_type = typename SetT::difference_type;
-  using hasher = typename SetT::hasher;
-  using key_equal = typename SetT::key_equal;
-  using allocator_type = typename SetT::allocator_type;
-  using reference = typename SetT::const_reference;
-  using const_reference = typename SetT::const_reference;
-  using pointer = typename SetT::const_pointer;
-  using const_pointer = typename SetT::const_pointer;
-  using iterator = typename SetT::const_iterator;
-  using const_iterator = typename SetT::const_iterator;
-  using reverse_iterator = typename SetT::reverse_iterator;
-  using const_reverse_iterator = typename SetT::const_reverse_iterator;
+  using value_type = typename ChromBuff::value_type;
+  using size_type = typename ChromBuff::size_type;
+  using difference_type = typename ChromBuff::difference_type;
+  using allocator_type = typename ChromBuff::allocator_type;
+  using reference = typename ChromBuff::const_reference;
+  using const_reference = typename ChromBuff::const_reference;
+  using pointer = typename ChromBuff::const_pointer;
+  using const_pointer = typename ChromBuff::const_pointer;
+  using iterator = typename ChromBuff::const_iterator;
+  using const_iterator = typename ChromBuff::const_iterator;
+  using reverse_iterator = typename ChromBuff::reverse_iterator;
+  using const_reverse_iterator = typename ChromBuff::const_reverse_iterator;
 
   ChromosomeSet() = default;
 
@@ -136,27 +122,50 @@ class ChromosomeSet {
   [[nodiscard]] bool contains(const Chromosome& chrom) const;
   [[nodiscard]] bool contains(std::string_view chrom_name) const;
 
-  [[nodiscard]] std::uint32_t get_id(const Chromosome& chrom) const;
   [[nodiscard]] std::uint32_t get_id(std::string_view chrom_name) const;
 
   [[nodiscard]] bool operator==(const ChromosomeSet& other) const;
   [[nodiscard]] bool operator!=(const ChromosomeSet& other) const;
 
-  [[nodiscard]] const Chromosome& find_longest_chromosome() const;
-  [[nodiscard]] const Chromosome& find_chromosome_with_longest_name() const;
+  // In case of ties, the first match is returned
+  [[nodiscard]] const Chromosome& longest_chromosome() const;
+  [[nodiscard]] const Chromosome& chromosome_with_longest_name() const;
 
  private:
   void validate_chrom_id(std::uint32_t chrom_id) const;
 
   template <typename ChromosomeNameIt, typename ChromosomeSizeIt>
-  [[nodiscard]] static auto construct_set(ChromosomeNameIt first_chrom_name,
-                                          ChromosomeNameIt last_chrom_name,
-                                          ChromosomeSizeIt first_chrom_size) -> SetT;
+  [[nodiscard]] static auto construct_chrom_buffer(ChromosomeNameIt first_chrom_name,
+                                                   ChromosomeNameIt last_chrom_name,
+                                                   ChromosomeSizeIt first_chrom_size) -> ChromBuff;
 
-  template <typename ChromosomeIt>
-  [[nodiscard]] static auto construct_set(ChromosomeIt first_chrom, ChromosomeIt last_chrom)
-      -> SetT;
+  [[nodiscard]] static auto construct_chrom_map(const ChromBuff& chroms) -> ChromMap;
+
+  [[nodiscard]] static const Chromosome* find_longest_chromosome(const ChromBuff& chroms) noexcept;
+  [[nodiscard]] static const Chromosome* find_chromosome_with_longest_name(
+      const ChromBuff& chroms) noexcept;
+
+  void validate() const;
 };
 }  // namespace coolerpp
+
+namespace std {
+template <>
+struct hash<coolerpp::Chromosome> {
+  size_t operator()(const coolerpp::Chromosome& c) const;
+};
+}  // namespace std
+
+namespace fmt {
+template <>
+struct formatter<coolerpp::Chromosome> {
+  enum Presentation { tsv, ucsc };
+  Presentation presentation{Presentation::ucsc};
+
+  constexpr auto parse(format_parse_context& ctx) -> decltype(ctx.begin());
+  template <typename FormatContext>
+  auto format(const coolerpp::Chromosome& c, FormatContext& ctx) const -> decltype(ctx.out());
+};
+}  // namespace fmt
 
 #include "../../chromosome_impl.hpp"

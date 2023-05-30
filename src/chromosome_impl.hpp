@@ -16,119 +16,154 @@
 #include <utility>
 
 #include "coolerpp/common.hpp"
+#include "coolerpp/internal/hash.hpp"
 
 namespace coolerpp {
 
-inline Chromosome::Chromosome(std::string name_, std::uint32_t size_) noexcept
-    : name(std::move(name_)), size(size_) {
-  assert(size != 0);
+inline Chromosome::Chromosome(std::uint32_t id, std::string name_, std::uint32_t size_) noexcept
+    : _name(std::move(name_)), _id(id), _size(size_) {
+  assert(_id != (std::numeric_limits<std::uint32_t>::max)());
+  assert(_size != 0);
 }
 
-inline bool Chromosome::operator<(const Chromosome& other) const noexcept {
-  return this->name < other.name;
+constexpr Chromosome::operator bool() const noexcept {
+  return this->id() != (std::numeric_limits<std::uint32_t>::max)();
 }
 
-inline bool Chromosome::operator>(const Chromosome& other) const noexcept {
-  return this->name > other.name;
+constexpr std::uint32_t Chromosome::id() const noexcept { return this->_id; }
+
+inline std::string_view Chromosome::name() const noexcept { return this->_name; }
+
+constexpr std::uint32_t Chromosome::size() const noexcept { return this->_size; }
+
+constexpr bool Chromosome::operator<(const Chromosome& other) const noexcept {
+  return this->id() < other.id();
 }
 
-inline bool Chromosome::operator<=(const Chromosome& other) const noexcept {
-  return this->name <= other.name;
+constexpr bool Chromosome::operator>(const Chromosome& other) const noexcept {
+  return this->id() > other.id();
 }
 
-inline bool Chromosome::operator>=(const Chromosome& other) const noexcept {
-  return this->name >= other.name;
+constexpr bool Chromosome::operator<=(const Chromosome& other) const noexcept {
+  return this->id() <= other.id();
+}
+
+constexpr bool Chromosome::operator>=(const Chromosome& other) const noexcept {
+  return this->id() >= other.id();
 }
 
 inline bool Chromosome::operator==(const Chromosome& other) const noexcept {
-  // Comparing by ID only is not enough, as different sets of chromosomes may use the same ID for
-  // different chromosomes
-  return this->name == other.name && this->size == other.size;
+  return this->id() == other.id() && this->name() == other.name() && this->size() == other.size();
 }
 
 inline bool Chromosome::operator!=(const Chromosome& other) const noexcept {
   return !(*this == other);
 }
 
-inline bool operator<(const Chromosome& a, std::string_view b_name) noexcept {
-  return a.name < b_name;
-}
-inline bool operator>(const Chromosome& a, std::string_view b_name) noexcept {
-  return a.name > b_name;
-}
-inline bool operator<=(const Chromosome& a, std::string_view b_name) noexcept {
-  return a.name <= b_name;
-}
-inline bool operator>=(const Chromosome& a, std::string_view b_name) noexcept {
-  return a.name >= b_name;
-}
 inline bool operator==(const Chromosome& a, std::string_view b_name) noexcept {
-  return a.name == b_name;
+  return a.name() == b_name;
 }
 inline bool operator!=(const Chromosome& a, std::string_view b_name) noexcept {
-  return a.name != b_name;
+  return a.name() != b_name;
 }
 
-inline bool operator<(std::string_view a_name, const Chromosome& b) noexcept {
-  return a_name < b.name;
-}
-inline bool operator>(std::string_view a_name, const Chromosome& b) noexcept {
-  return a_name > b.name;
-}
-inline bool operator<=(std::string_view a_name, const Chromosome& b) noexcept {
-  return a_name <= b.name;
-}
-inline bool operator>=(std::string_view a_name, const Chromosome& b) noexcept {
-  return a_name >= b.name;
-}
 inline bool operator==(std::string_view a_name, const Chromosome& b) noexcept {
-  return a_name == b.name;
+  return a_name == b.name();
 }
 inline bool operator!=(std::string_view a_name, const Chromosome& b) noexcept {
-  return a_name != b.name;
+  return a_name != b.name();
+}
+
+constexpr bool operator<(const Chromosome& a, std::uint32_t b_id) noexcept { return a.id() < b_id; }
+constexpr bool operator>(const Chromosome& a, std::uint32_t b_id) noexcept { return a.id() > b_id; }
+constexpr bool operator<=(const Chromosome& a, std::uint32_t b_id) noexcept {
+  return a.id() <= b_id;
+}
+constexpr bool operator>=(const Chromosome& a, std::uint32_t b_id) noexcept {
+  return a.id() >= b_id;
+}
+constexpr bool operator==(const Chromosome& a, std::uint32_t b_id) noexcept {
+  return a.id() == b_id;
+}
+constexpr bool operator!=(const Chromosome& a, std::uint32_t b_id) noexcept {
+  return a.id() != b_id;
+}
+
+constexpr bool operator<(std::uint32_t a_id, const Chromosome& b) noexcept { return a_id < b.id(); }
+constexpr bool operator>(std::uint32_t a_id, const Chromosome& b) noexcept { return a_id > b.id(); }
+constexpr bool operator<=(std::uint32_t a_id, const Chromosome& b) noexcept {
+  return a_id <= b.id();
+}
+constexpr bool operator>=(std::uint32_t a_id, const Chromosome& b) noexcept {
+  return a_id >= b.id();
+}
+constexpr bool operator==(std::uint32_t a_id, const Chromosome& b) noexcept {
+  return a_id == b.id();
+}
+constexpr bool operator!=(std::uint32_t a_id, const Chromosome& b) noexcept {
+  return a_id != b.id();
 }
 
 template <typename ChromosomeIt>
 inline ChromosomeSet::ChromosomeSet(ChromosomeIt first_chrom, ChromosomeIt last_chrom)
-    : _set(construct_set(first_chrom, last_chrom)) {}
+    : _buff(first_chrom, last_chrom),
+      _map(construct_chrom_map(_buff)),
+      _longest_chrom(find_longest_chromosome(_buff)),
+      _chrom_with_longest_name(find_chromosome_with_longest_name(_buff)) {
+  this->validate();
+}
 
 template <typename ChromosomeNameIt, typename ChromosomeSizeIt>
 inline ChromosomeSet::ChromosomeSet(ChromosomeNameIt first_chrom_name,
                                     ChromosomeNameIt last_chrom_name,
                                     ChromosomeSizeIt first_chrom_size)
-    : _set(construct_set(first_chrom_name, last_chrom_name, first_chrom_size)) {}
+    : _buff(construct_chrom_buffer(first_chrom_name, last_chrom_name, first_chrom_size)),
+      _map(construct_chrom_map(_buff)),
+      _longest_chrom(find_longest_chromosome(_buff)),
+      _chrom_with_longest_name(find_chromosome_with_longest_name(_buff)) {
+  this->validate();
+}
 
 inline ChromosomeSet::ChromosomeSet(std::initializer_list<Chromosome> chromosomes)
     : ChromosomeSet(chromosomes.begin(), chromosomes.end()) {}
 
 inline auto ChromosomeSet::begin() const -> const_iterator { return this->cbegin(); }
 inline auto ChromosomeSet::end() const -> const_iterator { return this->cend(); }
-inline auto ChromosomeSet::cbegin() const -> const_iterator { return this->_set.cbegin(); }
-inline auto ChromosomeSet::cend() const -> const_iterator { return this->_set.cend(); }
+inline auto ChromosomeSet::cbegin() const -> const_iterator { return this->_buff.cbegin(); }
+inline auto ChromosomeSet::cend() const -> const_iterator { return this->_buff.cend(); }
 
 inline auto ChromosomeSet::rbegin() const -> const_reverse_iterator { return this->rcbegin(); }
 inline auto ChromosomeSet::rend() const -> const_reverse_iterator { return this->rcend(); }
 inline auto ChromosomeSet::rcbegin() const -> const_reverse_iterator {
-  return this->_set.rcbegin();
+  return this->_buff.rbegin();
 }
-inline auto ChromosomeSet::rcend() const -> const_reverse_iterator { return this->_set.rcend(); }
+inline auto ChromosomeSet::rcend() const -> const_reverse_iterator { return this->_buff.rend(); }
 
 inline bool ChromosomeSet::empty() const noexcept { return this->size() == 0; }
-inline std::size_t ChromosomeSet::size() const noexcept { return this->_set.size(); }
+inline std::size_t ChromosomeSet::size() const noexcept { return this->_buff.size(); }
 
 inline auto ChromosomeSet::find(std::uint32_t id) const -> const_iterator {
   if (static_cast<std::size_t>(id) > this->size()) {
     return this->end();
   }
-  return this->_set.begin() + static_cast<std::ptrdiff_t>(id);
+  return this->_buff.begin() + static_cast<std::ptrdiff_t>(id);
 }
 
 inline auto ChromosomeSet::find(std::string_view chrom_name) const -> const_iterator {
-  return this->_set.find(chrom_name);
+  auto it = this->_map.find(chrom_name);
+  if (it == this->_map.end()) {
+    return this->end();
+  }
+
+  return this->_buff.begin() + static_cast<std::ptrdiff_t>(it->second->id());
 }
 
 inline auto ChromosomeSet::find(const Chromosome& chrom) const -> const_iterator {
-  return this->_set.find(chrom);
+  auto match = this->find(chrom.id());
+  if (match != this->end() && *match != chrom) {
+    match = this->end();
+  }
+  return match;
 }
 
 inline const Chromosome& ChromosomeSet::at(std::uint32_t id) const {
@@ -164,13 +199,6 @@ inline bool ChromosomeSet::contains(std::string_view chrom_name) const {
   return this->find(chrom_name) != this->end();
 }
 
-inline std::uint32_t ChromosomeSet::get_id(const Chromosome& chrom) const {
-  if (const auto match = this->find(chrom); match != this->end()) {
-    return static_cast<std::uint32_t>(std::distance(this->begin(), match));
-  }
-  throw std::out_of_range(fmt::format(FMT_STRING("chromosome {} not found"), chrom));
-}
-
 inline std::uint32_t ChromosomeSet::get_id(std::string_view chrom_name) const {
   if (const auto match = this->find(chrom_name); match != this->end()) {
     return static_cast<std::uint32_t>(std::distance(this->begin(), match));
@@ -179,31 +207,33 @@ inline std::uint32_t ChromosomeSet::get_id(std::string_view chrom_name) const {
 }
 
 inline bool ChromosomeSet::operator==(const ChromosomeSet& other) const {
-  return this->_set == other._set;
+  if (this->size() != other.size()) {
+    return false;
+  }
+  return std::equal(this->_buff.begin(), this->_buff.end(), other.begin(),
+                    [](const Chromosome& chrom1, const Chromosome& chrom2) {
+                      return chrom1.id() == chrom2.id() && chrom1.name() == chrom2.name() &&
+                             chrom1.size() == chrom2.size();
+                    });
 }
 
 inline bool ChromosomeSet::operator!=(const ChromosomeSet& other) const {
   return !(*this == other);
 }
 
-inline const Chromosome& ChromosomeSet::find_longest_chromosome() const {
-  if (this->_set.empty()) {
-    throw std::runtime_error("find_longest_chromosome() was called on an empty ChromosomeSet");
+inline const Chromosome& ChromosomeSet::longest_chromosome() const {
+  if (this->empty()) {
+    throw std::runtime_error("longest_chromosome() was called on an empty ChromosomeSet");
   }
-  return *std::max_element(this->_set.begin(), this->_set.end(),
-                           [&](const Chromosome& chrom1, const Chromosome& chrom2) {
-                             return chrom1.size < chrom2.size;
-                           });
+  assert(!!this->_longest_chrom);
+  return *this->_longest_chrom;
 }
-inline const Chromosome& ChromosomeSet::find_chromosome_with_longest_name() const {
-  if (this->_set.empty()) {
-    throw std::runtime_error(
-        "find_chromosome_with_longest_name() was called on an empty ChromosomeSet");
+inline const Chromosome& ChromosomeSet::chromosome_with_longest_name() const {
+  if (this->empty()) {
+    throw std::runtime_error("chromosome_with_longest_name() was called on an empty ChromosomeSet");
   }
-  return *std::max_element(this->_set.begin(), this->_set.end(),
-                           [&](const Chromosome& chrom1, const Chromosome& chrom2) {
-                             return chrom1.name.size() < chrom2.name.size();
-                           });
+  assert(!!this->_chrom_with_longest_name);
+  return *this->_chrom_with_longest_name;
 }
 
 inline void ChromosomeSet::validate_chrom_id(std::uint32_t chrom_id) const {
@@ -213,88 +243,117 @@ inline void ChromosomeSet::validate_chrom_id(std::uint32_t chrom_id) const {
 }
 
 template <typename ChromosomeNameIt, typename ChromosomeSizeIt>
-inline auto ChromosomeSet::construct_set(ChromosomeNameIt first_chrom_name,
-                                         ChromosomeNameIt last_chrom_name,
-                                         ChromosomeSizeIt first_chrom_size) -> SetT {
-  const auto num_chroms =
-      conditional_static_cast<std::size_t>(std::distance(first_chrom_name, last_chrom_name));
-  SetT set(num_chroms);
-
-  std::transform(
-      first_chrom_name, last_chrom_name, std::inserter(set, set.begin()), [&](const auto& name) {
-        auto chrom = Chromosome{std::string{name}, *(first_chrom_size++)};
-        if (const auto& collision = set.find(chrom); collision != set.end()) {
-          const auto id1 = set.size();
-          const auto id2 = std::distance(set.begin(), collision);
-          throw std::runtime_error(fmt::format(
-              FMT_STRING("found duplicate chromosome: {}:{} (id={}) collides with {}:{} (id={})"),
-              chrom.name, chrom.size, id1, collision->name, collision->size, id2));
-        }
-        return chrom;
-      });
-
-  return set;
-}
-
-template <typename ChromosomeIt>
-inline auto ChromosomeSet::construct_set(ChromosomeIt first_chrom, ChromosomeIt last_chrom)
-    -> SetT {
-  const auto num_chroms =
-      conditional_static_cast<std::size_t>(std::distance(first_chrom, last_chrom));
-  SetT set(num_chroms);
-
-  std::transform(first_chrom, last_chrom, std::inserter(set, set.begin()), [&](Chromosome chrom) {
-    if (const auto& collision = set.find(chrom); collision != set.end()) {
-      const auto id1 = set.size();
-      const auto id2 = std::distance(set.begin(), collision);
-      throw std::runtime_error(fmt::format(
-          FMT_STRING("found duplicate chromosome: {}:{} (id={}) collides with {}:{} (id={})"),
-          chrom.name, chrom.size, id1, collision->name, collision->size, id2));
+inline auto ChromosomeSet::construct_chrom_buffer(ChromosomeNameIt first_chrom_name,
+                                                  ChromosomeNameIt last_chrom_name,
+                                                  ChromosomeSizeIt first_chrom_size) -> ChromBuff {
+  ChromBuff buff{};
+  while (first_chrom_name != last_chrom_name) {
+    if (std::string_view{*first_chrom_name}.empty()) {
+      throw std::runtime_error("found chromosome with empty name");
     }
-    return chrom;
-  });
+    buff.emplace_back(static_cast<std::uint32_t>(buff.size()), std::string{*first_chrom_name},
+                      conditional_static_cast<std::uint32_t>(*first_chrom_size));
 
-  return set;
-}
-
-namespace internal {
-
-inline bool ChromEq::operator()(const Chromosome& a, const Chromosome& b) const noexcept {
-  return a.name == b.name;
-}
-inline bool ChromEq::operator()(const Chromosome& a, std::string_view b_name) const noexcept {
-  return a.name == b_name;
-}
-inline bool ChromEq::operator()(std::string_view a_name, const Chromosome& b) const noexcept {
-  return a_name == b.name;
+    ++first_chrom_name;
+    ++first_chrom_size;
+  }
+  return buff;
 }
 
-inline std::size_t ChromHasher::operator()(const Chromosome& c) const {
-  return std::hash<Chromosome>{}(c);
-}
-inline std::size_t ChromHasher::operator()(std::string_view name) const {
-  return std::hash<std::string_view>{}(name);
+inline auto ChromosomeSet::construct_chrom_map(const ChromBuff& chroms) -> ChromMap {
+  ChromMap buff(chroms.size());
+  std::transform(chroms.begin(), chroms.end(), std::inserter(buff, buff.begin()),
+                 [&](const auto& chrom) {
+                   if (buff.contains(chrom.name())) {
+                     throw std::runtime_error(fmt::format(
+                         FMT_STRING("found multiple entries for chromosome \"{}\""), chrom.name()));
+                   }
+                   return std::make_pair(chrom.name(), &chrom);
+                 });
+  return buff;
 }
 
-}  // namespace internal
+inline const Chromosome* ChromosomeSet::find_longest_chromosome(const ChromBuff& chroms) noexcept {
+  if (chroms.empty()) {
+    return nullptr;
+  }
+
+  return &(*std::max_element(chroms.begin(), chroms.end(),
+                             [](const Chromosome& chrom1, const Chromosome& chrom2) {
+                               return chrom1.size() < chrom2.size();
+                             }));
+}
+inline const Chromosome* ChromosomeSet::find_chromosome_with_longest_name(
+    const ChromBuff& chroms) noexcept {
+  if (chroms.empty()) {
+    return nullptr;
+  }
+
+  return &(*std::max_element(chroms.begin(), chroms.end(),
+                             [](const Chromosome& chrom1, const Chromosome& chrom2) {
+                               return chrom1.name().size() < chrom2.name().size();
+                             }));
+}
+
+inline void ChromosomeSet::validate() const {
+  if (this->empty()) {
+    return;
+  }
+
+  assert(!!this->_longest_chrom);
+  assert(!!this->_chrom_with_longest_name);
+
+  if (!std::is_sorted(this->_buff.begin(), this->_buff.end())) {
+    throw std::runtime_error("chromosomes are not sorted by ID");
+  }
+
+  for (const auto& chrom : this->_buff) {
+    if (chrom.size() == 0) {
+      throw std::runtime_error(
+          fmt::format(FMT_STRING("chromosome {} has a size of 0"), chrom.name()));
+    }
+  }
+}
+
 }  // namespace coolerpp
 
 inline std::size_t std::hash<coolerpp::Chromosome>::operator()(
-    const coolerpp::Chromosome& k) const {
-  return std::hash<std::string>{}(k.name);
+    const coolerpp::Chromosome& c) const {
+  return coolerpp::internal::hash_combine(0, c.id(), c.name(), c.size());
 }
 
 constexpr auto fmt::formatter<coolerpp::Chromosome>::parse(format_parse_context& ctx)
     -> decltype(ctx.begin()) {
-  if (ctx.begin() != ctx.end() && *ctx.begin() != '}') {
+  const auto* it = ctx.begin();
+  const auto* end = ctx.end();
+  const auto fmt_string =
+      std::string_view{&(*ctx.begin()), static_cast<std::size_t>(ctx.end() - ctx.begin())};
+
+  if (it != end) {
+    if (fmt_string.find("ucsc") != std::string_view::npos) {
+      this->presentation = Presentation::ucsc;
+      it += std::string_view{"ucsc"}.size();  // NOLINT
+    } else if (fmt_string.find("tsv") != std::string_view::npos) {
+      this->presentation = Presentation::tsv;
+      it += std::string_view{"tsv"}.size();  // NOLINT
+    }
+  }
+
+  if (it != end && *it != '}') {
     throw fmt::format_error("invalid format");
   }
-  return ctx.end();
+
+  return it;
 }
 
 template <typename FormatContext>
 inline auto fmt::formatter<coolerpp::Chromosome>::format(const coolerpp::Chromosome& c,
                                                          FormatContext& ctx) const
     -> decltype(ctx.out()) {
-  return fmt::format_to(ctx.out(), FMT_STRING("{}:{}"), c.name, c.size);
+  // clang-format off
+  return fmt::format_to(ctx.out(), FMT_STRING("{}{}{}"),
+                        c.name(),
+                        this->presentation == Presentation::tsv ? '\t' : ':',
+                        c.size());
+  // clang-format on
 }
