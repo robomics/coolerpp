@@ -117,7 +117,7 @@ static void pixel_iterator_chunk_size_bench() {
 }
 
 TEST_CASE("File::iterator chunk_size: benchmark", "[iteration][bench]") {
-  constexpr std::size_t MAX_ITERS = 1024 * 1024;
+  constexpr std::size_t MAX_ITERS = 1024ULL * 1024;
   pixel_iterator_chunk_size_bench<256, MAX_ITERS>();
   pixel_iterator_chunk_size_bench<512, MAX_ITERS>();
   pixel_iterator_chunk_size_bench<1024, MAX_ITERS>();
@@ -141,7 +141,6 @@ static void pixel_selector_iterator_chunk_size_bench(std::string query1, std::st
     const auto test_file = datadir / "4DNFI9FVHJZQ.0.9.1.mcool::/resolutions/100000";
     const auto clr = File::open_read_only(test_file.string());
 
-    // Returns ~ 4M pixels
     const auto sel = clr.fetch<std::int32_t>(query1, query2);
 
     meter.measure([&]() {
