@@ -164,11 +164,11 @@ inline std::vector<std::uint64_t> Index::compute_chrom_offsets() const {
   return buff;
 }
 
-inline std::uint64_t Index::get_bin1_offset(std::string_view chrom_name) const {
+inline std::uint64_t Index::chrom_to_bin1_offset(std::string_view chrom_name) const {
   return this->at(chrom_name).front();
 }
 
-inline std::uint64_t Index::get_bin1_offset(std::uint32_t chrom_id) const {
+inline std::uint64_t Index::chrom_to_bin1_offset(std::uint32_t chrom_id) const {
   return this->at(chrom_id).front();
 }
 

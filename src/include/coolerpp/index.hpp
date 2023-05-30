@@ -98,8 +98,8 @@ class Index {
   void compute_chrom_offsets(std::vector<std::uint64_t>& buff) const noexcept;
   [[nodiscard]] std::vector<std::uint64_t> compute_chrom_offsets() const;
   // Return first bin1_id corresponding to chrom_name/id
-  [[nodiscard]] std::uint64_t get_bin1_offset(std::string_view chrom_name) const;
-  [[nodiscard]] std::uint64_t get_bin1_offset(std::uint32_t chrom_id) const;
+  [[nodiscard]] std::uint64_t chrom_to_bin1_offset(std::string_view chrom_name) const;
+  [[nodiscard]] std::uint64_t chrom_to_bin1_offset(std::uint32_t chrom_id) const;
 
   void finalize(std::uint64_t nnz);
 
