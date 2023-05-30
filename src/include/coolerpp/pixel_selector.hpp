@@ -71,15 +71,18 @@ class PixelSelector {
 
   class iterator {
     friend PixelSelector<N, CHUNK_SIZE>;
+
+    Dataset::iterator<std::uint64_t, CHUNK_SIZE> _bin1_id_it{};
+    Dataset::iterator<std::uint64_t, CHUNK_SIZE> _bin2_id_it{};
+    Dataset::iterator<N, CHUNK_SIZE> _count_it{};
+
+    mutable Pixel<N> _value{};
     std::shared_ptr<const Index> _index{};
 
     std::shared_ptr<PixelCoordinates> _coord1{};
     std::shared_ptr<PixelCoordinates> _coord2{};
 
-    Dataset::iterator<std::uint64_t, CHUNK_SIZE> _bin1_id_it{};
-    Dataset::iterator<std::uint64_t, CHUNK_SIZE> _bin2_id_it{};
-    Dataset::iterator<std::uint64_t, CHUNK_SIZE> _bin2_id_last{};
-    Dataset::iterator<N, CHUNK_SIZE> _count_it{};
+    std::uint64_t _h5_end_offset{};
 
     explicit iterator(std::shared_ptr<const Index> index, const Dataset &pixels_bin1_id,
                       const Dataset &pixels_bin2_id, const Dataset &pixels_count);
@@ -101,7 +104,9 @@ class PixelSelector {
     using difference_type = std::ptrdiff_t;
     using value_type = Pixel<N>;
     using pointer = value_type *;
+    using const_pointer = const value_type *;
     using reference = value_type &;
+    using const_reference = const value_type &;
     // using iterator_category = std::random_access_iterator_tag;
     using iterator_category = std::forward_iterator_tag;
 
@@ -116,7 +121,8 @@ class PixelSelector {
     [[nodiscard]] constexpr bool operator>(const iterator &other) const noexcept;
     [[nodiscard]] constexpr bool operator>=(const iterator &other) const noexcept;
 
-    [[nodiscard]] auto operator*() const -> value_type;
+    [[nodiscard]] auto operator*() const -> const_reference;
+    [[nodiscard]] auto operator->() const -> const_pointer;
 
     auto operator++() -> iterator &;
     auto operator++(int) -> iterator;
@@ -137,6 +143,11 @@ class PixelSelector {
     [[nodiscard]] std::size_t h5_offset() const noexcept;
     void jump_at_end();
     void refresh();
+    [[nodiscard]] constexpr bool pixel_is_outdated() const noexcept;
+    void read_pixel() const;
+    constexpr void assert_within_bound() const noexcept;
+    constexpr bool is_at_end() const noexcept;
+    constexpr bool is_past_end() const noexcept;
   };
 };
 

@@ -118,7 +118,7 @@ class Index {
 
     static constexpr auto npos = std::numeric_limits<std::size_t>::max();
 
-    const Index* _idx;
+    const Index* _idx{};
     std::uint32_t _chrom_id{};
     std::size_t _offset_idx{npos};
 

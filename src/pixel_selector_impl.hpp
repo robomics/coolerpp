@@ -203,13 +203,13 @@ inline PixelSelector<N, CHUNK_SIZE>::iterator::iterator(std::shared_ptr<const In
                                                         const Dataset &pixels_bin1_id,
                                                         const Dataset &pixels_bin2_id,
                                                         const Dataset &pixels_count)
-    : _index(std::move(index)),
+    : _bin1_id_it(pixels_bin1_id.begin<std::uint64_t, CHUNK_SIZE>()),
+      _bin2_id_it(pixels_bin2_id.begin<std::uint64_t, CHUNK_SIZE>()),
+      _count_it(pixels_count.begin<N, CHUNK_SIZE>()),
+      _index(std::move(index)),
       _coord1(nullptr),
       _coord2(nullptr),
-      _bin1_id_it(pixels_bin1_id.begin<std::uint64_t, CHUNK_SIZE>()),
-      _bin2_id_it(pixels_bin2_id.begin<std::uint64_t, CHUNK_SIZE>()),
-      _bin2_id_last(pixels_bin2_id.end<std::uint64_t, CHUNK_SIZE>()),
-      _count_it(pixels_count.begin<N, CHUNK_SIZE>()) {}
+      _h5_end_offset(pixels_bin2_id.size()) {}
 
 template <typename N, std::size_t CHUNK_SIZE>
 inline PixelSelector<N, CHUNK_SIZE>::iterator::iterator(std::shared_ptr<const Index> index,
@@ -234,8 +234,8 @@ inline PixelSelector<N, CHUNK_SIZE>::iterator::iterator(std::shared_ptr<const In
   // overlapping the query
   auto it = iterator::at_end(this->_index, pixels_bin1_id, pixels_bin2_id, pixels_count, _coord1,
                              _coord2);
-  _bin2_id_last = it._bin2_id_last;
-  assert(_bin2_id_it <= _bin2_id_last);
+  _h5_end_offset = it._h5_end_offset;
+  assert(!this->is_past_end());
 
   if (_bin2_id_it.h5_offset() == pixels_bin2_id.size()) {
     return;
@@ -260,7 +260,7 @@ inline auto PixelSelector<N, CHUNK_SIZE>::iterator::at_end(std::shared_ptr<const
   it._index = std::move(index);
   it._bin1_id_it = pixels_bin1_id.end<std::uint64_t, CHUNK_SIZE>();
   it._bin2_id_it = pixels_bin2_id.end<std::uint64_t, CHUNK_SIZE>();
-  it._bin2_id_last = it._bin2_id_it;
+  it._h5_end_offset = it._bin2_id_it.h5_offset();
   it._count_it = pixels_count.end<N, CHUNK_SIZE>();
 
   return it;
@@ -298,8 +298,8 @@ inline auto PixelSelector<N, CHUNK_SIZE>::iterator::at_end(std::shared_ptr<const
     if (offset == 0) {
       it._bin1_id_it = pixels_bin1_id.begin<std::uint64_t, CHUNK_SIZE>();
       it._bin2_id_it = pixels_bin2_id.begin<std::uint64_t, CHUNK_SIZE>();
-      it._bin2_id_last = pixels_bin2_id.begin<std::uint64_t, CHUNK_SIZE>();
       it._count_it = pixels_count.begin<N, CHUNK_SIZE>();
+      it._h5_end_offset = it._bin2_id_it.h5_offset();
       return it;
     }
   }
@@ -310,8 +310,8 @@ inline auto PixelSelector<N, CHUNK_SIZE>::iterator::at_end(std::shared_ptr<const
     it._bin1_id_it = pixels_bin1_id.make_iterator_at_offset<std::uint64_t, CHUNK_SIZE>(offset);
     it._bin2_id_it = pixels_bin2_id.make_iterator_at_offset<std::uint64_t, CHUNK_SIZE>(offset);
     // Even though we do not yet know where the last iterator actually is, the jump methods expect
-    // the last iterator to be set to something.
-    it._bin2_id_last = pixels_bin2_id.end<std::uint64_t, CHUNK_SIZE>();
+    // _h5_end_offset to be set to something.
+    it._h5_end_offset = pixels_bin2_id.size();
 
     it._count_it = pixels_count.make_iterator_at_offset<N, CHUNK_SIZE>(offset);
 
@@ -335,10 +335,10 @@ inline auto PixelSelector<N, CHUNK_SIZE>::iterator::at_end(std::shared_ptr<const
   if (it.discard()) {
     // Pixel pointed to by it does not overlap the query (i.e. matrix has 0 interactions for the
     // current row and col bin2_id()
-    it._bin2_id_last = it._bin2_id_it;
+    it._h5_end_offset = it._bin2_id_it.h5_offset();
   } else {
     // it points to the last pixel overlapping the query, so increment last_it and it
-    it._bin2_id_last = it._bin2_id_it + 1;
+    it._h5_end_offset = it._bin2_id_it.h5_offset() + 1;
     std::ignore = ++it;
   }
 
@@ -384,20 +384,23 @@ constexpr bool PixelSelector<N, CHUNK_SIZE>::iterator::operator>=(
 }
 
 template <typename N, std::size_t CHUNK_SIZE>
-inline auto PixelSelector<N, CHUNK_SIZE>::iterator::operator*() const -> value_type {
+inline auto PixelSelector<N, CHUNK_SIZE>::iterator::operator*() const -> const_reference {
   assert(this->_index);
-  assert(this->_bin2_id_it < this->_bin2_id_last);
-  // clang-format off
-  return {PixelCoordinates{this->_index->bins_ptr(),
-                           *this->_bin1_id_it,
-                           *this->_bin2_id_it},
-          *this->_count_it};
-  // clang-format on
+  assert_within_bound();
+  if (this->pixel_is_outdated()) {
+    this->read_pixel();
+  }
+  return this->_value;
+}
+
+template <typename N, std::size_t CHUNK_SIZE>
+inline auto PixelSelector<N, CHUNK_SIZE>::iterator::operator->() const -> const_pointer {
+  return &(*(*this));
 }
 
 template <typename N, std::size_t CHUNK_SIZE>
 inline auto PixelSelector<N, CHUNK_SIZE>::iterator::operator++() -> iterator & {
-  assert(this->_bin2_id_it < this->_bin2_id_last);
+  assert_within_bound();
   std::ignore = ++this->_bin1_id_it;
   std::ignore = ++this->_bin2_id_it;
   std::ignore = ++this->_count_it;
@@ -405,6 +408,9 @@ inline auto PixelSelector<N, CHUNK_SIZE>::iterator::operator++() -> iterator & {
   if (this->discard()) {
     this->jump_to_next_overlap();
   }
+
+  // signal _value is outdated
+  this->_value.count = 0;
 
   return *this;
 }
@@ -424,11 +430,11 @@ inline void PixelSelector<N, CHUNK_SIZE>::iterator::jump_to_row(std::uint64_t bi
   assert(this->_index);
   assert(bin_id <= this->_index->bins().size());
 
-  if (this->_bin2_id_it >= this->_bin2_id_last) {
+  if (this->is_at_end() || this->is_past_end()) {
     return;
   }
 
-  const auto end_offset = this->_bin2_id_last.h5_offset();
+  const auto end_offset = this->_h5_end_offset;
   const auto row_offset = this->_index->get_offset_by_bin_id(bin_id);
   const auto current_offset = this->h5_offset();
 
@@ -446,7 +452,7 @@ inline void PixelSelector<N, CHUNK_SIZE>::iterator::jump_to_col(std::uint64_t bi
   assert(this->_index);
   assert(bin_id <= this->_index->bins().size());
 
-  if (this->_bin2_id_it >= this->_bin2_id_last) {
+  if (this->is_at_end() || this->is_past_end()) {
     return;
   }
 
@@ -456,7 +462,7 @@ inline void PixelSelector<N, CHUNK_SIZE>::iterator::jump_to_col(std::uint64_t bi
   const auto current_offset = conditional_static_cast<std::uint64_t>(this->h5_offset());
   const auto current_row_offset = this->_index->get_offset_by_bin_id(current_row);
   const auto next_row_offset = this->_index->get_offset_by_bin_id(next_row);
-  const auto end_offset = conditional_static_cast<std::uint64_t>(this->_bin2_id_last.h5_offset());
+  const auto end_offset = this->_h5_end_offset;
 
   if (current_offset == next_row_offset) {
     return;  // Row is empty
@@ -480,7 +486,7 @@ inline void PixelSelector<N, CHUNK_SIZE>::iterator::jump_to_col(std::uint64_t bi
   this->_count_it += offset;
 
   assert(*this->_bin1_id_it == current_row);
-  assert(this->_bin2_id_it <= this->_bin2_id_last);
+  assert(!this->is_past_end());
 }
 
 template <typename N, std::size_t CHUNK_SIZE>
@@ -500,7 +506,7 @@ inline void PixelSelector<N, CHUNK_SIZE>::iterator::jump_to_next_overlap() {
   assert(this->_coord2);
   while (this->discard()) {
     // We're at/past end: return immediately
-    if (this->_bin2_id_it >= this->_bin2_id_last) {
+    if (this->is_at_end() || this->is_past_end()) {
       this->jump_at_end();
       return;
     }
@@ -520,7 +526,7 @@ inline void PixelSelector<N, CHUNK_SIZE>::iterator::jump_to_next_overlap() {
 
     // There's no more data to be read, as we're past the last column overlapping the query,
     // and the next row does not overlap the query
-    if (this->_bin2_id_it >= this->_bin2_id_last || next_row > this->_coord1->bin2_id()) {
+    if (this->is_at_end() || this->is_past_end() || next_row > this->_coord1->bin2_id()) {
       // assert(col > this->_coord2->bin2_id());  // This is not always true for trans queries
       this->jump_at_end();
       return;
@@ -539,7 +545,7 @@ inline bool PixelSelector<N, CHUNK_SIZE>::iterator::discard() const {
     return false;
   }
 
-  if (this->_bin2_id_it == this->_bin2_id_last) {
+  if (this->is_at_end()) {
     return false;
   }
 
@@ -562,13 +568,13 @@ inline std::size_t PixelSelector<N, CHUNK_SIZE>::iterator::h5_offset() const noe
 
 template <typename N, std::size_t CHUNK_SIZE>
 inline void PixelSelector<N, CHUNK_SIZE>::iterator::jump_at_end() {
-  if (this->_bin2_id_it == this->_bin2_id_last) {
+  if (this->is_at_end()) {
     return;
   }
 
   // Deal with iterators upstream of last
-  if (this->_bin2_id_it < this->_bin2_id_last) {
-    const auto offset = this->_bin2_id_last.h5_offset() - this->_bin2_id_it.h5_offset();
+  if (!this->is_past_end()) {
+    const auto offset = this->_h5_end_offset - this->_bin2_id_it.h5_offset();
     this->_bin1_id_it += offset;
     this->_bin2_id_it += offset;
     this->_count_it += offset;
@@ -576,7 +582,7 @@ inline void PixelSelector<N, CHUNK_SIZE>::iterator::jump_at_end() {
   }
 
   // Deal with iterators downstream of last
-  const auto offset = this->_bin2_id_it.h5_offset() - this->_bin2_id_last.h5_offset();
+  const auto offset = this->_bin2_id_it.h5_offset() - this->_h5_end_offset;
   this->_bin1_id_it -= offset;
   this->_bin2_id_it -= offset;
   this->_count_it -= offset;
@@ -597,4 +603,31 @@ inline void PixelSelector<N, CHUNK_SIZE>::iterator::refresh() {
   this->_count_it = count_dset.template make_iterator_at_offset<N, CHUNK_SIZE>(h5_offset);
 }
 
+template <typename N, std::size_t CHUNK_SIZE>
+constexpr bool PixelSelector<N, CHUNK_SIZE>::iterator::pixel_is_outdated() const noexcept {
+  return this->_value.count == 0;
+}
+
+template <typename N, std::size_t CHUNK_SIZE>
+inline void PixelSelector<N, CHUNK_SIZE>::iterator::read_pixel() const {
+  assert(this->pixel_is_outdated());
+  this->_value.coords =
+      PixelCoordinates{this->_index->bins_ptr(), *this->_bin1_id_it, *this->_bin2_id_it};
+  this->_value.count = *this->_count_it;
+}
+
+template <typename N, std::size_t CHUNK_SIZE>
+constexpr void PixelSelector<N, CHUNK_SIZE>::iterator::assert_within_bound() const noexcept {
+  assert(this->_bin2_id_it.h5_offset() < this->_h5_end_offset);
+}
+
+template <typename N, std::size_t CHUNK_SIZE>
+constexpr bool PixelSelector<N, CHUNK_SIZE>::iterator::is_at_end() const noexcept {
+  return this->_bin2_id_it.h5_offset() == this->_h5_end_offset;
+}
+
+template <typename N, std::size_t CHUNK_SIZE>
+constexpr bool PixelSelector<N, CHUNK_SIZE>::iterator::is_past_end() const noexcept {
+  return this->_bin2_id_it.h5_offset() > this->_h5_end_offset;
+}
 }  // namespace coolerpp
