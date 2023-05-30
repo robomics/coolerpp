@@ -12,14 +12,43 @@
 #include <highfive/H5DataSet.hpp>
 #include <highfive/H5Exception.hpp>
 #include <highfive/H5Selection.hpp>
+#include <numeric>
 #include <string>
 #include <string_view>
 #include <vector>
 
 #include "coolerpp/common.hpp"
-#include "coolerpp/internal/prime_number_table.hpp"
 
 namespace coolerpp {
+
+namespace internal {
+
+// https://www.geeksforgeeks.org/nearest-prime-less-given-number-n/
+// https://practice.geeksforgeeks.org/user-profile.php?user=Shashank%20Mishra
+template <typename I>
+inline bool is_prime(I n) {
+  if (n <= 1) {
+    return false;
+  }
+  for (I i = 2; i <= static_cast<I>(std::sqrt(static_cast<double>(n))); ++i) {
+    if (n % i == 0) {
+      return false;
+    }
+  }
+  return true;
+}
+
+template <typename I>
+[[nodiscard]] inline I nearest_prime(I n) {
+  for (I i = n - 1; i >= 2; --i) {
+    if (is_prime(i)) {
+      return i;
+    }
+  }
+  return 0;
+}
+
+}  // namespace internal
 
 inline HighFive::DataSetCreateProps Dataset::generate_default_dset_create_props(
     std::uint_fast8_t compression_lvl, const std::size_t chunk_size) {
@@ -32,18 +61,13 @@ inline HighFive::DataSetCreateProps Dataset::generate_default_dset_create_props(
 }
 
 inline HighFive::DataSetAccessProps Dataset::generate_default_dset_access_props(
-    const std::size_t chunk_size, const std::size_t cache_size) {
+    const std::size_t chunk_size, const std::size_t cache_size, double w0) {
+  // https://docs.hdfgroup.org/hdf5/v1_12/group___d_a_p_l.html#ga104d00442c31714ee073dee518f661f
   assert(chunk_size != 0);
   assert(cache_size != 0);
-  // https://docs.hdfgroup.org/hdf5/v1_12/group___d_a_p_l.html#ga104d00442c31714ee073dee518f661f
-  constexpr double w0 = 0.75;  // default as of HDF5 v12.1
-  const auto num_chunks = (std::max)(std::size_t(1), cache_size / chunk_size);
-  constexpr auto &prime_number_table = internal::prime_number_table;  // NOLINT
 
-  // NOLINTNEXTLINE(readability-qualified-auto)
-  const auto it =
-      std::lower_bound(prime_number_table.begin(), prime_number_table.end(), 100 * num_chunks);
-  const auto num_slots = it != prime_number_table.end() ? *it : prime_number_table.back();
+  const auto num_chunks = (std::max)(std::size_t(1), cache_size / chunk_size);
+  const auto num_slots = internal::nearest_prime(100 * num_chunks);
 
   HighFive::DataSetAccessProps props{};
   props.add(HighFive::Caching(num_slots, cache_size, w0));
