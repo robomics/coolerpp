@@ -247,17 +247,13 @@ constexpr auto fmt::formatter<coolerpp::PixelCoordinates>::parse(format_parse_co
     -> decltype(ctx.begin()) {
   const auto *it = ctx.begin();
   const auto *end = ctx.end();
-  const auto fmt_string =
-      std::string_view{&(*ctx.begin()), static_cast<std::size_t>(ctx.end() - ctx.begin())};
 
-  if (it != end) {
-    if (fmt_string.find("bg2") != std::string_view::npos) {
-      this->presentation = Presentation::bg2;
-      it += std::string_view{"bg2"}.size();  // NOLINT
-    } else if (fmt_string.find("raw") != std::string_view::npos) {
-      this->presentation = Presentation::raw;
-      it += std::string_view{"raw"}.size();  // NOLINT
-    }
+  if (fmt::starts_with(ctx, "bg2")) {
+    this->presentation = Presentation::bg2;
+    it += std::string_view{"bg2"}.size();  // NOLINT
+  } else if (fmt::starts_with(ctx, "raw")) {
+    this->presentation = Presentation::raw;
+    it += std::string_view{"raw"}.size();  // NOLINT
   }
 
   if (it != end && *it != '}') {
@@ -287,14 +283,12 @@ constexpr auto fmt::formatter<coolerpp::Pixel<N>>::parse(format_parse_context &c
   const auto fmt_string =
       std::string_view{&(*ctx.begin()), static_cast<std::size_t>(ctx.end() - ctx.begin())};
 
-  if (it != end) {
-    if (fmt_string.find("bg2") != std::string_view::npos) {
-      this->presentation = Presentation::bg2;
-      it += std::string_view{"bg2"}.size();  // NOLINT
-    } else if (fmt_string.find("raw") != std::string_view::npos) {
-      this->presentation = Presentation::raw;
-      it += std::string_view{"raw"}.size();  // NOLINT
-    }
+  if (fmt_string.find("bg2") == 0) {
+    this->presentation = Presentation::bg2;
+    it += std::string_view{"bg2"}.size();  // NOLINT
+  } else if (fmt_string.find("raw") == 0) {
+    this->presentation = Presentation::raw;
+    it += std::string_view{"raw"}.size();  // NOLINT
   }
 
   if (it != end && *it != '}') {

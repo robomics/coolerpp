@@ -173,9 +173,8 @@ struct formatter<coolerpp::Bin> {
   enum Presentation { bed, raw, ucsc };
   Presentation presentation{Presentation::raw};
 
-  constexpr auto parse(format_parse_context &ctx) -> decltype(ctx.begin());
-  template <typename FormatContext>
-  auto format(const coolerpp::Bin &b, FormatContext &ctx) const -> decltype(ctx.out());
+  constexpr format_parse_context::iterator parse(format_parse_context &ctx);
+  format_context::iterator format(const coolerpp::Bin &b, format_context &ctx) const;
 };
 }  // namespace fmt
 

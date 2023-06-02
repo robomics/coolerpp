@@ -163,9 +163,8 @@ struct formatter<coolerpp::Chromosome> {
   enum Presentation { tsv, ucsc };
   Presentation presentation{Presentation::ucsc};
 
-  constexpr auto parse(format_parse_context& ctx) -> decltype(ctx.begin());
-  template <typename FormatContext>
-  auto format(const coolerpp::Chromosome& c, FormatContext& ctx) const -> decltype(ctx.out());
+  constexpr format_parse_context::iterator parse(format_parse_context& ctx);
+  format_context::iterator format(const coolerpp::Chromosome& c, format_context& ctx) const;
 };
 }  // namespace fmt
 

@@ -188,3 +188,18 @@ constexpr bool is_unary_operation_on_iterator<
     std::void_t<std::disjunction<is_iterable<It>, std::is_pointer<It>>,
                 is_unary_operation<Operation, decltype(*std::declval<It>())>>> = true;
 }  // namespace coolerpp
+
+namespace fmt {
+template <typename FormatParseContext>
+[[nodiscard]] constexpr bool starts_with(const FormatParseContext &ctx, const char *prefix) {
+  auto first = ctx.begin();
+  auto last = ctx.end();
+  while (first != last && *prefix != '\0') {
+    if (*prefix++ != *first++) {  // NOLINT
+      return false;
+    }
+  }
+  return *prefix == '\0';
+}
+
+}  // namespace fmt

@@ -358,24 +358,20 @@ inline std::size_t std::hash<coolerpp::Bin>::operator()(const coolerpp::Bin &b) 
   return coolerpp::internal::hash_combine(0, b.id(), b.interval());
 }
 
-constexpr auto fmt::formatter<coolerpp::Bin>::parse(format_parse_context &ctx)
-    -> decltype(ctx.begin()) {
+constexpr fmt::format_parse_context::iterator fmt::formatter<coolerpp::Bin>::parse(
+    format_parse_context &ctx) {
   const auto *it = ctx.begin();
   const auto *end = ctx.end();
-  const auto fmt_string =
-      std::string_view{&(*ctx.begin()), static_cast<std::size_t>(ctx.end() - ctx.begin())};
 
-  if (it != end) {
-    if (fmt_string.find("bed") != std::string_view::npos) {
-      this->presentation = Presentation::bed;
-      it += std::string_view{"bed"}.size();  // NOLINT
-    } else if (fmt_string.find("raw") != std::string_view::npos) {
-      this->presentation = Presentation::raw;
-      it += std::string_view{"raw"}.size();  // NOLINT
-    } else if (fmt_string.find("ucsc") != std::string_view::npos) {
-      this->presentation = Presentation::ucsc;
-      it += std::string_view{"ucsc"}.size();  // NOLINT
-    }
+  if (fmt::starts_with(ctx, "bed")) {
+    this->presentation = Presentation::bed;
+    it += std::string_view{"bed"}.size();  // NOLINT
+  } else if (fmt::starts_with(ctx, "raw")) {
+    this->presentation = Presentation::raw;
+    it += std::string_view{"raw"}.size();  // NOLINT
+  } else if (fmt::starts_with(ctx, "ucsc")) {
+    this->presentation = Presentation::ucsc;
+    it += std::string_view{"ucsc"}.size();  // NOLINT
   }
 
   if (it != end && *it != '}') {
@@ -385,9 +381,8 @@ constexpr auto fmt::formatter<coolerpp::Bin>::parse(format_parse_context &ctx)
   return it;
 }
 
-template <typename FormatContext>
-inline auto fmt::formatter<coolerpp::Bin>::format(const coolerpp::Bin &b, FormatContext &ctx) const
-    -> decltype(ctx.out()) {
+inline fmt::format_context::iterator fmt::formatter<coolerpp::Bin>::format(
+    const coolerpp::Bin &b, format_context &ctx) const {
   if (this->presentation == Presentation::bed) {
     return fmt::format_to(ctx.out(), FMT_STRING("{:bed}"), b.interval());
   }

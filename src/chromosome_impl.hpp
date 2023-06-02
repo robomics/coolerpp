@@ -312,21 +312,17 @@ inline std::size_t std::hash<coolerpp::Chromosome>::operator()(
   return coolerpp::internal::hash_combine(0, c.id(), c.name(), c.size());
 }
 
-constexpr auto fmt::formatter<coolerpp::Chromosome>::parse(format_parse_context& ctx)
-    -> decltype(ctx.begin()) {
-  const auto* it = ctx.begin();
+constexpr fmt::format_parse_context::iterator fmt::formatter<coolerpp::Chromosome>::parse(
+    format_parse_context& ctx) {
+  auto* it = ctx.begin();
   const auto* end = ctx.end();
-  const auto fmt_string =
-      std::string_view{&(*ctx.begin()), static_cast<std::size_t>(ctx.end() - ctx.begin())};
 
-  if (it != end) {
-    if (fmt_string.find("ucsc") != std::string_view::npos) {
-      this->presentation = Presentation::ucsc;
-      it += std::string_view{"ucsc"}.size();  // NOLINT
-    } else if (fmt_string.find("tsv") != std::string_view::npos) {
-      this->presentation = Presentation::tsv;
-      it += std::string_view{"tsv"}.size();  // NOLINT
-    }
+  if (fmt::starts_with(ctx, "ucsc")) {
+    this->presentation = Presentation::ucsc;
+    it += std::string_view{"ucsc"}.size();
+  } else if (fmt::starts_with(ctx, "tsv")) {
+    this->presentation = Presentation::tsv;
+    it += std::string_view{"tsv"}.size();
   }
 
   if (it != end && *it != '}') {
@@ -336,14 +332,9 @@ constexpr auto fmt::formatter<coolerpp::Chromosome>::parse(format_parse_context&
   return it;
 }
 
-template <typename FormatContext>
-inline auto fmt::formatter<coolerpp::Chromosome>::format(const coolerpp::Chromosome& c,
-                                                         FormatContext& ctx) const
-    -> decltype(ctx.out()) {
-  // clang-format off
-  return fmt::format_to(ctx.out(), FMT_STRING("{}{}{}"),
-                        c.name(),
-                        this->presentation == Presentation::tsv ? '\t' : ':',
-                        c.size());
-  // clang-format on
+inline fmt::format_context::iterator fmt::formatter<coolerpp::Chromosome>::format(
+    const coolerpp::Chromosome& c, format_context& ctx) const {
+  return this->presentation == Presentation::tsv
+             ? fmt::format_to(ctx.out(), FMT_STRING("{}\t{}"), c.name(), c.size())
+             : fmt::format_to(ctx.out(), FMT_STRING("{}:{}"), c.name(), c.size());
 }
