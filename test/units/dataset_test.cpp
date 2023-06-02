@@ -258,7 +258,7 @@ TEST_CASE("Dataset: linear iteration", "[dataset][short]") {
 
     CHECK(it == first_pixel);
   }
-}
+}  // NOLINT(clang-analyzer-cplusplus.NewDeleteLeaks)
 
 // NOLINTNEXTLINE(readability-function-cognitive-complexity)
 TEST_CASE("Dataset: random iteration", "[dataset][medium]") {
