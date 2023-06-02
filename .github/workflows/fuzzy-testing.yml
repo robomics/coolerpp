@@ -267,6 +267,18 @@ jobs:
           echo "seed=$seed" >> $GITHUB_OUTPUT
           echo "duration=$duration" >> $GITHUB_OUTPUT
 
+          if [[ ${{ github.event_name }} == 'workflow_dispatch' ]]; then
+            duration='${{ inputs.duration }}'
+          else
+            duration=600
+          fi
+
+          2>&1 echo "Seed: ${seed}"
+          2>&1 echo "Duration: ${duration}"
+
+          echo "seed=$seed" >> $GITHUB_OUTPUT
+          echo "duration=$duration" >> $GITHUB_OUTPUT
+
       - name: Run test
         run: |
           chmod 755 coolerpp_dump
