@@ -149,8 +149,8 @@ TEST_CASE("Coolerpp: file ctors", "[cooler][short]") {
       const auto chr1_bins = f.bins().subset("chr1");
       for (std::uint64_t bin1_id = 0; bin1_id < chr1_bins.size(); ++bin1_id) {
         for (std::uint64_t bin2_id = bin1_id; bin2_id < chr1_bins.size(); ++bin2_id) {
-          pixels.emplace_back(
-              PixelT{f.bins(), bin1_id, bin2_id, static_cast<std::int32_t>(pixels.size() + 1)});
+          pixels.emplace_back(f.bins(), bin1_id, bin2_id,
+                              static_cast<std::int32_t>(pixels.size() + 1));
         }
       }
       f.append_pixels(pixels.begin(), pixels.end(), true);
@@ -246,6 +246,35 @@ TEST_CASE("Coolerpp: file ctors", "[cooler][short]") {
       const auto f = File::open_read_only_random_access(path.string());
       CHECK(std::distance(f.begin<std::int32_t>(), f.end<std::int32_t>()) == 107041);
     }
+  }
+}
+
+// NOLINTNEXTLINE(readability-function-cognitive-complexity)
+TEST_CASE("Coolerpp: accessors", "[cooler][short]") {
+  const auto path = datadir / "cooler_test_file.cool";
+  const auto f = File::open_read_only(path.string());
+
+  SECTION("group") {
+    CHECK(f.group("bins").group.getPath() == "/bins");
+    CHECK_THROWS(f.group("foo"));
+  }
+
+  SECTION("dataset") {
+    CHECK(f.dataset("bins/chrom").hdf5_path() == "/bins/chrom");
+    CHECK_THROWS(f.dataset("foo"));
+  }
+
+  SECTION("pixel type") {
+    const auto v = f.pixel_variant();
+    using T = std::int32_t;
+    CHECK(std::holds_alternative<T>(v));
+    CHECK(f.has_pixel_of_type<T>());
+
+    CHECK(f.has_signed_pixels());
+    CHECK_FALSE(f.has_unsigned_pixels());
+
+    CHECK(f.has_integral_pixels());
+    CHECK_FALSE(f.has_float_pixels());
   }
 }
 

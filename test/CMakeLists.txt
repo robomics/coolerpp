@@ -17,7 +17,7 @@ target_sources(
           ${CMAKE_CURRENT_SOURCE_DIR}/units/balancing_test.cpp
           ${CMAKE_CURRENT_SOURCE_DIR}/units/bin_table_test.cpp
           ${CMAKE_CURRENT_SOURCE_DIR}/units/chromosome_test.cpp
-          ${CMAKE_CURRENT_SOURCE_DIR}/units/cooler_test.cpp
+          ${CMAKE_CURRENT_SOURCE_DIR}/units/file_test.cpp
           ${CMAKE_CURRENT_SOURCE_DIR}/units/dataset_test.cpp
           ${CMAKE_CURRENT_SOURCE_DIR}/units/index_test.cpp
           ${CMAKE_CURRENT_SOURCE_DIR}/units/pixel_test.cpp
