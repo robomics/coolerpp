@@ -63,9 +63,9 @@ jobs:
           echo "ccache-key=${ccache_key_prefix}-${current_date}" >> $GITHUB_OUTPUT
           echo "ccache-restore-key=$ccache_key_prefix" >> $GITHUB_OUTPUT
 
-      - name: Cache Conan packages
-        id: cache-conan
-        uses: actions/cache@v3
+      - name: Restore Conan cache
+        id: conan-conan
+        uses: actions/cache/restore@v3
         with:
           key: conan-${{ steps.cache-key.outputs.conan-key }}
           path: ${{ env.CONAN_HOME }}
@@ -97,6 +97,13 @@ jobs:
           conan cache clean "*" --download
           conan cache clean "*" --source
 
+      - name: Save Conan cache
+        uses: actions/cache/save@v3
+        if: steps.cache-conan.outputs.cache-hit != 'true'
+        with:
+          key: conan-${{ steps.cache-key.outputs.conan-key }}
+          path: ${{ env.CONAN_HOME }}
+
       - name: Configure project
         run: |
           cmake -DCMAKE_BUILD_TYPE=Debug                      \
@@ -105,7 +112,7 @@ jobs:
                 -DOPT_ENABLE_COVERAGE=ON                      \
                 -DOPT_ENABLE_SANITIZER_ADDRESS=OFF            \
                 -DOPT_ENABLE_SANITIZER_UNDEFINED_BEHAVIOR=OFF \
-                -DOPT_ENABLE_CLANG_TIDY=ON                    \
+                -DOPT_ENABLE_CLANG_TIDY=OFF                   \
                 -DCOOLERPP_BUILD_EXAMPLES=OFF                 \
                 -DCOOLERPP_ENABLE_TESTING=ON                  \
                 -S .                                          \
@@ -139,6 +146,7 @@ jobs:
         with:
           fail_ci_if_error: true
           gcov: true
+          gcov_executable: gcov-12
           os: linux
           token: ${{ secrets.CODECOV_TOKEN }}
           verbose: true
