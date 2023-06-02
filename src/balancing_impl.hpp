@@ -191,28 +191,28 @@ template <typename N, std::size_t CHUNK_SIZE>
 constexpr bool Balancer<N, CHUNK_SIZE>::iterator::operator<(
     const Balancer::iterator& other) const noexcept {
   assert(this->_weights == other._weights);
-  return this->_it < other.it;
+  return this->_it < other._it;
 }
 
 template <typename N, std::size_t CHUNK_SIZE>
 constexpr bool Balancer<N, CHUNK_SIZE>::iterator::operator<=(
     const Balancer::iterator& other) const noexcept {
   assert(this->_weights == other._weights);
-  return this->_it <= other.it;
+  return this->_it <= other._it;
 }
 
 template <typename N, std::size_t CHUNK_SIZE>
 constexpr bool Balancer<N, CHUNK_SIZE>::iterator::operator>(
     const Balancer::iterator& other) const noexcept {
   assert(this->_weights == other._weights);
-  return this->_it > other.it;
+  return this->_it > other._it;
 }
 
 template <typename N, std::size_t CHUNK_SIZE>
 constexpr bool Balancer<N, CHUNK_SIZE>::iterator::operator>=(
     const Balancer::iterator& other) const noexcept {
   assert(this->_weights == other._weights);
-  return this->_it >= other.it;
+  return this->_it >= other._it;
 }
 
 template <typename N, std::size_t CHUNK_SIZE>
