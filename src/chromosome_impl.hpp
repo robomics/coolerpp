@@ -66,10 +66,10 @@ inline bool operator!=(const Chromosome& a, std::string_view b_name) noexcept {
 }
 
 inline bool operator==(std::string_view a_name, const Chromosome& b) noexcept {
-  return a_name == b.name();
+  return b == a_name;
 }
 inline bool operator!=(std::string_view a_name, const Chromosome& b) noexcept {
-  return a_name != b.name();
+  return !(b == a_name);
 }
 
 constexpr bool operator<(const Chromosome& a, std::uint32_t b_id) noexcept { return a.id() < b_id; }
@@ -87,20 +87,12 @@ constexpr bool operator!=(const Chromosome& a, std::uint32_t b_id) noexcept {
   return a.id() != b_id;
 }
 
-constexpr bool operator<(std::uint32_t a_id, const Chromosome& b) noexcept { return a_id < b.id(); }
-constexpr bool operator>(std::uint32_t a_id, const Chromosome& b) noexcept { return a_id > b.id(); }
-constexpr bool operator<=(std::uint32_t a_id, const Chromosome& b) noexcept {
-  return a_id <= b.id();
-}
-constexpr bool operator>=(std::uint32_t a_id, const Chromosome& b) noexcept {
-  return a_id >= b.id();
-}
-constexpr bool operator==(std::uint32_t a_id, const Chromosome& b) noexcept {
-  return a_id == b.id();
-}
-constexpr bool operator!=(std::uint32_t a_id, const Chromosome& b) noexcept {
-  return a_id != b.id();
-}
+constexpr bool operator<(std::uint32_t a_id, const Chromosome& b) noexcept { return b > a_id; }
+constexpr bool operator>(std::uint32_t a_id, const Chromosome& b) noexcept { return b < a_id; }
+constexpr bool operator<=(std::uint32_t a_id, const Chromosome& b) noexcept { return b >= a_id; }
+constexpr bool operator>=(std::uint32_t a_id, const Chromosome& b) noexcept { return b <= a_id; }
+constexpr bool operator==(std::uint32_t a_id, const Chromosome& b) noexcept { return b == a_id; }
+constexpr bool operator!=(std::uint32_t a_id, const Chromosome& b) noexcept { return b != a_id; }
 
 template <typename ChromosomeIt>
 inline ChromosomeSet::ChromosomeSet(ChromosomeIt first_chrom, ChromosomeIt last_chrom)
