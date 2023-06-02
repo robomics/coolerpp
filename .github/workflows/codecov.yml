@@ -1,0 +1,59 @@
+# Copyright (C) 2023 Roberto Rossini (roberros@uio.no)
+# SPDX-License-Identifier: MIT
+
+name: Run Codecov
+
+on:
+  push:
+    branches: [ main ]
+    paths:
+      - ".github/workflows/run-codecov.yml"
+      - "cmake/**"
+      - "examples/**"
+      - "src/**"
+      - "test/**"
+      - "CMakeLists.txt"
+      - "conanfile.txt"
+    tags:
+      - 'v*.*.*'
+
+  pull_request:
+    paths:
+      - ".github/workflows/run-codecov.yml"
+      - "cmake/**"
+      - "examples/**"
+      - "src/**"
+      - "test/**"
+      - "CMakeLists.txt"
+      - "conanfile.txt"
+
+# https://stackoverflow.com/a/72408109
+concurrency:
+  group: ${{ github.workflow }}-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: true
+
+env:
+  CONAN_HOME: '/root/.conan2'
+
+jobs:
+  run-clang-tidy:
+    runs-on: ubuntu-latest
+    container:
+      image: ghcr.io/paulsengroup/ci-docker-images/ubuntu-22.04-cxx-gcc-12
+      options: '--user=root'
+
+    steps:
+      - uses: actions/checkout@v3
+
+
+  codecov-status-check:
+    name: Status Check (Vodecov)
+    if: ${{ always() }}
+    runs-on: ubuntu-latest
+    needs:
+      - run-codecov
+
+    steps:
+      - name: Collect job results
+        if: needs.run-codecov.result != 'success'
+        run: exit 1
