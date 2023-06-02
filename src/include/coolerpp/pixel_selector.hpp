@@ -55,8 +55,8 @@ class PixelSelector {
   [[nodiscard]] auto cbegin() const -> iterator;
   [[nodiscard]] auto cend() const -> iterator;
 
-  [[nodiscard]] constexpr const PixelCoordinates &coord1() const noexcept;
-  [[nodiscard]] constexpr const PixelCoordinates &coord2() const noexcept;
+  [[nodiscard]] const PixelCoordinates &coord1() const noexcept;
+  [[nodiscard]] const PixelCoordinates &coord2() const noexcept;
 
   class iterator {
     friend PixelSelector<N, CHUNK_SIZE>;

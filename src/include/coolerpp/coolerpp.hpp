@@ -87,7 +87,6 @@ void init_mcool(std::string_view file_path, bool force_overwrite = false);
 
 class File {
  public:
-  using BinTable = BinTable;
   enum class QUERY_TYPE { BED, UCSC };
 
  private:

@@ -24,18 +24,18 @@ class GenomicInterval {
   [[nodiscard]] static GenomicInterval parse_bed(const ChromosomeSet &chroms,
                                                  std::string_view query, char sep = '\t');
 
-  [[nodiscard]] constexpr explicit operator bool() const noexcept;
+  [[nodiscard]] explicit operator bool() const noexcept;
 
-  [[nodiscard]] constexpr bool operator==(const GenomicInterval &other) const noexcept;
-  [[nodiscard]] constexpr bool operator!=(const GenomicInterval &other) const noexcept;
+  [[nodiscard]] bool operator==(const GenomicInterval &other) const noexcept;
+  [[nodiscard]] bool operator!=(const GenomicInterval &other) const noexcept;
 
-  [[nodiscard]] constexpr bool operator<(const GenomicInterval &other) const noexcept;
-  [[nodiscard]] constexpr bool operator<=(const GenomicInterval &other) const noexcept;
+  [[nodiscard]] bool operator<(const GenomicInterval &other) const noexcept;
+  [[nodiscard]] bool operator<=(const GenomicInterval &other) const noexcept;
 
-  [[nodiscard]] constexpr bool operator>(const GenomicInterval &other) const noexcept;
-  [[nodiscard]] constexpr bool operator>=(const GenomicInterval &other) const noexcept;
+  [[nodiscard]] bool operator>(const GenomicInterval &other) const noexcept;
+  [[nodiscard]] bool operator>=(const GenomicInterval &other) const noexcept;
 
-  [[nodiscard]] constexpr const Chromosome &chrom() const noexcept;
+  [[nodiscard]] const Chromosome &chrom() const noexcept;
   [[nodiscard]] constexpr std::uint32_t start() const noexcept;
   [[nodiscard]] constexpr std::uint32_t end() const noexcept;
 };

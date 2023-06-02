@@ -95,15 +95,15 @@ inline auto PixelSelector<N, CHUNK_SIZE>::cend() const -> iterator {
 }
 
 template <typename N, std::size_t CHUNK_SIZE>
-constexpr const PixelCoordinates &PixelSelector<N, CHUNK_SIZE>::coord1() const noexcept {
+inline const PixelCoordinates &PixelSelector<N, CHUNK_SIZE>::coord1() const noexcept {
   assert(this->_coord1);
-  return *this->_coord1;
+  return this->_coord1;
 }
 
 template <typename N, std::size_t CHUNK_SIZE>
-constexpr const PixelCoordinates &PixelSelector<N, CHUNK_SIZE>::coord2() const noexcept {
+inline const PixelCoordinates &PixelSelector<N, CHUNK_SIZE>::coord2() const noexcept {
   assert(this->_coord1);
-  return *this->_coord2;
+  return this->_coord2;
 }
 
 template <typename N, std::size_t CHUNK_SIZE>

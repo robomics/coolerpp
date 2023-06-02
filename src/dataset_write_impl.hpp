@@ -77,7 +77,8 @@ template <typename InputIt, typename UnaryOperation,
 inline std::size_t Dataset::write(InputIt first_value, InputIt last_value, std::size_t offset,
                                   bool allow_dataset_resize, UnaryOperation op) {
   using T = remove_cvref_t<decltype(op(*first_value))>;
-  constexpr std::size_t buffer_capacity = is_string_v<T> ? 256 : (64 * 1024 * 1024) / sizeof(T);
+  constexpr std::size_t buffer_capacity =
+      is_string_v<T> ? 256 : (16 * 1024 * 1024) / sizeof(std::uint64_t);
   if (this->_buff.holds_alternative<T>()) {
     this->_buff.resize<T>(buffer_capacity);
   } else {

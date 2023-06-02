@@ -133,38 +133,38 @@ inline PixelCoordinates::PixelCoordinates(std::pair<Bin, Bin> bins) noexcept
 
 inline PixelCoordinates::PixelCoordinates(Bin bin) noexcept : bin1(bin), bin2(std::move(bin)) {}
 
-constexpr PixelCoordinates::operator bool() const noexcept { return !!this->bin1 && !!this->bin2; }
+inline PixelCoordinates::operator bool() const noexcept { return !!this->bin1 && !!this->bin2; }
 
-constexpr bool PixelCoordinates::operator==(const PixelCoordinates &other) const noexcept {
+inline bool PixelCoordinates::operator==(const PixelCoordinates &other) const noexcept {
   return this->bin1 == other.bin1 && this->bin2 == other.bin2;
 }
 
-constexpr bool PixelCoordinates::operator!=(const PixelCoordinates &other) const noexcept {
+inline bool PixelCoordinates::operator!=(const PixelCoordinates &other) const noexcept {
   return !(*this == other);
 }
 
-constexpr bool PixelCoordinates::operator<(const PixelCoordinates &other) const noexcept {
+inline bool PixelCoordinates::operator<(const PixelCoordinates &other) const noexcept {
   if (this->bin1 == other.bin1) {
     return this->bin2 < other.bin2;
   }
   return this->bin1 < other.bin1;
 }
 
-constexpr bool PixelCoordinates::operator<=(const PixelCoordinates &other) const noexcept {
+inline bool PixelCoordinates::operator<=(const PixelCoordinates &other) const noexcept {
   if (this->bin1 == other.bin1) {
     return this->bin2 <= other.bin2;
   }
   return this->bin1 <= other.bin1;
 }
 
-constexpr bool PixelCoordinates::operator>(const PixelCoordinates &other) const noexcept {
+inline bool PixelCoordinates::operator>(const PixelCoordinates &other) const noexcept {
   if (this->bin1 == other.bin1) {
     return this->bin2 > other.bin2;
   }
   return this->bin1 > other.bin1;
 }
 
-constexpr bool PixelCoordinates::operator>=(const PixelCoordinates &other) const noexcept {
+inline bool PixelCoordinates::operator>=(const PixelCoordinates &other) const noexcept {
   if (this->bin1 == other.bin1) {
     return this->bin2 >= other.bin2;
   }
@@ -202,7 +202,7 @@ inline Pixel<N>::Pixel(const BinTable &bins, std::uint64_t bin1_id, std::uint64_
     : Pixel(bins.at(bin1_id), bins.at(bin2_id), count_) {}
 
 template <typename N>
-constexpr Pixel<N>::operator bool() const noexcept {
+inline Pixel<N>::operator bool() const noexcept {
   return !!this->coords;
 }
 template <typename N>
@@ -214,28 +214,28 @@ inline bool Pixel<N>::operator!=(const Pixel<N> &other) const noexcept {
   return !(*this == other);
 }
 template <typename N>
-constexpr bool Pixel<N>::operator<(const Pixel<N> &other) const noexcept {
+inline bool Pixel<N>::operator<(const Pixel<N> &other) const noexcept {
   if (this->coords == other.coords) {
     return this->count < other.count;
   }
   return this->coords < other.coords;
 }
 template <typename N>
-constexpr bool Pixel<N>::operator<=(const Pixel<N> &other) const noexcept {
+inline bool Pixel<N>::operator<=(const Pixel<N> &other) const noexcept {
   if (this->coords == other.coords) {
     return this->count <= other.count;
   }
   return this->coords <= other.coords;
 }
 template <typename N>
-constexpr bool Pixel<N>::operator>(const Pixel<N> &other) const noexcept {
+inline bool Pixel<N>::operator>(const Pixel<N> &other) const noexcept {
   if (this->coords == other.coords) {
     return this->count > other.count;
   }
   return this->coords > other.coords;
 }
 template <typename N>
-constexpr bool Pixel<N>::operator>=(const Pixel<N> &other) const noexcept {
+inline bool Pixel<N>::operator>=(const Pixel<N> &other) const noexcept {
   if (this->coords == other.coords) {
     return this->count >= other.count;
   }

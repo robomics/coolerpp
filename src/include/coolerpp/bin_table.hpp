@@ -33,20 +33,20 @@ class Bin {
   explicit Bin(GenomicInterval interval) noexcept;
   Bin(std::uint64_t id, GenomicInterval interval) noexcept;
 
-  [[nodiscard]] constexpr explicit operator bool() const noexcept;
+  [[nodiscard]] explicit operator bool() const noexcept;
 
-  [[nodiscard]] constexpr bool operator==(const Bin &other) const noexcept;
-  [[nodiscard]] constexpr bool operator!=(const Bin &other) const noexcept;
+  [[nodiscard]] bool operator==(const Bin &other) const noexcept;
+  [[nodiscard]] bool operator!=(const Bin &other) const noexcept;
 
-  [[nodiscard]] constexpr bool operator<(const Bin &other) const noexcept;
-  [[nodiscard]] constexpr bool operator<=(const Bin &other) const noexcept;
+  [[nodiscard]] bool operator<(const Bin &other) const noexcept;
+  [[nodiscard]] bool operator<=(const Bin &other) const noexcept;
 
-  [[nodiscard]] constexpr bool operator>(const Bin &other) const noexcept;
-  [[nodiscard]] constexpr bool operator>=(const Bin &other) const noexcept;
+  [[nodiscard]] bool operator>(const Bin &other) const noexcept;
+  [[nodiscard]] bool operator>=(const Bin &other) const noexcept;
 
   [[nodiscard]] constexpr std::uint64_t id() const noexcept;
-  [[nodiscard]] constexpr const GenomicInterval &interval() const noexcept;
-  [[nodiscard]] constexpr const Chromosome &chrom() const noexcept;
+  [[nodiscard]] const GenomicInterval &interval() const noexcept;
+  [[nodiscard]] const Chromosome &chrom() const noexcept;
   [[nodiscard]] constexpr std::uint32_t start() const noexcept;
   [[nodiscard]] constexpr std::uint32_t end() const noexcept;
 

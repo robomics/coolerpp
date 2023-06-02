@@ -33,38 +33,38 @@ inline Bin::Bin(GenomicInterval interval) noexcept : Bin(Bin::null_id, std::move
 inline Bin::Bin(std::uint64_t id_, GenomicInterval interval) noexcept
     : _id(id_), _interval(std::move(interval)) {}
 
-constexpr Bin::operator bool() const noexcept { return !!this->chrom(); }
+inline Bin::operator bool() const noexcept { return !!this->chrom(); }
 
-constexpr bool Bin::operator==(const Bin &other) const noexcept {
+inline bool Bin::operator==(const Bin &other) const noexcept {
   if (!this->has_null_id() && !other.has_null_id()) {
     return this->id() == other.id();
   }
   return this->_interval == other._interval;
 }
-constexpr bool Bin::operator!=(const Bin &other) const noexcept { return !(*this == other); }
+inline bool Bin::operator!=(const Bin &other) const noexcept { return !(*this == other); }
 
-constexpr bool Bin::operator<(const Bin &other) const noexcept {
+inline bool Bin::operator<(const Bin &other) const noexcept {
   if (!this->has_null_id() && !other.has_null_id()) {
     return this->id() < other.id();
   }
   return this->_interval < other._interval;
 }
 
-constexpr bool Bin::operator<=(const Bin &other) const noexcept {
+inline bool Bin::operator<=(const Bin &other) const noexcept {
   if (!this->has_null_id() && !other.has_null_id()) {
     return this->id() <= other.id();
   }
   return this->_interval <= other._interval;
 }
 
-constexpr bool Bin::operator>(const Bin &other) const noexcept {
+inline bool Bin::operator>(const Bin &other) const noexcept {
   if (!this->has_null_id() && !other.has_null_id()) {
     return this->id() > other.id();
   }
   return this->_interval > other._interval;
 }
 
-constexpr bool Bin::operator>=(const Bin &other) const noexcept {
+inline bool Bin::operator>=(const Bin &other) const noexcept {
   if (!this->has_null_id() && !other.has_null_id()) {
     return this->id() >= other.id();
   }
@@ -72,8 +72,8 @@ constexpr bool Bin::operator>=(const Bin &other) const noexcept {
 }
 
 constexpr std::uint64_t Bin::id() const noexcept { return this->_id; }
-constexpr const GenomicInterval &Bin::interval() const noexcept { return this->_interval; }
-constexpr const Chromosome &Bin::chrom() const noexcept { return this->_interval.chrom(); }
+inline const GenomicInterval &Bin::interval() const noexcept { return this->_interval; }
+inline const Chromosome &Bin::chrom() const noexcept { return this->interval().chrom(); }
 constexpr std::uint32_t Bin::start() const noexcept { return this->_interval.start(); }
 constexpr std::uint32_t Bin::end() const noexcept { return this->_interval.end(); }
 

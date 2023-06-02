@@ -26,13 +26,13 @@ struct PixelCoordinates {
   explicit PixelCoordinates(std::pair<Bin, Bin> bins) noexcept;
   explicit PixelCoordinates(Bin bin) noexcept;
 
-  [[nodiscard]] constexpr explicit operator bool() const noexcept;
-  [[nodiscard]] constexpr bool operator==(const PixelCoordinates &other) const noexcept;
-  [[nodiscard]] constexpr bool operator!=(const PixelCoordinates &other) const noexcept;
-  [[nodiscard]] constexpr bool operator<(const PixelCoordinates &other) const noexcept;
-  [[nodiscard]] constexpr bool operator<=(const PixelCoordinates &other) const noexcept;
-  [[nodiscard]] constexpr bool operator>(const PixelCoordinates &other) const noexcept;
-  [[nodiscard]] constexpr bool operator>=(const PixelCoordinates &other) const noexcept;
+  [[nodiscard]] explicit operator bool() const noexcept;
+  [[nodiscard]] bool operator==(const PixelCoordinates &other) const noexcept;
+  [[nodiscard]] bool operator!=(const PixelCoordinates &other) const noexcept;
+  [[nodiscard]] bool operator<(const PixelCoordinates &other) const noexcept;
+  [[nodiscard]] bool operator<=(const PixelCoordinates &other) const noexcept;
+  [[nodiscard]] bool operator>(const PixelCoordinates &other) const noexcept;
+  [[nodiscard]] bool operator>=(const PixelCoordinates &other) const noexcept;
 };
 
 template <typename N>
@@ -53,13 +53,13 @@ struct Pixel {
   Pixel(const BinTable &bins, std::uint64_t bin1_id, std::uint64_t bin2_id, N count_ = 0);
   Pixel(const BinTable &bins, std::uint64_t bin_id, N count_ = 0);
 
-  [[nodiscard]] constexpr explicit operator bool() const noexcept;
+  [[nodiscard]] explicit operator bool() const noexcept;
   [[nodiscard]] bool operator==(const Pixel<N> &other) const noexcept;
   [[nodiscard]] bool operator!=(const Pixel<N> &other) const noexcept;
-  [[nodiscard]] constexpr bool operator<(const Pixel<N> &other) const noexcept;
-  [[nodiscard]] constexpr bool operator<=(const Pixel<N> &other) const noexcept;
-  [[nodiscard]] constexpr bool operator>(const Pixel<N> &other) const noexcept;
-  [[nodiscard]] constexpr bool operator>=(const Pixel<N> &other) const noexcept;
+  [[nodiscard]] bool operator<(const Pixel<N> &other) const noexcept;
+  [[nodiscard]] bool operator<=(const Pixel<N> &other) const noexcept;
+  [[nodiscard]] bool operator>(const Pixel<N> &other) const noexcept;
+  [[nodiscard]] bool operator>=(const Pixel<N> &other) const noexcept;
 };
 
 }  // namespace coolerpp

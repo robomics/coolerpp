@@ -30,20 +30,20 @@ inline GenomicInterval::GenomicInterval(const Chromosome &chrom_, std::uint32_t 
   assert(_start <= _end);
 }
 
-constexpr GenomicInterval::operator bool() const noexcept { return !!this->chrom(); }
+inline GenomicInterval::operator bool() const noexcept { return !!this->chrom(); }
 
-constexpr bool GenomicInterval::operator==(const GenomicInterval &other) const noexcept {
+inline bool GenomicInterval::operator==(const GenomicInterval &other) const noexcept {
   // clang-format off
   return this->chrom() == other.chrom() &&
          this->start() == other.start() &&
          this->end() == other.end();
   // clang-format on
 }
-constexpr bool GenomicInterval::operator!=(const GenomicInterval &other) const noexcept {
+inline bool GenomicInterval::operator!=(const GenomicInterval &other) const noexcept {
   return !(*this == other);
 }
 
-constexpr bool GenomicInterval::operator<(const GenomicInterval &other) const noexcept {
+inline bool GenomicInterval::operator<(const GenomicInterval &other) const noexcept {
   if (this->chrom() != other.chrom()) {
     return this->chrom() < other.chrom();
   }
@@ -55,7 +55,7 @@ constexpr bool GenomicInterval::operator<(const GenomicInterval &other) const no
   return this->end() < other.end();
 }
 
-constexpr bool GenomicInterval::operator<=(const GenomicInterval &other) const noexcept {
+inline bool GenomicInterval::operator<=(const GenomicInterval &other) const noexcept {
   if (this->chrom() != other.chrom()) {
     return this->chrom() <= other.chrom();
   }
@@ -67,7 +67,7 @@ constexpr bool GenomicInterval::operator<=(const GenomicInterval &other) const n
   return this->end() <= other.end();
 }
 
-constexpr bool GenomicInterval::operator>(const GenomicInterval &other) const noexcept {
+inline bool GenomicInterval::operator>(const GenomicInterval &other) const noexcept {
   if (this->chrom() != other.chrom()) {
     return this->chrom() > other.chrom();
   }
@@ -79,7 +79,7 @@ constexpr bool GenomicInterval::operator>(const GenomicInterval &other) const no
   return this->end() > other.end();
 }
 
-constexpr bool GenomicInterval::operator>=(const GenomicInterval &other) const noexcept {
+inline bool GenomicInterval::operator>=(const GenomicInterval &other) const noexcept {
   if (this->chrom() != other.chrom()) {
     return this->chrom() >= other.chrom();
   }
@@ -91,7 +91,7 @@ constexpr bool GenomicInterval::operator>=(const GenomicInterval &other) const n
   return this->end() >= other.end();
 }
 
-constexpr const Chromosome &GenomicInterval::chrom() const noexcept { return this->_chrom; }
+inline const Chromosome &GenomicInterval::chrom() const noexcept { return this->_chrom; }
 constexpr std::uint32_t GenomicInterval::start() const noexcept { return this->_start; }
 constexpr std::uint32_t GenomicInterval::end() const noexcept { return this->_end; }
 
