@@ -154,14 +154,6 @@ inline PixelSelector<N, CHUNK_SIZE> File::fetch(PixelCoordinates coord1,
   // clang-format on
 }
 
-inline std::shared_ptr<Weights> File::read_weights(std::string_view name) const {
-  if (name.empty()) {
-    throw std::runtime_error("weight dataset name is empty");
-  }
-
-  return this->read_weights(name, Weights::infer_type(name));
-}
-
 inline bool File::has_weights(std::string_view name) const {
   const auto dset_path =
       fmt::format(FMT_STRING("{}/{}"), this->_groups.at("bins").group.getPath(), name);
@@ -172,8 +164,16 @@ inline bool File::has_weights(std::string_view name) const {
   return this->_root_group().exist(dset_path);
 }
 
-inline std::shared_ptr<Weights> File::read_weights(std::string_view name,
-                                                   Weights::Type type) const {
+inline std::shared_ptr<const Weights> File::read_weights(std::string_view name) const {
+  if (name.empty()) {
+    throw std::runtime_error("weight dataset name is empty");
+  }
+
+  return this->read_weights(name, Weights::infer_type(name));
+}
+
+inline std::shared_ptr<const Weights> File::read_weights(std::string_view name,
+                                                         Weights::Type type) const {
   if (name.empty()) {
     throw std::runtime_error("weight dataset name is empty");
   }
@@ -191,7 +191,7 @@ inline std::shared_ptr<Weights> File::read_weights(std::string_view name,
   }
 
   const auto node = this->_weights.emplace(
-      name, std::make_shared<Weights>(
+      name, std::make_shared<const Weights>(
                 *this->_bins,
                 Dataset{this->_root_group, dset_path,
                         Dataset::generate_default_dset_access_props(

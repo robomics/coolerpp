@@ -133,13 +133,13 @@ inline auto Weights::infer_type(std::string_view name) -> Type {
 
 template <typename N, std::size_t CHUNK_SIZE>
 inline Balancer<N, CHUNK_SIZE>::Balancer(const PixelSelector<N, CHUNK_SIZE>& selector,
-                                         std::shared_ptr<Weights> weights)
+                                         std::shared_ptr<const Weights> weights)
     : Balancer(selector.begin(), selector.end(), std::move(weights)) {}
 
 template <typename N, std::size_t CHUNK_SIZE>
 inline Balancer<N, CHUNK_SIZE>::Balancer(typename PixelSelector<N, CHUNK_SIZE>::iterator first,
                                          typename PixelSelector<N, CHUNK_SIZE>::iterator last,
-                                         std::shared_ptr<Weights> weights)
+                                         std::shared_ptr<const Weights> weights)
     : _first(std::move(first)), _last(std::move(last)), _weights(std::move(weights)) {}
 
 template <typename N, std::size_t CHUNK_SIZE>
@@ -172,7 +172,7 @@ inline auto Balancer<N, CHUNK_SIZE>::cend() const -> iterator {
 
 template <typename N, std::size_t CHUNK_SIZE>
 inline Balancer<N, CHUNK_SIZE>::iterator::iterator(
-    typename PixelSelector<N, CHUNK_SIZE>::iterator it, std::shared_ptr<Weights> weights)
+    typename PixelSelector<N, CHUNK_SIZE>::iterator it, std::shared_ptr<const Weights> weights)
     : _it(std::move(it)), _weights(std::move(weights)) {}
 
 template <typename N, std::size_t CHUNK_SIZE>
@@ -216,28 +216,40 @@ constexpr bool Balancer<N, CHUNK_SIZE>::iterator::operator>=(
 }
 
 template <typename N, std::size_t CHUNK_SIZE>
-inline auto Balancer<N, CHUNK_SIZE>::iterator::operator*() const -> value_type {
-  Pixel<N> raw_pixel = *this->_it;
+inline auto Balancer<N, CHUNK_SIZE>::iterator::operator*() const -> const_reference {
+  const auto& raw_pixel = *this->_it;
   const auto w1 = (*this->_weights)[raw_pixel.coords.bin1.id()];
   const auto w2 = (*this->_weights)[raw_pixel.coords.bin2.id()];
   if (this->_weights->type() == Weights::Type::MULTIPLICATIVE) {
-    return value_type{std::move(raw_pixel.coords),
-                      conditional_static_cast<double>(raw_pixel.count) * w1 * w2};
+    this->_value = value_type{std::move(raw_pixel.coords),
+                              conditional_static_cast<double>(raw_pixel.count) * w1 * w2};
   } else {
-    return value_type{std::move(raw_pixel.coords),
-                      conditional_static_cast<double>(raw_pixel.count) * (1.0 / w1) * (1.0 / w2)};
+    this->_value =
+        value_type{std::move(raw_pixel.coords),
+                   conditional_static_cast<double>(raw_pixel.count) * (1.0 / w1) * (1.0 / w2)};
   }
+  return this->_value;
+}
+
+template <typename N, std::size_t CHUNK_SIZE>
+inline auto Balancer<N, CHUNK_SIZE>::iterator::operator->() const -> const_pointer {
+  return &(*(*this));
 }
 
 template <typename N, std::size_t CHUNK_SIZE>
 inline auto Balancer<N, CHUNK_SIZE>::iterator::operator++() -> iterator& {
   ++this->_it;
+
+  // signal _value is outdated
+  this->_value.count = 0;
   return *this;
 }
 
 template <typename N, std::size_t CHUNK_SIZE>
 inline auto Balancer<N, CHUNK_SIZE>::iterator::operator++(int) -> iterator {
-  return {this->_it++, this->_weights};
+  auto it = *this;
+  std::ignore = ++(*this);
+  return it;
 }
 
 }  // namespace coolerpp

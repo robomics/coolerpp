@@ -99,7 +99,6 @@ class PixelSelector {
     using const_pointer = const value_type *;
     using reference = value_type &;
     using const_reference = const value_type &;
-    // using iterator_category = std::random_access_iterator_tag;
     using iterator_category = std::forward_iterator_tag;
 
     iterator() = default;
@@ -118,14 +117,7 @@ class PixelSelector {
 
     auto operator++() -> iterator &;
     auto operator++(int) -> iterator;
-    // auto operator+=(std::size_t i) -> iterator &;
-    // [[nodiscard]] auto operator+(std::size_t i) const -> iterator;
 
-    // auto operator--() -> iterator &;
-    // auto operator--(int) -> iterator;
-    // auto operator-=(std::size_t i) -> iterator &;
-    // [[nodiscard]] auto operator-(std::size_t i) const -> iterator;
-    // [[nodiscard]] auto operator-(const iterator &other) const -> difference_type;
    private:
     void jump_to_row(std::uint64_t bin_id);
     void jump_to_col(std::uint64_t bin_id);

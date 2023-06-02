@@ -47,13 +47,14 @@ class Balancer {
  private:
   typename PixelSelector<N, CHUNK_SIZE>::iterator _first;
   typename PixelSelector<N, CHUNK_SIZE>::iterator _last;
-  std::shared_ptr<Weights> _weights;
+  std::shared_ptr<const Weights> _weights;
 
  public:
   Balancer() = delete;
-  Balancer(const PixelSelector<N, CHUNK_SIZE> &selector, std::shared_ptr<Weights> weights);
+  Balancer(const PixelSelector<N, CHUNK_SIZE> &selector, std::shared_ptr<const Weights> weights);
   Balancer(typename PixelSelector<N, CHUNK_SIZE>::iterator first,
-           typename PixelSelector<N, CHUNK_SIZE>::iterator last, std::shared_ptr<Weights> weights);
+           typename PixelSelector<N, CHUNK_SIZE>::iterator last,
+           std::shared_ptr<const Weights> weights);
 
   [[nodiscard]] Weights::Type type() const noexcept;
 
@@ -65,18 +66,21 @@ class Balancer {
 
   class iterator {
     typename PixelSelector<N, CHUNK_SIZE>::iterator _it{};
-    std::shared_ptr<Weights> _weights{};
+    std::shared_ptr<const Weights> _weights{};
+    mutable Pixel<double> _value{};
 
    public:
     using difference_type = std::ptrdiff_t;
     using value_type = Pixel<double>;
     using pointer = value_type *;
+    using const_pointer = const value_type *;
     using reference = value_type &;
-    // using iterator_category = std::random_access_iterator_tag;
+    using const_reference = const value_type &;
     using iterator_category = std::forward_iterator_tag;
 
     iterator() = default;
-    iterator(typename PixelSelector<N, CHUNK_SIZE>::iterator it, std::shared_ptr<Weights> weights);
+    iterator(typename PixelSelector<N, CHUNK_SIZE>::iterator it,
+             std::shared_ptr<const Weights> weights);
 
     [[nodiscard]] constexpr bool operator==(const iterator &other) const noexcept;
     [[nodiscard]] constexpr bool operator!=(const iterator &other) const noexcept;
@@ -87,18 +91,11 @@ class Balancer {
     [[nodiscard]] constexpr bool operator>(const iterator &other) const noexcept;
     [[nodiscard]] constexpr bool operator>=(const iterator &other) const noexcept;
 
-    [[nodiscard]] auto operator*() const -> value_type;
+    [[nodiscard]] auto operator*() const -> const_reference;
+    [[nodiscard]] auto operator->() const -> const_pointer;
 
     auto operator++() -> iterator &;
     auto operator++(int) -> iterator;
-    // auto operator+=(std::size_t i) -> iterator &;
-    // [[nodiscard]] auto operator+(std::size_t i) const -> iterator;
-
-    // auto operator--() -> iterator &;
-    // auto operator--(int) -> iterator;
-    // auto operator-=(std::size_t i) -> iterator &;
-    // [[nodiscard]] auto operator-(std::size_t i) const -> iterator;
-    // [[nodiscard]] auto operator-(const iterator &other) const -> difference_type;
   };
 };
 
