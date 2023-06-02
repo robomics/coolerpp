@@ -258,7 +258,7 @@ TEST_CASE("Dataset: linear iteration", "[dataset][long]") {
 
     CHECK(it == first_pixel);
   }
-}
+}  // NOLINT(clang-analyzer-cplusplus.NewDeleteLeaks)
 
 // NOLINTNEXTLINE(readability-function-cognitive-complexity)
 TEST_CASE("Dataset: random iteration", "[dataset][medium]") {
@@ -383,6 +383,6 @@ TEST_CASE("Dataset: attributes", "[dataset][short]") {
     dset.write_attribute("attr", -1, true);
     CHECK(dset.read_attribute<std::int32_t>("attr") == -1);
   }
-}
+}  // NOLINT(clang-analyzer-cplusplus.NewDeleteLeaks)
 
 }  // namespace coolerpp::test::dataset
