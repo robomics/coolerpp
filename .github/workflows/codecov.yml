@@ -7,7 +7,7 @@ on:
   push:
     branches: [ main ]
     paths:
-      - ".github/workflows/run-codecov.yml"
+      - ".github/workflows/codecov.yml"
       - "cmake/**"
       - "examples/**"
       - "src/**"
@@ -19,7 +19,7 @@ on:
 
   pull_request:
     paths:
-      - ".github/workflows/run-codecov.yml"
+      - ".github/workflows/codecov.yml"
       - "cmake/**"
       - "examples/**"
       - "src/**"
@@ -36,7 +36,7 @@ env:
   CONAN_HOME: '/root/.conan2'
 
 jobs:
-  run-clang-tidy:
+  run-codecov:
     runs-on: ubuntu-latest
     container:
       image: ghcr.io/paulsengroup/ci-docker-images/ubuntu-22.04-cxx-gcc-12
@@ -50,7 +50,7 @@ jobs:
         run: |
           hash="${{ hashFiles('conanfile.txt', '.github/workflows/run-codecov.yml') }}"
 
-          echo "key=run-clang-tidy-$hash" >> $GITHUB_OUTPUT
+          echo "key=codecov-$hash" >> $GITHUB_OUTPUT
 
       - name: Cache Conan packages
         id: cache-conan
