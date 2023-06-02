@@ -112,7 +112,7 @@ inline void File::write_weights(std::string_view name, It first_weight, It last_
   }();
 
   dset.resize(static_cast<std::size_t>(std::distance(first_weight, last_weight)));
-  dset.write(first_weight, last_weight, 0);
+  dset.write(first_weight, last_weight);
   dset.write_attribute("divisive_weights", std::uint8_t(divisive), overwrite_if_exists);
 }
 
