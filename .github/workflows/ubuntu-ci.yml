@@ -188,12 +188,11 @@ jobs:
           echo "ccache-key=${ccache_key_prefix}-${current_date}" >> $GITHUB_OUTPUT
           echo "ccache-restore-key=$ccache_key_prefix" >> $GITHUB_OUTPUT
 
-      - name: Cache Conan packages
+      - name: Restore Conan cache
         id: cache-conan
-        uses: actions/cache@v3
+        uses: actions/cache/restore@v3
         with:
-          key: ${{ steps.cache-key.outputs.conan-key }}
-          restore-keys: ${{ steps.cache-key.outputs.conan-restore-key }}
+          key: conan-${{ steps.cache-key.outputs.conan-restore }}
           path: ${{ env.CONAN_HOME }}
 
       - name: Clean Conan cache (pre-build)
@@ -222,6 +221,13 @@ jobs:
           conan cache clean "*" --build
           conan cache clean "*" --download
           conan cache clean "*" --source
+
+      - name: Save Conan cache
+        uses: actions/cache/save@v3
+        if: steps.cache-conan.outputs.cache-hit != 'true'
+        with:
+          key: conan-${{ steps.cache-key.outputs.conan-key }}
+          path: ${{ env.CONAN_HOME }}
 
       - name: Cache Ccache folder
         uses: actions/cache@v3

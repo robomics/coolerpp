@@ -87,9 +87,9 @@ jobs:
 
           echo "key=$os-$compiler-$hash-$build_type" >> $GITHUB_OUTPUT
 
-      - name: Cache Conan packages
+      - name: Restore Conan cache
         id: cache-conan
-        uses: actions/cache@v3
+        uses: actions/cache/restore@v3
         with:
           key: conan-${{ steps.cache-key.outputs.key }}
           path: ${{ env.CONAN_HOME }}
@@ -126,6 +126,13 @@ jobs:
           conan cache clean "*" --build
           conan cache clean "*" --download
           conan cache clean "*" --source
+
+      - name: Save Conan cache
+        uses: actions/cache/save@v3
+        if: steps.cache-conan.outputs.cache-hit != 'true'
+        with:
+          key: conan-${{ steps.cache-key.outputs.key }}
+          path: ${{ env.CONAN_HOME }}
 
       - name: Configure project
         run: |
