@@ -69,35 +69,40 @@ jobs:
 
             var includes = []
             // Debug builds (short CI)
-            includes.push({ image: 'conanio/gcc8-ubuntu16.04',      build_type: 'Debug',   developer_mode: 'OFF' })
-            includes.push({ image: 'conanio/gcc13-ubuntu16.04',     build_type: 'Debug',   developer_mode: 'ON'  })
-            includes.push({ image: 'conanio/clang14-ubuntu16.04',   build_type: 'Debug',   developer_mode: 'ON'  })
+            includes.push({ image: 'ghcr.io/paulsengroup/ci-docker-images/ubuntu-22.04-cxx-gcc-8',    build_type: 'Debug',   developer_mode: 'OFF' })
+            includes.push({ image: 'ghcr.io/paulsengroup/ci-docker-images/ubuntu-22.04-cxx-gcc-13',   build_type: 'Debug',   developer_mode: 'ON'  })
+            includes.push({ image: 'ghcr.io/paulsengroup/ci-docker-images/ubuntu-22.04-cxx-clang-8',  build_type: 'Debug',   developer_mode: 'OFF' })
+            includes.push({ image: 'ghcr.io/paulsengroup/ci-docker-images/ubuntu-22.04-cxx-clang-15', build_type: 'Debug',   developer_mode: 'ON'  })
             // Release builds (short CI)
-            includes.push({ image: 'conanio/gcc13-ubuntu16.04',     build_type: 'Release', developer_mode: 'ON'  })
-            includes.push({ image: 'conanio/clang14-ubuntu16.04',   build_type: 'Release', developer_mode: 'ON'  })
+            includes.push({ image: 'ghcr.io/paulsengroup/ci-docker-images/ubuntu-22.04-cxx-gcc-8',    build_type: 'Release',   developer_mode: 'OFF' })
+            includes.push({ image: 'ghcr.io/paulsengroup/ci-docker-images/ubuntu-22.04-cxx-gcc-13',   build_type: 'Release',   developer_mode: 'ON'  })
+            includes.push({ image: 'ghcr.io/paulsengroup/ci-docker-images/ubuntu-22.04-cxx-clang-8',  build_type: 'Release',   developer_mode: 'OFF' })
+            includes.push({ image: 'ghcr.io/paulsengroup/ci-docker-images/ubuntu-22.04-cxx-clang-15', build_type: 'Release',   developer_mode: 'ON'  })
             if (ci_short) {
               return { include: includes }
             }
             // Debug builds (long CI)
-            includes.push({ image: 'conanio/gcc9-ubuntu16.04',      build_type: 'Debug',   developer_mode: 'OFF' })
-            includes.push({ image: 'conanio/gcc10-ubuntu16.04',     build_type: 'Debug',   developer_mode: 'OFF' })
-            includes.push({ image: 'conanio/gcc11-ubuntu16.04',     build_type: 'Debug',   developer_mode: 'ON'  })
-            includes.push({ image: 'conanio/gcc12-ubuntu16.04',     build_type: 'Debug',   developer_mode: 'ON'  })
-            includes.push({ image: 'conanio/clang10-ubuntu16.04',   build_type: 'Debug',   developer_mode: 'OFF' })
-            includes.push({ image: 'conanio/clang11-ubuntu16.04',   build_type: 'Debug',   developer_mode: 'OFF' })
-            includes.push({ image: 'conanio/clang12-ubuntu16.04',   build_type: 'Debug',   developer_mode: 'OFF' })
-            includes.push({ image: 'conanio/clang13-ubuntu16.04',   build_type: 'Debug',   developer_mode: 'ON'  })
-            includes.push({ image: 'conanio/clang14-ubuntu16.04',   build_type: 'Debug',   developer_mode: 'ON'  })
+            includes.push({ image: 'ghcr.io/paulsengroup/ci-docker-images/ubuntu-22.04-cxx-gcc-9',    build_type: 'Debug',   developer_mode: 'OFF' })
+            includes.push({ image: 'ghcr.io/paulsengroup/ci-docker-images/ubuntu-22.04-cxx-gcc-10',   build_type: 'Debug',   developer_mode: 'OFF' })
+            includes.push({ image: 'ghcr.io/paulsengroup/ci-docker-images/ubuntu-22.04-cxx-gcc-11',   build_type: 'Debug',   developer_mode: 'ON'  })
+            includes.push({ image: 'ghcr.io/paulsengroup/ci-docker-images/ubuntu-22.04-cxx-gcc-12',   build_type: 'Debug',   developer_mode: 'ON'  })
+            includes.push({ image: 'ghcr.io/paulsengroup/ci-docker-images/ubuntu-22.04-cxx-clang-9',  build_type: 'Debug',   developer_mode: 'OFF' })
+            includes.push({ image: 'ghcr.io/paulsengroup/ci-docker-images/ubuntu-22.04-cxx-clang-10', build_type: 'Debug',   developer_mode: 'OFF' })
+            includes.push({ image: 'ghcr.io/paulsengroup/ci-docker-images/ubuntu-22.04-cxx-clang-11', build_type: 'Debug',   developer_mode: 'OFF' })
+            includes.push({ image: 'ghcr.io/paulsengroup/ci-docker-images/ubuntu-22.04-cxx-clang-12', build_type: 'Debug',   developer_mode: 'OFF' })
+            includes.push({ image: 'ghcr.io/paulsengroup/ci-docker-images/ubuntu-22.04-cxx-clang-13', build_type: 'Debug',   developer_mode: 'ON'  })
+            includes.push({ image: 'ghcr.io/paulsengroup/ci-docker-images/ubuntu-22.04-cxx-clang-14', build_type: 'Debug',   developer_mode: 'ON'  })
             // Release builds (long CI)
-            includes.push({ image: 'conanio/gcc8-ubuntu16.04',      build_type: 'Release', developer_mode: 'OFF' })
-            includes.push({ image: 'conanio/gcc9-ubuntu16.04',      build_type: 'Release', developer_mode: 'OFF' })
-            includes.push({ image: 'conanio/gcc10-ubuntu16.04',     build_type: 'Release', developer_mode: 'ON'  })
-            includes.push({ image: 'conanio/gcc11-ubuntu16.04',     build_type: 'Release', developer_mode: 'ON'  })
-            includes.push({ image: 'conanio/gcc12-ubuntu16.04',     build_type: 'Release', developer_mode: 'ON'  })
-            includes.push({ image: 'conanio/clang10-ubuntu16.04',   build_type: 'Release', developer_mode: 'OFF' })
-            includes.push({ image: 'conanio/clang11-ubuntu16.04',   build_type: 'Release', developer_mode: 'OFF' })
-            includes.push({ image: 'conanio/clang12-ubuntu16.04',   build_type: 'Release', developer_mode: 'ON'  })
-            includes.push({ image: 'conanio/clang13-ubuntu16.04',   build_type: 'Release', developer_mode: 'ON'  })
+            includes.push({ image: 'ghcr.io/paulsengroup/ci-docker-images/ubuntu-22.04-cxx-gcc-9',    build_type: 'Release', developer_mode: 'OFF' })
+            includes.push({ image: 'ghcr.io/paulsengroup/ci-docker-images/ubuntu-22.04-cxx-gcc-10',   build_type: 'Release', developer_mode: 'OFF' })
+            includes.push({ image: 'ghcr.io/paulsengroup/ci-docker-images/ubuntu-22.04-cxx-gcc-11',   build_type: 'Release', developer_mode: 'ON'  })
+            includes.push({ image: 'ghcr.io/paulsengroup/ci-docker-images/ubuntu-22.04-cxx-gcc-12',   build_type: 'Release', developer_mode: 'ON'  })
+            includes.push({ image: 'ghcr.io/paulsengroup/ci-docker-images/ubuntu-22.04-cxx-clang-9',  build_type: 'Release', developer_mode: 'OFF' })
+            includes.push({ image: 'ghcr.io/paulsengroup/ci-docker-images/ubuntu-22.04-cxx-clang-10', build_type: 'Release', developer_mode: 'OFF' })
+            includes.push({ image: 'ghcr.io/paulsengroup/ci-docker-images/ubuntu-22.04-cxx-clang-11', build_type: 'Release', developer_mode: 'OFF' })
+            includes.push({ image: 'ghcr.io/paulsengroup/ci-docker-images/ubuntu-22.04-cxx-clang-12', build_type: 'Release', developer_mode: 'OFF' })
+            includes.push({ image: 'ghcr.io/paulsengroup/ci-docker-images/ubuntu-22.04-cxx-clang-13', build_type: 'Release', developer_mode: 'ON'  })
+            includes.push({ image: 'ghcr.io/paulsengroup/ci-docker-images/ubuntu-22.04-cxx-clang-14', build_type: 'Release', developer_mode: 'ON'  })
             return { include: includes }
 
   build-project:
@@ -108,17 +113,14 @@ jobs:
       matrix: ${{ fromJSON(needs.matrix-factory.outputs.matrix) }}
 
     container:
-      image: ${{ matrix.image }}:2.0.6
+      image: ${{ matrix.image }}
       options: "--user=root"
 
     env:
-      CONAN_HOME: '/home/conan/.conan2'
+      CONAN_HOME: '/root/.conan2'
 
     steps:
       - uses: actions/checkout@v3
-
-      - name: Update CMake
-        run: pip install --no-cache-dir 'cmake==3.26.*'
 
       - name: Generate cache key
         id: cache-key
@@ -149,7 +151,8 @@ jobs:
           conan install .                             \
              --build=missing                          \
              --build=cascade                          \
-             -pr default                              \
+             -pr:b="$CONAN_DEFAULT_PROFILE_PATH"      \
+             -pr:h="$CONAN_DEFAULT_PROFILE_PATH"      \
              -s build_type="${{ matrix.build_type }}" \
              -s compiler.libcxx=libstdc++11           \
              -s compiler.cppstd=17                    \
@@ -171,7 +174,6 @@ jobs:
                 -DOPT_ENABLE_CPPCHECK=OFF                            \
                 -DCOOLERPP_ENABLE_TESTING=ON                         \
                 -DCOOLERPP_BUILD_EXAMPLES=ON                         \
-                -DOPT_ENABLE_CONAN=OFF                               \
                 -S .                                                 \
                 -B build
 

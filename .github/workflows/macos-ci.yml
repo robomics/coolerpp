@@ -136,7 +136,6 @@ jobs:
                 -DCOOLERPP_BUILD_EXAMPLES=ON                         \
                 -DOPT_ENABLE_CLANG_TIDY=OFF                          \
                 -DOPT_ENABLE_CPPCHECK=OFF                            \
-                -DOPT_ENABLE_CONAN=OFF                               \
                 -S "${{ github.workspace }}"                         \
                 -B "${{ github.workspace }}/build"
 

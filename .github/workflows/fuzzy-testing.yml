@@ -132,18 +132,14 @@ jobs:
   build-project:
     runs-on: ubuntu-latest
     container:
-      image: conanio/clang14-ubuntu16.04:2.0.6
+      image: ghcr.io/paulsengroup/ci-docker-images/ubuntu-22.04-cxx-clang-15
       options: "--user=root"
 
     env:
-      CONAN_HOME: '/home/conan/.conan2'
+      CONAN_HOME: '/root/.conan2'
 
     steps:
       - uses: actions/checkout@v3
-
-      - name: Install build dependencies
-        run: |
-          pip install --no-cache-dir 'cmake>=3.20'
 
       - name: Generate cache key
         id: cache-key
@@ -156,7 +152,7 @@ jobs:
         id: cache-conan
         uses: actions/cache@v3
         with:
-          key: ${{ steps.cache-key.outputs.key }}
+          key: conan-${{ steps.cache-key.outputs.key }}
           path: ${{ env.CONAN_HOME }}
 
       - name: Clean Conan cache (pre-build)
@@ -169,13 +165,14 @@ jobs:
 
       - name: Install build dependencies
         run: |
-          conan install .                   \
-             --build=missing                \
-             --build=cascade                \
-             -pr default                    \
-             -s build_type=Release          \
-             -s compiler.libcxx=libstdc++11 \
-             -s compiler.cppstd=17          \
+          conan install .                             \
+             --build=missing                          \
+             --build=cascade                          \
+             -pr:b="$CONAN_DEFAULT_PROFILE_PATH"      \
+             -pr:h="$CONAN_DEFAULT_PROFILE_PATH"      \
+             -s build_type="${{ matrix.build_type }}" \
+             -s compiler.libcxx=libstdc++11           \
+             -s compiler.cppstd=17                    \
              --output-folder=build
 
       - name: Clean Conan cache (post-build)

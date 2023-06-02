@@ -41,18 +41,11 @@ jobs:
   run-clang-tidy:
     runs-on: ubuntu-latest
     container:
-      image: ubuntu:22.04
+      image: ghcr.io/paulsengroup/ci-docker-images/ubuntu-22.04-cxx-clang-15
       options: '--user=root'
 
     steps:
       - uses: actions/checkout@v3
-
-      - name: Install build dependencies
-        run: |
-          apt-get update
-          apt-get install -y clang clang-tidy cmake git python3-pip
-
-          pip install --no-cache-dir 'conan==2.0.*'
 
       - name: Print clang-tidy version
         run: clang-tidy --version
@@ -68,13 +61,8 @@ jobs:
         id: cache-conan
         uses: actions/cache@v3
         with:
-          key: ${{ steps.cache-key.outputs.key }}
+          key: conan-${{ steps.cache-key.outputs.key }}
           path: ${{ env.CONAN_HOME }}
-
-      - name: Configure Conan
-        if: steps.cache-conan.outputs.cache-hit != 'true'
-        run: |
-          conan profile detect --force
 
       - name: Clean Conan cache (pre-build)
         if: steps.cache-conan.outputs.cache-hit != 'true'
@@ -86,14 +74,22 @@ jobs:
 
       - name: Install build dependencies
         run: |
-          conan install .                   \
-             --build=missing                \
-             --build=cascade                \
-             -pr default                    \
-             -s build_type=Debug            \
-             -s compiler.libcxx=libstdc++11 \
-             -s compiler.cppstd=17          \
+          conan install .                             \
+             --build=missing                          \
+             --build=cascade                          \
+             -pr:b="$CONAN_DEFAULT_PROFILE_PATH"      \
+             -pr:h="$CONAN_DEFAULT_PROFILE_PATH"      \
+             -s build_type="${{ matrix.build_type }}" \
+             -s compiler.libcxx=libstdc++11           \
+             -s compiler.cppstd=17                    \
              --output-folder=build
+
+      - name: Clean Conan cache (post-build)
+        if: steps.cache-conan.outputs.cache-hit != 'true'
+        run: |
+          conan cache clean "*" --build
+          conan cache clean "*" --download
+          conan cache clean "*" --source
 
       - name: Configure project
         run: |
@@ -103,18 +99,10 @@ jobs:
                 -DOPT_ENABLE_SANITIZER_ADDRESS=OFF            \
                 -DOPT_ENABLE_SANITIZER_UNDEFINED_BEHAVIOR=OFF \
                 -DOPT_ENABLE_CLANG_TIDY=ON                    \
-                -DOPT_ENABLE_CONAN=OFF                        \
                 -DCOOLERPP_BUILD_EXAMPLES=ON                  \
                 -DCOOLERPP_ENABLE_TESTING=ON                  \
                 -S .                                          \
                 -B build
-
-      - name: Clean Conan cache (post-build)
-        if: steps.cache-conan.outputs.cache-hit != 'true'
-        run: |
-          conan cache clean "*" --build
-          conan cache clean "*" --download
-          conan cache clean "*" --source
 
       - name: Build project
         run: cmake --build build -j $(nproc)
