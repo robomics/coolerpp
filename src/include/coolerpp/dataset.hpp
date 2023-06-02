@@ -7,8 +7,6 @@
 #include "coolerpp/internal/suppress_warnings.hpp"
 // clang-format on
 
-#include <tsl/hopscotch_map.h>
-
 #include <cstdint>
 DISABLE_WARNING_PUSH
 DISABLE_WARNING_NULL_DEREF

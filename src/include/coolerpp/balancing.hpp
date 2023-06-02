@@ -4,6 +4,9 @@
 
 #pragma once
 
+#include <tsl/hopscotch_map.h>
+
+#include <memory>
 #include <vector>
 
 #include "coolerpp/bin_table.hpp"
@@ -98,6 +101,8 @@ class Balancer {
     auto operator++(int) -> iterator;
   };
 };
+
+using WeightMap = tsl::hopscotch_map<std::string, std::shared_ptr<const Weights>>;
 
 }  // namespace coolerpp
 

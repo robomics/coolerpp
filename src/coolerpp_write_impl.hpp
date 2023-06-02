@@ -99,11 +99,11 @@ inline void File::write_weights(std::string_view name, It first_weight, It last_
                     expected_num_weights, num_weights));
   }
 
-  auto dset = [&]() {
+  auto dset = [&, name_ = std::string{name}]() {
     // Return existing dataset
     auto &grp = this->group("bins").group;
-    if (overwrite_if_exists && grp.exist(std::string{name})) {
-      return Dataset(this->_root_group, grp.getDataSet(std::string{name}));
+    if (overwrite_if_exists && grp.exist(name_)) {
+      return Dataset(this->_root_group, grp.getDataSet(name_));
     }
 
     // Create new dataset or throw
@@ -111,7 +111,8 @@ inline void File::write_weights(std::string_view name, It first_weight, It last_
     return Dataset(this->_root_group, path, *first_weight, HighFive::DataSpace::UNLIMITED);
   }();
 
-  dset.write(first_weight, last_weight, 0, true);
+  dset.resize(static_cast<std::size_t>(std::distance(first_weight, last_weight)));
+  dset.write(first_weight, last_weight, 0);
   dset.write_attribute("divisive_weights", std::uint8_t(divisive), overwrite_if_exists);
 }
 

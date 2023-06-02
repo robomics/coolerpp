@@ -95,7 +95,7 @@ class File {
   RootGroup _root_group{};
   GroupMap _groups{};
   DatasetMap _datasets{};
-  mutable tsl::hopscotch_map<std::string, std::shared_ptr<const Weights>> _weights{};
+  mutable WeightMap _weights{};
   StandardAttributes _attrs{StandardAttributes::init(0)};
   internal::NumericVariant _pixel_variant{};
   std::shared_ptr<const BinTable> _bins{};
