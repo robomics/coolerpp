@@ -15,18 +15,21 @@
 namespace coolerpp {
 
 template <typename N, std::size_t CHUNK_SIZE>
-inline PixelSelector<N, CHUNK_SIZE>::PixelSelector(
-    std::shared_ptr<const Index> index, const Dataset &pixels_bin1_id,
-    const Dataset &pixels_bin2_id, const Dataset &pixels_count,
-    const std::shared_ptr<PixelCoordinates> &coords) noexcept
+inline PixelSelector<N, CHUNK_SIZE>::PixelSelector(std::shared_ptr<const Index> index,
+                                                   const Dataset &pixels_bin1_id,
+                                                   const Dataset &pixels_bin2_id,
+                                                   const Dataset &pixels_count,
+                                                   PixelCoordinates coords) noexcept
     : PixelSelector(std::move(index), pixels_bin1_id, pixels_bin2_id, pixels_count, coords,
-                    coords) {}
+                    std::move(coords)) {}
 
 template <typename N, std::size_t CHUNK_SIZE>
-inline PixelSelector<N, CHUNK_SIZE>::PixelSelector(
-    std::shared_ptr<const Index> index, const Dataset &pixels_bin1_id,
-    const Dataset &pixels_bin2_id, const Dataset &pixels_count,
-    std::shared_ptr<PixelCoordinates> coord1, std::shared_ptr<PixelCoordinates> coord2) noexcept
+inline PixelSelector<N, CHUNK_SIZE>::PixelSelector(std::shared_ptr<const Index> index,
+                                                   const Dataset &pixels_bin1_id,
+                                                   const Dataset &pixels_bin2_id,
+                                                   const Dataset &pixels_count,
+                                                   PixelCoordinates coord1,
+                                                   PixelCoordinates coord2) noexcept
     : _coord1(std::move(coord1)),
       _coord2(std::move(coord2)),
       _index(std::move(index)),
@@ -40,29 +43,9 @@ template <typename N, std::size_t CHUNK_SIZE>
 inline PixelSelector<N, CHUNK_SIZE>::PixelSelector(std::shared_ptr<const Index> index,
                                                    const Dataset &pixels_bin1_id,
                                                    const Dataset &pixels_bin2_id,
-                                                   const Dataset &pixels_count,
-                                                   PixelCoordinates coords) noexcept
-    : PixelSelector<N, CHUNK_SIZE>(std::move(index), pixels_bin1_id, pixels_bin2_id, pixels_count,
-                                   std::make_shared<PixelCoordinates>(std::move(coords))) {}
-
-template <typename N, std::size_t CHUNK_SIZE>
-inline PixelSelector<N, CHUNK_SIZE>::PixelSelector(std::shared_ptr<const Index> index,
-                                                   const Dataset &pixels_bin1_id,
-                                                   const Dataset &pixels_bin2_id,
                                                    const Dataset &pixels_count) noexcept
     : PixelSelector<N, CHUNK_SIZE>(std::move(index), pixels_bin1_id, pixels_bin2_id, pixels_count,
-                                   nullptr, nullptr) {}
-
-template <typename N, std::size_t CHUNK_SIZE>
-inline PixelSelector<N, CHUNK_SIZE>::PixelSelector(std::shared_ptr<const Index> index,
-                                                   const Dataset &pixels_bin1_id,
-                                                   const Dataset &pixels_bin2_id,
-                                                   const Dataset &pixels_count,
-                                                   PixelCoordinates coord1,
-                                                   PixelCoordinates coord2) noexcept
-    : PixelSelector(std::move(index), pixels_bin1_id, pixels_bin2_id, pixels_count,
-                    std::make_shared<PixelCoordinates>(std::move(coord1)),
-                    std::make_shared<PixelCoordinates>(std::move(coord2))) {}
+                                   PixelCoordinates{}, PixelCoordinates{}) {}
 
 template <typename N, std::size_t CHUNK_SIZE>
 template <std::size_t CHUNK_SIZE_OTHER>
@@ -102,6 +85,11 @@ inline auto PixelSelector<N, CHUNK_SIZE>::cbegin() const -> iterator {
 
 template <typename N, std::size_t CHUNK_SIZE>
 inline auto PixelSelector<N, CHUNK_SIZE>::cend() const -> iterator {
+  if (!this->_coord1) {
+    assert(!this->_coord2);
+    return iterator::at_end(this->_index, *this->_pixels_bin1_id, *this->_pixels_bin2_id,
+                            *this->_pixels_count);
+  }
   return iterator::at_end(this->_index, *this->_pixels_bin1_id, *this->_pixels_bin2_id,
                           *this->_pixels_count, this->_coord1, this->_coord2);
 }
@@ -116,86 +104,6 @@ template <typename N, std::size_t CHUNK_SIZE>
 constexpr const PixelCoordinates &PixelSelector<N, CHUNK_SIZE>::coord2() const noexcept {
   assert(this->_coord1);
   return *this->_coord2;
-}
-
-template <typename N, std::size_t CHUNK_SIZE>
-inline PixelCoordinates PixelSelector<N, CHUNK_SIZE>::parse_query(
-    std::shared_ptr<const BinTableLazy> bins, std::string_view query) {
-  assert(bins);
-  if (query == "") {
-    throw std::runtime_error("query is empty");
-  }
-  const auto &chroms = bins->chromosomes();
-  if (chroms.contains(query)) {
-    const auto &chrom = chroms.at(query);
-    return {bins, chrom, 0, chrom.size - 1};
-  }
-
-  const auto p1 = query.find_last_of(':');
-  const auto p2 = query.find_last_of('-');
-
-  if (p1 == std::string_view::npos && p2 == std::string_view::npos) {
-    throw std::runtime_error(fmt::format(FMT_STRING("invalid chromosome \"{}\""), query));
-  }
-
-  if (p1 == std::string_view::npos || p2 == std::string_view::npos || p1 > p2) {
-    throw std::runtime_error(fmt::format(FMT_STRING("query \"{}\" is malformed"), query));
-  }
-
-  const auto chrom_name = query.substr(0, p1);
-  const auto start_pos_str = query.substr(p1 + 1, p2 - (p1 + 1));
-  const auto end_pos_str = query.substr(p2 + 1);
-
-  if (!chroms.contains(chrom_name)) {
-    throw std::runtime_error(
-        fmt::format(FMT_STRING("invalid chromosome \"{}\" in query \"{}\""), chrom_name, query));
-  }
-
-  if (start_pos_str.empty()) {
-    throw std::runtime_error(
-        fmt::format(FMT_STRING("query \"{}\" is malformed: missing start position"), query));
-  }
-
-  if (end_pos_str.empty()) {
-    throw std::runtime_error(
-        fmt::format(FMT_STRING("query \"{}\" is malformed: missing end position"), query));
-  }
-
-  const auto &chrom = chroms.at(chrom_name);
-  std::uint32_t start_pos{};
-  std::uint32_t end_pos{};
-
-  try {
-    internal::parse_numeric_or_throw(start_pos_str, start_pos);
-  } catch (const std::exception &e) {
-    throw std::runtime_error(
-        fmt::format(FMT_STRING("invalid start position \"{}\" in query \"{}\": {}"), start_pos_str,
-                    query, e.what()));
-  }
-  try {
-    internal::parse_numeric_or_throw(end_pos_str, end_pos);
-  } catch (const std::exception &e) {
-    throw std::runtime_error(
-        fmt::format(FMT_STRING("invalid end position \"{}\" in query \"{}\": {}"), end_pos_str,
-                    query, e.what()));
-  }
-
-  if (end_pos > chrom.size) {
-    throw std::runtime_error(
-        fmt::format(FMT_STRING("invalid end position \"{}\" in query \"{}\": end position is "
-                               "greater than the chromosome size ({} > {})"),
-                    end_pos, query, end_pos, chrom.size));
-  }
-
-  if (start_pos >= end_pos) {
-    throw std::runtime_error(
-        fmt::format(FMT_STRING("invalid query \"{}\": query end position should be "
-                               "greater than the start position ({} >= {})"),
-                    query, start_pos, end_pos));
-  }
-
-  end_pos -= (std::min)(end_pos, 1U);
-  return {bins, chrom, start_pos, end_pos};
 }
 
 template <typename N, std::size_t CHUNK_SIZE>
@@ -216,16 +124,18 @@ inline PixelSelector<N, CHUNK_SIZE>::iterator::iterator(std::shared_ptr<const In
                                                         const Dataset &pixels_bin1_id,
                                                         const Dataset &pixels_bin2_id,
                                                         const Dataset &pixels_count,
-                                                        std::shared_ptr<PixelCoordinates> coord1,
-                                                        std::shared_ptr<PixelCoordinates> coord2)
-    : _index(std::move(index)), _coord1(std::move(coord1)), _coord2(std::move(coord2)) {
+                                                        PixelCoordinates coord1,
+                                                        PixelCoordinates coord2)
+    : _index(std::move(index)),
+      _coord1(std::make_shared<PixelCoordinates>(std::move(coord1))),
+      _coord2(std::make_shared<PixelCoordinates>(std::move(coord2))) {
   assert(_coord1);
   assert(_coord2);
-  assert(_coord1->bin1_id() <= _coord1->bin2_id());
-  assert(_coord2->bin1_id() <= _coord2->bin2_id());
+  assert(_coord1->bin1.id() <= _coord1->bin2.id());
+  assert(_coord2->bin1.id() <= _coord2->bin2.id());
 
   // Set iterator to the first row overlapping the query (i.e. the first bin overlapping coord1)
-  auto offset = _index->get_offset_by_bin_id(_coord1->bin1_id());
+  auto offset = _index->get_offset_by_bin_id(_coord1->bin1.id());
   _bin1_id_it = pixels_bin1_id.make_iterator_at_offset<std::uint64_t, CHUNK_SIZE>(offset);
   _bin2_id_it = pixels_bin2_id.make_iterator_at_offset<std::uint64_t, CHUNK_SIZE>(offset);
   _count_it = pixels_count.make_iterator_at_offset<N, CHUNK_SIZE>(offset);
@@ -244,7 +154,7 @@ inline PixelSelector<N, CHUNK_SIZE>::iterator::iterator(std::shared_ptr<const In
   // Now that last it is set, we can call jump_to_col() to seek to the first pixel actually
   // overlapping the query. Calling jump_to_next_overlap() is required to deal with rows that are
   // not empty, but that have no pixels overlapping the query
-  this->jump_to_col(_coord2->bin1_id());
+  this->jump_to_col(_coord2->bin1.id());
   if (this->discard()) {
     this->jump_to_next_overlap();
   }
@@ -271,8 +181,23 @@ inline auto PixelSelector<N, CHUNK_SIZE>::iterator::at_end(std::shared_ptr<const
                                                            const Dataset &pixels_bin1_id,
                                                            const Dataset &pixels_bin2_id,
                                                            const Dataset &pixels_count,
-                                                           std::shared_ptr<PixelCoordinates> coord1,
-                                                           std::shared_ptr<PixelCoordinates> coord2)
+                                                           PixelCoordinates coord1,
+                                                           PixelCoordinates coord2) -> iterator {
+  std::shared_ptr<const PixelCoordinates> coord1_ =
+      !!coord1 ? std::make_shared<const PixelCoordinates>(std::move(coord1)) : nullptr;
+  std::shared_ptr<const PixelCoordinates> coord2_ =
+      !!coord2 ? std::make_shared<const PixelCoordinates>(std::move(coord2)) : nullptr;
+
+  return PixelSelector<N, CHUNK_SIZE>::iterator::at_end(std::move(index), pixels_bin1_id,
+                                                        pixels_bin2_id, pixels_count,
+                                                        std::move(coord1_), std::move(coord2_));
+}
+
+template <typename N, std::size_t CHUNK_SIZE>
+inline auto PixelSelector<N, CHUNK_SIZE>::iterator::at_end(
+    std::shared_ptr<const Index> index, const Dataset &pixels_bin1_id,
+    const Dataset &pixels_bin2_id, const Dataset &pixels_count,
+    std::shared_ptr<const PixelCoordinates> coord1, std::shared_ptr<const PixelCoordinates> coord2)
     -> iterator {
   if (!coord1 && !coord2) {
     return at_end(std::move(index), pixels_bin1_id, pixels_bin2_id, pixels_count);
@@ -280,7 +205,7 @@ inline auto PixelSelector<N, CHUNK_SIZE>::iterator::at_end(std::shared_ptr<const
   assert(!!coord1);
   assert(!!coord2);
 
-  assert(coord1->bin2_id() <= coord2->bin2_id());
+  assert(coord1->bin2.id() <= coord2->bin2.id());
 
   iterator it{};
 
@@ -289,7 +214,7 @@ inline auto PixelSelector<N, CHUNK_SIZE>::iterator::at_end(std::shared_ptr<const
   it._coord2 = std::move(coord2);
 
   // Get the bin id for the last row overlapping the query
-  auto bin1_id = it._coord1->bin2_id();
+  auto bin1_id = it._coord1->bin2.id();
 
   if (bin1_id != 0) {
     // Efficiently deal with the possiblity that a cooler file does not have any
@@ -320,15 +245,15 @@ inline auto PixelSelector<N, CHUNK_SIZE>::iterator::at_end(std::shared_ptr<const
     }
 
     // Jump to the first column overlapping the query
-    it.jump_to_col(it._coord2->bin1_id());
+    it.jump_to_col(it._coord2->bin1.id());
 
     // If discard() returns true, it means that the row corresponding to bin1_id does not contain
     // any pixel overlapping the query, so we keep looking backwards
-  } while (bin1_id-- > it._coord1->bin1_id() && it.discard());
+  } while (bin1_id-- > it._coord1->bin1.id() && it.discard());
 
   // Now that we know the row pointed by it contains at least one pixel overlapping the query, jump
   // to the last column overlapping the query
-  it.jump_to_col(it._coord2->bin2_id());
+  it.jump_to_col(it._coord2->bin2.id());
 
   // IMPORTANT! Do not try to set _bin2_id_last before calling it.discard(), otherwise discard will
   // always return true!
@@ -514,11 +439,11 @@ inline void PixelSelector<N, CHUNK_SIZE>::iterator::jump_to_next_overlap() {
     const auto row = *this->_bin1_id_it;
     const auto col = *this->_bin2_id_it;
     const auto next_row = row + 1;
-    const auto next_col = (std::max)(next_row, this->_coord2->bin1_id());
+    const auto next_col = (std::max)(next_row, this->_coord2->bin1.id());
 
     // We may have some data left to read from the current row
-    if (col < this->_coord2->bin1_id()) {
-      this->jump_to_col(this->_coord2->bin1_id());
+    if (col < this->_coord2->bin1.id()) {
+      this->jump_to_col(this->_coord2->bin1.id());
       if (!this->discard()) {
         return;
       }
@@ -526,8 +451,8 @@ inline void PixelSelector<N, CHUNK_SIZE>::iterator::jump_to_next_overlap() {
 
     // There's no more data to be read, as we're past the last column overlapping the query,
     // and the next row does not overlap the query
-    if (this->is_at_end() || this->is_past_end() || next_row > this->_coord1->bin2_id()) {
-      // assert(col > this->_coord2->bin2_id());  // This is not always true for trans queries
+    if (this->is_at_end() || this->is_past_end() || next_row > this->_coord1->bin2.id()) {
+      // assert(col > this->_coord2->bin2.id());  // This is not always true for trans queries
       this->jump_at_end();
       return;
     }
@@ -549,11 +474,11 @@ inline bool PixelSelector<N, CHUNK_SIZE>::iterator::discard() const {
     return false;
   }
 
-  const auto overlaps_range1 = *this->_bin1_id_it >= this->_coord1->bin1_id() &&
-                               *this->_bin1_id_it <= this->_coord1->bin2_id();
+  const auto overlaps_range1 = *this->_bin1_id_it >= this->_coord1->bin1.id() &&
+                               *this->_bin1_id_it <= this->_coord1->bin2.id();
 
-  const auto overlaps_range2 = *this->_bin2_id_it >= this->_coord2->bin1_id() &&
-                               *this->_bin2_id_it <= this->_coord2->bin2_id();
+  const auto overlaps_range2 = *this->_bin2_id_it >= this->_coord2->bin1.id() &&
+                               *this->_bin2_id_it <= this->_coord2->bin2.id();
 
   return !overlaps_range1 || !overlaps_range2;
 }
@@ -611,8 +536,8 @@ constexpr bool PixelSelector<N, CHUNK_SIZE>::iterator::pixel_is_outdated() const
 template <typename N, std::size_t CHUNK_SIZE>
 inline void PixelSelector<N, CHUNK_SIZE>::iterator::read_pixel() const {
   assert(this->pixel_is_outdated());
-  this->_value.coords =
-      PixelCoordinates{this->_index->bins_ptr(), *this->_bin1_id_it, *this->_bin2_id_it};
+  this->_value.coords = PixelCoordinates{this->_index->bins().at(*this->_bin1_id_it),
+                                         this->_index->bins().at(*this->_bin2_id_it)};
   this->_value.count = *this->_count_it;
 }
 

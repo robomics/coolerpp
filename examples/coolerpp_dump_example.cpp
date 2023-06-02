@@ -24,12 +24,12 @@ static std::size_t print_pixels(typename PixelSelector<N>::iterator first_pixel,
     const auto sel = Balancer<N>(first_pixel, last_pixel, weights);
     std::for_each(sel.begin(), sel.end(), [&](const auto& pixel) {
       ++nnz;
-      fmt::print(FMT_COMPILE("{:bedpe}\t{}\n"), pixel.coords, pixel.count);
+      fmt::print(FMT_COMPILE("{:bg2}\t{}\n"), pixel.coords, pixel.count);
     });
   } else {
     std::for_each(first_pixel, last_pixel, [&](const auto& pixel) {
       ++nnz;
-      fmt::print(FMT_COMPILE("{:bedpe}\t{}\n"), pixel.coords, pixel.count);
+      fmt::print(FMT_COMPILE("{:bg2}\t{}\n"), pixel.coords, pixel.count);
     });
   }
 

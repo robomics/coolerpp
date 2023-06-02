@@ -19,7 +19,7 @@
 
 namespace coolerpp {
 
-inline Index::Index(std::shared_ptr<const BinTableLazy> bins, std::uint64_t nnz)
+inline Index::Index(std::shared_ptr<const BinTable> bins, std::uint64_t nnz)
     : _bins(std::move(bins)),
       _idx(Index::init(_bins->chromosomes(), _bins->bin_size())),
       _nnz(nnz) {
@@ -33,12 +33,12 @@ inline const ChromosomeSet &Index::chromosomes() const noexcept {
   return this->_bins->chromosomes();
 }
 
-inline const BinTableLazy &Index::bins() const noexcept {
+inline const BinTable &Index::bins() const noexcept {
   assert(this->_bins);
   return *this->_bins;
 }
 
-inline std::shared_ptr<const BinTableLazy> Index::bins_ptr() const noexcept { return this->_bins; }
+inline std::shared_ptr<const BinTable> Index::bins_ptr() const noexcept { return this->_bins; }
 
 inline std::size_t Index::num_chromosomes() const noexcept {
   assert(this->_idx.size() == this->_bins->num_chromosomes());
@@ -92,12 +92,12 @@ inline std::uint64_t Index::get_offset_by_bin_id(std::uint64_t bin_id) const {
   if (bin_id == this->size()) {
     return this->_idx.back().back();
   }
-  const auto &coords = this->_bins->bin_id_to_coords(bin_id);
-  return this->get_offset_by_pos(coords.chrom, coords.start);
+  const auto &coords = this->_bins->at(bin_id);
+  return this->get_offset_by_pos(coords.chrom(), coords.start());
 }
 
 inline std::uint64_t Index::get_offset_by_pos(const Chromosome &chrom, std::uint32_t pos) const {
-  return this->get_offset_by_pos(chrom.name, pos);
+  return this->get_offset_by_pos(chrom.name(), pos);
 }
 
 inline std::uint64_t Index::get_offset_by_pos(std::string_view chrom_name,
@@ -123,13 +123,13 @@ inline std::uint64_t Index::get_offset_by_row_idx(std::uint32_t chrom_id,
 }
 
 inline void Index::set_offset_by_bin_id(std::uint64_t bin_id, std::uint64_t offset) {
-  const auto &coords = this->_bins->bin_id_to_coords(bin_id);
-  this->set_offset_by_pos(coords.chrom, coords.start, offset);
+  const auto &bin = this->_bins->at(bin_id);
+  this->set_offset_by_pos(bin.chrom(), bin.start(), offset);
 }
 
 inline void Index::set_offset_by_pos(const Chromosome &chrom, std::uint32_t pos,
                                      std::uint64_t offset) {
-  this->set_offset_by_pos(chrom.name, pos, offset);
+  this->set_offset_by_pos(chrom.id(), pos, offset);
 }
 
 inline void Index::set_offset_by_pos(std::string_view chrom_name, std::uint32_t pos,
@@ -211,7 +211,7 @@ inline auto Index::init(const ChromosomeSet &chroms, std::uint32_t bin_size) -> 
 
   MapT idx(chroms.size());
   std::transform(chroms.begin(), chroms.end(), idx.begin(), [&](const Chromosome &chrom) {
-    const auto num_bins = (chrom.size + bin_size - 1) / bin_size;
+    const auto num_bins = (chrom.size() + bin_size - 1) / bin_size;
     return std::vector<std::uint64_t>(num_bins, Index::offset_not_set_value);
   });
 
@@ -220,7 +220,7 @@ inline auto Index::init(const ChromosomeSet &chroms, std::uint32_t bin_size) -> 
 
 inline void Index::validate(const Chromosome &chrom) const {
   try {
-    const auto chrom_id = this->chromosomes().get_id(chrom);
+    const auto chrom_id = chrom.id();
     const auto &offsets = this->at(chrom_id);
     if (chrom_id == 0) {
       if (offsets.front() != 0) {
@@ -232,7 +232,7 @@ inline void Index::validate(const Chromosome &chrom) const {
         throw std::runtime_error(
             fmt::format(FMT_STRING("offsets are not in ascending order: offset for "
                                    "bin {}:{}-{} should be >= {}, found {}"),
-                        chrom.name, 0, this->bin_size(), prev_offsets.back(), offsets.front()));
+                        chrom.name(), 0, this->bin_size(), prev_offsets.back(), offsets.front()));
       }
     }
 
@@ -257,7 +257,7 @@ inline void Index::validate(const Chromosome &chrom) const {
 
   } catch (const std::exception &e) {
     throw std::runtime_error(
-        fmt::format(FMT_STRING("{} index is corrupted or incomplete: {}"), chrom.name, e.what()));
+        fmt::format(FMT_STRING("{} index is corrupted or incomplete: {}"), chrom.name(), e.what()));
   }
 }
 

@@ -22,8 +22,8 @@ class Weights {
 
  public:
   Weights() = default;
-  explicit Weights(const BinTableLazy &bins, const Dataset &dset, bool rescale = false);
-  Weights(const BinTableLazy &bins, const Dataset &dset, Type type, bool rescale = false);
+  explicit Weights(const BinTable &bins, const Dataset &dset, bool rescale = false);
+  Weights(const BinTable &bins, const Dataset &dset, Type type, bool rescale = false);
   Weights(std::vector<double> weights, Type type) noexcept;
   Weights(std::vector<double> weights, std::string_view name);
 

@@ -17,9 +17,10 @@
 namespace coolerpp {
 
 class Chromosome {
- private:
+  static constexpr std::uint32_t null_id{(std::numeric_limits<std::uint32_t>::max)()};
+
   std::string _name{};
-  std::uint32_t _id{(std::numeric_limits<std::uint32_t>::max)()};
+  std::uint32_t _id{null_id};
   std::uint32_t _size{};
 
  public:

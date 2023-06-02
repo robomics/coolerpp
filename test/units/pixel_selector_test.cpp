@@ -30,9 +30,9 @@ static std::ptrdiff_t generate_test_data(const std::filesystem::path& path,
   std::vector<Pixel<N>> pixels;
 
   N n = 1;
-  for (std::uint64_t i = 0; i < num_bins; ++i) {
-    for (std::uint64_t j = i; j < num_bins; ++j) {
-      pixels.emplace_back(Pixel<N>{PixelCoordinates{f.bins_ptr(), i, j}, n++});
+  for (std::uint64_t bin1_id = 0; bin1_id < num_bins; ++bin1_id) {
+    for (std::uint64_t bin2_id = bin1_id; bin2_id < num_bins; ++bin2_id) {
+      pixels.emplace_back(Pixel<N>{f.bins(), bin1_id, bin2_id, n++});
     }
   }
   f.append_pixels(pixels.begin(), pixels.end());
@@ -43,7 +43,7 @@ static std::ptrdiff_t generate_test_data(const std::filesystem::path& path,
 TEST_CASE("Pixel selector: 1D queries", "[pixel_selector][short]") {
   const auto path1 = testdir() / "pixel_selector_devel.cool";
 
-  const ChromosomeSet chroms{Chromosome{"chr1", 1000}, Chromosome{"chr2", 100}};
+  const ChromosomeSet chroms{Chromosome{0, "chr1", 1000}, Chromosome{1, "chr2", 100}};
   constexpr std::uint32_t bin_size = 10;
   using T = std::uint32_t;
 
@@ -51,6 +51,7 @@ TEST_CASE("Pixel selector: 1D queries", "[pixel_selector][short]") {
 
   auto f = File::open_read_only(path1.string());
   REQUIRE(std::distance(f.begin<T>(), f.end<T>()) == expected_nnz);
+
   SECTION("query overlaps chrom start") {
     auto selector = f.fetch<T>("chr1:0-20");
     const std::vector<Pixel<T>> pixels(selector.begin(), selector.end());

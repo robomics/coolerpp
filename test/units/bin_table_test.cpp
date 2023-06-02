@@ -34,39 +34,39 @@ TEST_CASE("BinTable", "[bin-table][short]") {
   SECTION("at") {
     const BinTable expected{{Chromosome{1, "chr2", 25017}}, bin_size};
 
-    CHECK(table.at(Chromosome{1, "chr2", 25017}) == expected);
-    CHECK(table.at("chr2") == expected);
-    CHECK(table.at(1) == expected);
-    CHECK(table.at("chr1") != expected);
+    CHECK(table.subset(Chromosome{1, "chr2", 25017}) == expected);
+    CHECK(table.subset("chr2") == expected);
+    CHECK(table.subset(1) == expected);
+    CHECK(table.subset("chr1") != expected);
 
-    CHECK_THROWS_AS(table.at(Chromosome{4, "chr5", 1}), std::out_of_range);
-    CHECK_THROWS_AS(table.at("a"), std::out_of_range);
-    CHECK_THROWS_AS(table.at(10), std::out_of_range);
+    CHECK_THROWS_AS(table.subset(Chromosome{4, "chr5", 1}), std::out_of_range);
+    CHECK_THROWS_AS(table.subset("a"), std::out_of_range);
+    CHECK_THROWS_AS(table.subset(10), std::out_of_range);
   }
 
   SECTION("bin id to coord") {
     const auto& chr1 = table.chromosomes().at("chr1");
     const auto& chr2 = table.chromosomes().at("chr2");
 
-    CHECK(table.bin_id_to_coords(0) == Bin{chr1, 0, bin_size});
-    CHECK(table.bin_id_to_coords(10) == Bin{chr1, 50000, 50001});
+    CHECK(table.at(0) == Bin{chr1, 0, bin_size});
+    CHECK(table.at(10) == Bin{chr1, 50000, 50001});
 
-    CHECK(table.bin_id_to_coords(11) == Bin{chr2, 0, bin_size});
+    CHECK(table.at(11) == Bin{chr2, 0, bin_size});
 
-    CHECK_THROWS_AS(table.bin_id_to_coords(table.size()), std::out_of_range);
+    CHECK_THROWS_AS(table.at(table.size()), std::out_of_range);
   }
 
   SECTION("coord to bin id") {
     const auto& chr2 = table.chromosomes().at("chr2");
 
-    CHECK(table.coord_to_bin_id(0, 7500) == 1);
-    CHECK(table.coord_to_bin_id("chr1", 50000) == 10);
-    CHECK(table.coord_to_bin_id(chr2, 10) == 11);
+    CHECK(table.map_to_bin_id(0, 7500) == 1);
+    CHECK(table.map_to_bin_id("chr1", 50000) == 10);
+    CHECK(table.map_to_bin_id(chr2, 10) == 11);
 
-    CHECK_THROWS_AS(table.coord_to_bin_id("a", 0), std::out_of_range);
-    CHECK_THROWS_AS(table.coord_to_bin_id("chr1", 99999), std::out_of_range);
-    CHECK_THROWS_AS(table.coord_to_bin_id(chr2, 99999), std::out_of_range);
-    CHECK_THROWS_AS(table.coord_to_bin_id(1, 99999), std::out_of_range);
+    CHECK_THROWS_AS(table.map_to_bin_id("a", 0), std::out_of_range);
+    CHECK_THROWS_AS(table.map_to_bin_id("chr1", 99999), std::out_of_range);
+    CHECK_THROWS_AS(table.map_to_bin_id(chr2, 99999), std::out_of_range);
+    CHECK_THROWS_AS(table.map_to_bin_id(1, 99999), std::out_of_range);
   }
 
   SECTION("iterators") {
@@ -131,10 +131,10 @@ TEST_CASE("BinTable", "[bin-table][short]") {
     REQUIRE(concrete_table.chroms.size() == table.size());
 
     std::size_t i = 0;
-    for (const auto& [chrom, bin_start, bin_end] : table) {
-      CHECK(*concrete_table.chroms[i] == *chrom);
-      CHECK(concrete_table.bin_starts[i] == bin_start);
-      CHECK(concrete_table.bin_ends[i++] == bin_end);
+    for (const auto& bin : table) {
+      CHECK(*concrete_table.chroms[i] == bin.chrom());
+      CHECK(concrete_table.bin_starts[i] == bin.start());
+      CHECK(concrete_table.bin_ends[i++] == bin.end());
     }
   }
 }

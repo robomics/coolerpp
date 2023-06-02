@@ -26,9 +26,7 @@ inline Chromosome::Chromosome(std::uint32_t id, std::string name_, std::uint32_t
   assert(_size != 0);
 }
 
-constexpr Chromosome::operator bool() const noexcept {
-  return this->id() != (std::numeric_limits<std::uint32_t>::max)();
-}
+constexpr Chromosome::operator bool() const noexcept { return this->id() != Chromosome::null_id; }
 
 constexpr std::uint32_t Chromosome::id() const noexcept { return this->_id; }
 

@@ -28,7 +28,7 @@ inline Weights::Weights(std::vector<double> weights, std::string_view name)
   }
 }
 
-inline Weights::Weights(const BinTableLazy& bins, const Dataset& dset, bool rescale)
+inline Weights::Weights(const BinTable& bins, const Dataset& dset, bool rescale)
     : Weights(bins, dset, Weights::infer_type(dset), rescale) {
   assert(_type != Type::INFER);
   if (_type == Type::UNKNOWN) {
@@ -37,7 +37,7 @@ inline Weights::Weights(const BinTableLazy& bins, const Dataset& dset, bool resc
   }
 }
 
-inline Weights::Weights(const BinTableLazy& bins, const Dataset& dset, Type type, bool rescale)
+inline Weights::Weights(const BinTable& bins, const Dataset& dset, Type type, bool rescale)
     : _weights(dset.read_all<std::vector<double>>()), _type(type) {
   if (_type == Type::INFER || type == Type::UNKNOWN) {
     if (dset.has_attribute("divisive_weights")) {
@@ -218,14 +218,14 @@ constexpr bool Balancer<N, CHUNK_SIZE>::iterator::operator>=(
 template <typename N, std::size_t CHUNK_SIZE>
 inline auto Balancer<N, CHUNK_SIZE>::iterator::operator*() const -> value_type {
   Pixel<N> raw_pixel = *this->_it;
-  const auto w1 = (*this->_weights)[raw_pixel.coords.bin1_id()];
-  const auto w2 = (*this->_weights)[raw_pixel.coords.bin2_id()];
+  const auto w1 = (*this->_weights)[raw_pixel.coords.bin1.id()];
+  const auto w2 = (*this->_weights)[raw_pixel.coords.bin2.id()];
   if (this->_weights->type() == Weights::Type::MULTIPLICATIVE) {
-    return {std::move(raw_pixel.coords),
-            conditional_static_cast<double>(raw_pixel.count) * w1 * w2};
+    return value_type{std::move(raw_pixel.coords),
+                      conditional_static_cast<double>(raw_pixel.count) * w1 * w2};
   } else {
-    return {std::move(raw_pixel.coords),
-            conditional_static_cast<double>(raw_pixel.count) * (1.0 / w1) * (1.0 / w2)};
+    return value_type{std::move(raw_pixel.coords),
+                      conditional_static_cast<double>(raw_pixel.count) * (1.0 / w1) * (1.0 / w2)};
   }
 }
 

@@ -17,68 +17,67 @@
 #include <vector>
 
 #include "coolerpp/common.hpp"
+#include "coolerpp/genomic_interval.hpp"
 
 namespace coolerpp {  // NOLINT
 
-constexpr Bin::Bin(const Chromosome &chrom_, std::uint32_t start_, std::uint32_t end_) noexcept
-    : chrom(&chrom_), start(start_), end(end_) {
-  assert(start <= end);
-}
+inline Bin::Bin(const Chromosome &chrom_, std::uint32_t start_, std::uint32_t end_) noexcept
+    : Bin(Bin::null_id, chrom_, start_, end_) {}
 
-constexpr Bin::operator bool() const noexcept { return !!chrom; }
+inline Bin::Bin(std::uint64_t id_, const Chromosome &chrom_, std::uint32_t start_,
+                std::uint32_t end_) noexcept
+    : _id(id_), _interval(chrom_, start_, end_) {}
+
+inline Bin::Bin(GenomicInterval interval) noexcept : Bin(Bin::null_id, std::move(interval)) {}
+
+inline Bin::Bin(std::uint64_t id_, GenomicInterval interval) noexcept
+    : _id(id_), _interval(std::move(interval)) {}
+
+constexpr Bin::operator bool() const noexcept { return !!this->chrom(); }
 
 constexpr bool Bin::operator==(const Bin &other) const noexcept {
-  return this->chrom == other.chrom && this->start == other.start && this->end == other.end;
+  if (!this->has_null_id() && !other.has_null_id()) {
+    return this->id() == other.id();
+  }
+  return this->_interval == other._interval;
 }
 constexpr bool Bin::operator!=(const Bin &other) const noexcept { return !(*this == other); }
 
 constexpr bool Bin::operator<(const Bin &other) const noexcept {
-  if (this->chrom != other.chrom) {
-    return this->chrom < other.chrom;
+  if (!this->has_null_id() && !other.has_null_id()) {
+    return this->id() < other.id();
   }
-
-  if (this->start != other.start) {
-    return this->start < other.start;
-  }
-
-  return this->end < other.end;
+  return this->_interval < other._interval;
 }
 
 constexpr bool Bin::operator<=(const Bin &other) const noexcept {
-  if (this->chrom != other.chrom) {
-    return this->chrom <= other.chrom;
+  if (!this->has_null_id() && !other.has_null_id()) {
+    return this->id() <= other.id();
   }
-
-  if (this->start != other.start) {
-    return this->start <= other.start;
-  }
-
-  return this->end <= other.end;
+  return this->_interval <= other._interval;
 }
 
 constexpr bool Bin::operator>(const Bin &other) const noexcept {
-  if (this->chrom != other.chrom) {
-    return this->chrom > other.chrom;
+  if (!this->has_null_id() && !other.has_null_id()) {
+    return this->id() > other.id();
   }
-
-  if (this->start != other.start) {
-    return this->start > other.start;
-  }
-
-  return this->end > other.end;
+  return this->_interval > other._interval;
 }
 
 constexpr bool Bin::operator>=(const Bin &other) const noexcept {
-  if (this->chrom != other.chrom) {
-    return this->chrom >= other.chrom;
+  if (!this->has_null_id() && !other.has_null_id()) {
+    return this->id() >= other.id();
   }
-
-  if (this->start != other.start) {
-    return this->start >= other.start;
-  }
-
-  return this->end >= other.end;
+  return this->_interval >= other._interval;
 }
+
+constexpr std::uint64_t Bin::id() const noexcept { return this->_id; }
+constexpr const GenomicInterval &Bin::interval() const noexcept { return this->_interval; }
+constexpr const Chromosome &Bin::chrom() const noexcept { return this->_interval.chrom(); }
+constexpr std::uint32_t Bin::start() const noexcept { return this->_interval.start(); }
+constexpr std::uint32_t Bin::end() const noexcept { return this->_interval.end(); }
+
+constexpr bool Bin::has_null_id() const noexcept { return this->id() == Bin::null_id; }
 
 inline BinTable::BinTable(ChromosomeSet chroms, std::uint32_t bin_size)
     : _chroms(std::move(chroms)),
@@ -136,9 +135,9 @@ inline BinTableConcrete BinTable::concretize() const {
 
   std::size_t i = 0;
   for (const auto &bin : *this) {
-    chroms[i] = bin.chrom;
-    starts[i] = bin.start;
-    ends[i++] = bin.end;
+    chroms[i] = &bin.chrom();
+    starts[i] = bin.start();
+    ends[i++] = bin.end();
   }
   assert(i == chroms.size());
 
@@ -150,18 +149,23 @@ inline bool BinTable::operator==(const BinTable &other) const {
 }
 inline bool BinTable::operator!=(const BinTable &other) const { return !(*this == other); }
 
-inline BinTable BinTable::at(const Chromosome &chrom) const { return this->at(chrom.id()); }
+inline BinTable BinTable::subset(const Chromosome &chrom) const { return this->subset(chrom.id()); }
 
-inline BinTable BinTable::at(std::string_view chrom_name) const {
-  return this->at(this->_chroms.at(chrom_name));
+inline BinTable BinTable::subset(std::string_view chrom_name) const {
+  return this->subset(this->_chroms.at(chrom_name));
 }
 
-inline BinTable BinTable::at(std::uint32_t chrom_id) const {
+inline BinTable BinTable::subset(std::uint32_t chrom_id) const {
   const auto &chrom = this->_chroms.at(chrom_id);
   return {ChromosomeSet{chrom}, this->_bin_size};
 }
 
-inline Bin BinTable::bin_id_to_coords(std::uint64_t bin_id) const {
+inline Bin BinTable::at(std::uint64_t bin_id) const {
+  // I tried benchmarking linear search as well as std::set (including third-party implementations).
+  // Binary search and find on flat vectors are always faster for a reasonable number of chromosomes
+  // (e.g. 5-100). and have fairly similar performance, thus I decided to use binary search over
+  // linear search to avoid severe perf. degradation for genomes with many chromosomes (e.g. draft
+  // assemblies)
   auto match = std::upper_bound(this->_num_bins_prefix_sum.begin(),
                                 this->_num_bins_prefix_sum.end(), bin_id);
 
@@ -181,43 +185,50 @@ inline Bin BinTable::bin_id_to_coords(std::uint64_t bin_id) const {
   assert(start < chrom.size());
   const auto end = (std::min)(start + this->bin_size(), chrom.size());
 
-  return {chrom, start, end};
+  return {bin_id, chrom, start, end};
+}
+inline std::pair<Bin, Bin> BinTable::at(const GenomicInterval &gi) const {
+  const auto [bin1_id, bin2_id] = this->map_to_bin_ids(gi);
+  return std::make_pair(this->at(bin1_id), this->at(bin2_id));
+}
+inline Bin BinTable::at(const Chromosome &chrom, std::uint32_t pos) const {
+  return this->at(this->map_to_bin_id(chrom, pos));
+}
+inline Bin BinTable::at(std::string_view chrom_name, std::uint32_t pos) const {
+  return this->at(this->map_to_bin_id(chrom_name, pos));
+}
+inline Bin BinTable::at(std::uint32_t chrom_id, std::uint32_t pos) const {
+  return this->at(this->map_to_bin_id(chrom_id, pos));
 }
 
-inline std::uint64_t BinTable::coord_to_bin_id(const Bin &bin) const {
-  assert(!!bin.chrom);
-  const auto match = this->_chroms.find(bin.chrom->id());
-  if (match == this->_chroms.end()) {
-    throw std::out_of_range(fmt::format(FMT_STRING("chromosome \"{}\" not found"), *bin.chrom));
-  }
-
-  if (bin.end < bin.start) {
-    throw std::logic_error(
-        fmt::format(FMT_STRING("invalid coordinate: start > end: {} > {}"), bin.start, bin.end));
-  }
-
-  const auto chrom_id =
-      conditional_static_cast<std::size_t>(std::distance(this->_chroms.begin(), match));
-  const auto bin_offset = this->_num_bins_prefix_sum[chrom_id] - this->_num_bins_prefix_sum.front();
-
-  return bin_offset + static_cast<std::uint64_t>(bin.start / this->bin_size());
+inline std::pair<std::uint64_t, std::uint64_t> BinTable::map_to_bin_ids(
+    const GenomicInterval &gi) const {
+  return std::make_pair(this->map_to_bin_id(gi.chrom(), gi.start()),
+                        this->map_to_bin_id(gi.chrom(), gi.end() - (std::min)(gi.end(), 1U)));
 }
 
-inline std::uint64_t BinTable::coord_to_bin_id(const Chromosome &chrom, std::uint32_t pos) const {
+inline std::uint64_t BinTable::map_to_bin_id(const Chromosome &chrom, std::uint32_t pos) const {
+  if (!this->_chroms.contains(chrom)) {
+    throw std::out_of_range(fmt::format(FMT_STRING("chromosome \"{}\" not found"), chrom.name()));
+  }
+
   if (pos > chrom.size()) {
-    throw std::out_of_range(
-        fmt::format(FMT_STRING("position is greater than chromosome size: {} > {}"), pos, chrom));
+    throw std::out_of_range(fmt::format(
+        FMT_STRING("position is greater than chromosome size: {} > {}"), pos, chrom.size()));
   }
-  return this->coord_to_bin_id(Bin{chrom, pos, (std::min)(pos + this->bin_size(), chrom.size())});
+
+  const auto bin_offset =
+      this->_num_bins_prefix_sum[chrom.id()] - this->_num_bins_prefix_sum.front();
+
+  return bin_offset + static_cast<std::uint64_t>(pos / this->bin_size());
 }
 
-inline std::uint64_t BinTable::coord_to_bin_id(std::string_view chrom_name,
-                                               std::uint32_t pos) const {
-  return this->coord_to_bin_id(this->_chroms.at(chrom_name), pos);
+inline std::uint64_t BinTable::map_to_bin_id(std::string_view chrom_name, std::uint32_t pos) const {
+  return this->map_to_bin_id(this->_chroms.at(chrom_name), pos);
 }
 
-inline std::uint64_t BinTable::coord_to_bin_id(std::uint32_t chrom_id, std::uint32_t pos) const {
-  return this->coord_to_bin_id(this->_chroms.at(chrom_id), pos);
+inline std::uint64_t BinTable::map_to_bin_id(std::uint32_t chrom_id, std::uint32_t pos) const {
+  return this->map_to_bin_id(this->_chroms.at(chrom_id), pos);
 }
 
 inline std::vector<std::uint64_t> BinTable::compute_num_bins_prefix_sum(const ChromosomeSet &chroms,
@@ -344,10 +355,7 @@ inline std::size_t BinTable::iterator::num_chromosomes() const noexcept {
 }  // namespace coolerpp
 
 inline std::size_t std::hash<coolerpp::Bin>::operator()(const coolerpp::Bin &b) const {
-  if (b) {
-    return coolerpp::internal::hash_combine(0, *b.chrom, b.start, b.end);
-  }
-  return coolerpp::internal::hash_combine(0, nullptr);
+  return coolerpp::internal::hash_combine(0, b.id(), b.interval());
 }
 
 constexpr auto fmt::formatter<coolerpp::Bin>::parse(format_parse_context &ctx)
@@ -358,12 +366,15 @@ constexpr auto fmt::formatter<coolerpp::Bin>::parse(format_parse_context &ctx)
       std::string_view{&(*ctx.begin()), static_cast<std::size_t>(ctx.end() - ctx.begin())};
 
   if (it != end) {
-    if (fmt_string.find("ucsc") != std::string_view::npos) {
+    if (fmt_string.find("bed") != std::string_view::npos) {
+      this->presentation = Presentation::bed;
+      it += std::string_view{"bed"}.size();  // NOLINT
+    } else if (fmt_string.find("raw") != std::string_view::npos) {
+      this->presentation = Presentation::raw;
+      it += std::string_view{"raw"}.size();  // NOLINT
+    } else if (fmt_string.find("ucsc") != std::string_view::npos) {
       this->presentation = Presentation::ucsc;
       it += std::string_view{"ucsc"}.size();  // NOLINT
-    } else if (fmt_string.find("tsv") != std::string_view::npos) {
-      this->presentation = Presentation::tsv;
-      it += std::string_view{"tsv"}.size();  // NOLINT
     }
   }
 
@@ -377,12 +388,12 @@ constexpr auto fmt::formatter<coolerpp::Bin>::parse(format_parse_context &ctx)
 template <typename FormatContext>
 inline auto fmt::formatter<coolerpp::Bin>::format(const coolerpp::Bin &b, FormatContext &ctx) const
     -> decltype(ctx.out()) {
-  if (!b) {
-    return fmt::format_to(ctx.out(), FMT_STRING("null"));
+  if (this->presentation == Presentation::bed) {
+    return fmt::format_to(ctx.out(), FMT_STRING("{:bed}"), b.interval());
   }
-
-  if (this->presentation == Presentation::tsv) {
-    return fmt::format_to(ctx.out(), FMT_STRING("{}\t{}\t{}"), b.chrom->name(), b.start, b.end);
+  if (this->presentation == Presentation::raw) {
+    return fmt::format_to(ctx.out(), FMT_STRING("{}"), b.id());
   }
-  return fmt::format_to(ctx.out(), FMT_STRING("{}:{}-{}"), b.chrom->name(), b.start, b.end);
+  assert(this->presentation == Presentation::ucsc);
+  return fmt::format_to(ctx.out(), FMT_STRING("{:ucsc}"), b.interval());
 }

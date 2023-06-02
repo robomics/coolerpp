@@ -14,7 +14,7 @@
 
 namespace coolerpp {
 
-class BinTableLazy;
+class BinTable;
 class Index;
 
 template <typename N, std::size_t CHUNK_SIZE = DEFAULT_HDF5_DATASET_ITERATOR_BUFFER_SIZE>
@@ -25,20 +25,12 @@ class PixelSelector {
   class iterator;
 
  private:
-  std::shared_ptr<PixelCoordinates> _coord1{};
-  std::shared_ptr<PixelCoordinates> _coord2{};
+  PixelCoordinates _coord1{};
+  PixelCoordinates _coord2{};
   std::shared_ptr<const Index> _index{};
   const Dataset *_pixels_bin1_id{};
   const Dataset *_pixels_bin2_id{};
   const Dataset *_pixels_count{};
-
-  PixelSelector(std::shared_ptr<const Index> index, const Dataset &pixels_bin1_id,
-                const Dataset &pixels_bin2_id, const Dataset &pixels_count,
-                const std::shared_ptr<PixelCoordinates> &coords) noexcept;
-  PixelSelector(std::shared_ptr<const Index> index, const Dataset &pixels_bin1_id,
-                const Dataset &pixels_bin2_id, const Dataset &pixels_count,
-                std::shared_ptr<PixelCoordinates> coord1,
-                std::shared_ptr<PixelCoordinates> coord2) noexcept;
 
  public:
   PixelSelector() = delete;
@@ -66,9 +58,6 @@ class PixelSelector {
   [[nodiscard]] constexpr const PixelCoordinates &coord1() const noexcept;
   [[nodiscard]] constexpr const PixelCoordinates &coord2() const noexcept;
 
-  [[nodiscard]] static PixelCoordinates parse_query(std::shared_ptr<const BinTableLazy> bins,
-                                                    std::string_view query);
-
   class iterator {
     friend PixelSelector<N, CHUNK_SIZE>;
 
@@ -79,8 +68,8 @@ class PixelSelector {
     mutable Pixel<N> _value{};
     std::shared_ptr<const Index> _index{};
 
-    std::shared_ptr<PixelCoordinates> _coord1{};
-    std::shared_ptr<PixelCoordinates> _coord2{};
+    std::shared_ptr<const PixelCoordinates> _coord1{};
+    std::shared_ptr<const PixelCoordinates> _coord2{};
 
     std::uint64_t _h5_end_offset{};
 
@@ -89,16 +78,19 @@ class PixelSelector {
 
     explicit iterator(std::shared_ptr<const Index> index, const Dataset &pixels_bin1_id,
                       const Dataset &pixels_bin2_id, const Dataset &pixels_count,
-                      std::shared_ptr<PixelCoordinates> coord1,
-                      std::shared_ptr<PixelCoordinates> coord2);
+                      PixelCoordinates coord1, PixelCoordinates coord2);
 
     static auto at_end(std::shared_ptr<const Index> index, const Dataset &pixels_bin1_id,
                        const Dataset &pixels_bin2_id, const Dataset &pixels_count) -> iterator;
 
     static auto at_end(std::shared_ptr<const Index> index, const Dataset &pixels_bin1_id,
                        const Dataset &pixels_bin2_id, const Dataset &pixels_count,
-                       std::shared_ptr<PixelCoordinates> coord1,
-                       std::shared_ptr<PixelCoordinates> coord2) -> iterator;
+                       PixelCoordinates coord1, PixelCoordinates coord2) -> iterator;
+
+    static auto at_end(std::shared_ptr<const Index> index, const Dataset &pixels_bin1_id,
+                       const Dataset &pixels_bin2_id, const Dataset &pixels_count,
+                       std::shared_ptr<const PixelCoordinates> coord1,
+                       std::shared_ptr<const PixelCoordinates> coord2) -> iterator;
 
    public:
     using difference_type = std::ptrdiff_t;

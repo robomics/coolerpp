@@ -135,7 +135,7 @@ TEST_CASE("Coolerpp: file ctors", "[cooler][short]") {
     CHECK(f.has_pixel_of_type<std::int32_t>());
   }
   SECTION("move #2") {
-    const ChromosomeSet chroms{Chromosome{"chr1", 10000}, Chromosome{"chr2", 5000}};
+    const ChromosomeSet chroms{Chromosome{0, "chr1", 10000}, Chromosome{1, "chr2", 5000}};
     const auto path = testdir() / "move_ctor.cool";
 
     constexpr std::uint32_t bin_size = 1000;
@@ -146,10 +146,11 @@ TEST_CASE("Coolerpp: file ctors", "[cooler][short]") {
 
       std::vector<PixelT> pixels{};
       f = File::create_new_cooler(path.string(), chroms, bin_size, true);
-      for (std::uint32_t pos1 = 0; pos1 < chroms.at("chr1").size; pos1 += bin_size) {
-        for (std::uint32_t pos2 = pos1; pos2 < chroms.at("chr1").size; pos2 += bin_size) {
-          pixels.emplace_back(PixelT{{f.bins_ptr(), "chr1", pos1, pos2},
-                                     static_cast<std::int32_t>(pixels.size() + 1)});
+      const auto chr1_bins = f.bins().subset("chr1");
+      for (std::uint64_t bin1_id = 0; bin1_id < chr1_bins.size(); ++bin1_id) {
+        for (std::uint64_t bin2_id = bin1_id; bin2_id < chr1_bins.size(); ++bin2_id) {
+          pixels.emplace_back(
+              PixelT{f.bins(), bin1_id, bin2_id, static_cast<std::int32_t>(pixels.size() + 1)});
         }
       }
       f.append_pixels(pixels.begin(), pixels.end(), true);
@@ -250,7 +251,7 @@ TEST_CASE("Coolerpp: file ctors", "[cooler][short]") {
 
 // NOLINTNEXTLINE(readability-function-cognitive-complexity)
 TEST_CASE("Coolerpp: init files", "[cooler][short]") {
-  const ChromosomeSet chroms{Chromosome{"chr1", 10000}, Chromosome{"chr2", 5000}};
+  const ChromosomeSet chroms{Chromosome{0, "chr1", 10000}, Chromosome{1, "chr2", 5000}};
 
   SECTION(".cool") {
     const auto path = testdir() / "test_init.cool";
@@ -292,7 +293,7 @@ TEST_CASE("Coolerpp: init files", "[cooler][short]") {
 
 // NOLINTNEXTLINE(readability-function-cognitive-complexity)
 TEST_CASE("Coolerpp: sentinel attribute", "[cooler][short]") {
-  const ChromosomeSet chroms{Chromosome{"chr1", 10000}, Chromosome{"chr2", 5000}};
+  const ChromosomeSet chroms{Chromosome{0, "chr1", 10000}, Chromosome{1, "chr2", 5000}};
 
   const auto path = testdir() / "test_sentinel_attr.cool";
   constexpr std::uint32_t bin_size = 1000;
@@ -358,8 +359,8 @@ TEST_CASE("Coolerpp: read/write chromosomes", "[cooler][short]") {
   const auto path = (testdir() / "test_write_chroms.cool").string();
 
   constexpr std::uint32_t bin_size = 5000;
-  const ChromosomeSet chroms{Chromosome{"chr1", 50001}, Chromosome{"chr2", 25017},
-                             Chromosome{"chr3", 10000}};
+  const ChromosomeSet chroms{Chromosome{0, "chr1", 50001}, Chromosome{1, "chr2", 25017},
+                             Chromosome{2, "chr3", 10000}};
 
   {
     auto f = File::create_new_cooler(path, chroms, bin_size, true);
@@ -374,11 +375,11 @@ TEST_CASE("Coolerpp: read/write chromosomes", "[cooler][short]") {
 TEST_CASE("Coolerpp: read/write bin table", "[cooler][short]") {
   const auto path = (testdir() / "test_write_bin_table.cool").string();
 
-  const ChromosomeSet chroms{Chromosome{"chr1", 50001}, Chromosome{"chr2", 25017},
-                             Chromosome{"chr3", 10000}};
+  const ChromosomeSet chroms{Chromosome{0, "chr1", 50001}, Chromosome{1, "chr2", 25017},
+                             Chromosome{2, "chr3", 10000}};
 
   constexpr std::uint32_t bin_size = 5000;
-  const BinTableLazy table(chroms, bin_size);
+  const BinTable table(chroms, bin_size);
 
   { auto f = File::create_new_cooler(path, chroms, bin_size, true); }
 
@@ -390,9 +391,9 @@ TEST_CASE("Coolerpp: read/write bin table", "[cooler][short]") {
   REQUIRE(start_it != f.dataset("bins/start").end<std::uint32_t>());
   REQUIRE(end_it != f.dataset("bins/end").end<std::uint32_t>());
 
-  for (const auto [_, start, end] : table) {
-    CHECK(*start_it++ == start);
-    CHECK(*end_it++ == end);
+  for (const auto bin : table) {
+    CHECK(*start_it++ == bin.start());
+    CHECK(*end_it++ == bin.end());
   }
 
   CHECK(start_it == f.dataset("bins/start").end<std::uint32_t>());

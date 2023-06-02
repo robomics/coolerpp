@@ -12,18 +12,26 @@
 #include <string>
 #include <vector>
 
-#include "coolerpp/chromosome.hpp"
 #include "coolerpp/common.hpp"
+#include "coolerpp/genomic_interval.hpp"
 
 namespace coolerpp {
 
-struct Bin {
-  const Chromosome *chrom{};
-  std::uint32_t start{};
-  std::uint32_t end{};
+class Bin {
+ public:
+  static constexpr std::uint64_t null_id{(std::numeric_limits<std::uint64_t>::max)()};
 
-  Bin() = default;
-  constexpr Bin(const Chromosome &chrom_, std::uint32_t start_, std::uint32_t end_) noexcept;
+ private:
+  std::uint64_t _id{null_id};
+  GenomicInterval _interval{};
+
+ public:
+  constexpr Bin() = default;
+  Bin(const Chromosome &chrom_, std::uint32_t start_, std::uint32_t end) noexcept;
+  Bin(std::uint64_t id_, const Chromosome &chrom_, std::uint32_t start_,
+      std::uint32_t end_) noexcept;
+  explicit Bin(GenomicInterval interval) noexcept;
+  Bin(std::uint64_t id, GenomicInterval interval) noexcept;
 
   [[nodiscard]] constexpr explicit operator bool() const noexcept;
 
@@ -35,6 +43,14 @@ struct Bin {
 
   [[nodiscard]] constexpr bool operator>(const Bin &other) const noexcept;
   [[nodiscard]] constexpr bool operator>=(const Bin &other) const noexcept;
+
+  [[nodiscard]] constexpr std::uint64_t id() const noexcept;
+  [[nodiscard]] constexpr const GenomicInterval &interval() const noexcept;
+  [[nodiscard]] constexpr const Chromosome &chrom() const noexcept;
+  [[nodiscard]] constexpr std::uint32_t start() const noexcept;
+  [[nodiscard]] constexpr std::uint32_t end() const noexcept;
+
+  [[nodiscard]] constexpr bool has_null_id() const noexcept;
 };
 
 struct BinTableConcrete {
@@ -76,18 +92,23 @@ class BinTable {
   [[nodiscard]] constexpr auto cbegin() const -> const_iterator;
   [[nodiscard]] constexpr auto cend() const -> const_iterator;
 
-  [[nodiscard]] BinTable at(const Chromosome &chrom) const;
-  [[nodiscard]] BinTable at(std::string_view chrom_name) const;
-  [[nodiscard]] BinTable at(std::uint32_t chrom_id) const;
+  [[nodiscard]] BinTable subset(const Chromosome &chrom) const;
+  [[nodiscard]] BinTable subset(std::string_view chrom_name) const;
+  [[nodiscard]] BinTable subset(std::uint32_t chrom_id) const;
 
-  // Map bin_id to chromosome + (relative) position
-  [[nodiscard]] Bin bin_id_to_coords(std::uint64_t bin_id) const;
+  // Map bin_id to Bin
+  [[nodiscard]] Bin at(std::uint64_t bin_id) const;
+  [[nodiscard]] std::pair<Bin, Bin> at(const GenomicInterval &gi) const;
+  [[nodiscard]] Bin at(const Chromosome &chrom, std::uint32_t pos) const;
+  [[nodiscard]] Bin at(std::string_view chrom_name, std::uint32_t pos) const;
+  [[nodiscard]] Bin at(std::uint32_t chrom_id, std::uint32_t pos) const;
 
   // Map genomic coords to bin_id
-  [[nodiscard]] std::uint64_t coord_to_bin_id(const Bin &bin) const;
-  [[nodiscard]] std::uint64_t coord_to_bin_id(const Chromosome &chrom, std::uint32_t pos) const;
-  [[nodiscard]] std::uint64_t coord_to_bin_id(std::string_view chrom_name, std::uint32_t pos) const;
-  [[nodiscard]] std::uint64_t coord_to_bin_id(std::uint32_t chrom_id, std::uint32_t pos) const;
+  [[nodiscard]] std::pair<std::uint64_t, std::uint64_t> map_to_bin_ids(
+      const GenomicInterval &gi) const;
+  [[nodiscard]] std::uint64_t map_to_bin_id(const Chromosome &chrom, std::uint32_t pos) const;
+  [[nodiscard]] std::uint64_t map_to_bin_id(std::string_view chrom_name, std::uint32_t pos) const;
+  [[nodiscard]] std::uint64_t map_to_bin_id(std::uint32_t chrom_id, std::uint32_t pos) const;
 
   [[nodiscard]] BinTableConcrete concretize() const;
 
@@ -149,8 +170,8 @@ struct hash<coolerpp::Bin> {
 namespace fmt {
 template <>
 struct formatter<coolerpp::Bin> {
-  enum Presentation { tsv, ucsc };
-  Presentation presentation{Presentation::ucsc};
+  enum Presentation { bed, raw, ucsc };
+  Presentation presentation{Presentation::raw};
 
   constexpr auto parse(format_parse_context &ctx) -> decltype(ctx.begin());
   template <typename FormatContext>
