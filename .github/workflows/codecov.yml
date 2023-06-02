@@ -1,0 +1,133 @@
+# Copyright (C) 2023 Roberto Rossini (roberros@uio.no)
+# SPDX-License-Identifier: MIT
+
+name: Run Codecov
+
+on:
+  push:
+    branches: [ main ]
+    paths:
+      - ".github/workflows/run-codecov.yml"
+      - "cmake/**"
+      - "examples/**"
+      - "src/**"
+      - "test/**"
+      - "CMakeLists.txt"
+      - "conanfile.txt"
+    tags:
+      - 'v*.*.*'
+
+  pull_request:
+    paths:
+      - ".github/workflows/run-codecov.yml"
+      - "cmake/**"
+      - "examples/**"
+      - "src/**"
+      - "test/**"
+      - "CMakeLists.txt"
+      - "conanfile.txt"
+
+# https://stackoverflow.com/a/72408109
+concurrency:
+  group: ${{ github.workflow }}-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: true
+
+env:
+  CONAN_HOME: '/root/.conan2'
+
+jobs:
+  run-clang-tidy:
+    runs-on: ubuntu-latest
+    container:
+      image: ghcr.io/paulsengroup/ci-docker-images/ubuntu-22.04-cxx-gcc-12
+      options: '--user=root'
+
+    steps:
+      - uses: actions/checkout@v3
+
+      - name: Generate cache key
+        id: cache-key
+        run: |
+          hash="${{ hashFiles('conanfile.txt', '.github/workflows/run-codecov.yml') }}"
+
+          echo "key=run-clang-tidy-$hash" >> $GITHUB_OUTPUT
+
+      - name: Cache Conan packages
+        id: cache-conan
+        uses: actions/cache@v3
+        with:
+          key: conan-${{ steps.cache-key.outputs.key }}
+          path: ${{ env.CONAN_HOME }}
+
+      - name: Clean Conan cache (pre-build)
+        if: steps.cache-conan.outputs.cache-hit != 'true'
+        run: |
+          conan cache clean "*" --build
+          conan cache clean "*" --download
+          conan cache clean "*" --source
+          conan remove --confirm "*"
+
+      - name: Install build dependencies
+        run: |
+          conan install .                        \
+             --build=missing                     \
+             --build=cascade                     \
+             -pr:b="$CONAN_DEFAULT_PROFILE_PATH" \
+             -pr:h="$CONAN_DEFAULT_PROFILE_PATH" \
+             -s build_type=Debug                 \
+             -s compiler.libcxx=libstdc++11      \
+             -s compiler.cppstd=17               \
+             --output-folder=build
+
+      - name: Clean Conan cache (post-build)
+        if: steps.cache-conan.outputs.cache-hit != 'true'
+        run: |
+          conan cache clean "*" --build
+          conan cache clean "*" --download
+          conan cache clean "*" --source
+
+      - name: Configure project
+        run: |
+          cmake -DCMAKE_BUILD_TYPE=Debug         \
+                -DCMAKE_PREFIX_PATH="$PWD/build" \
+                -DCOOLERPP_BUILD_EXAMPLES=OFF    \
+                -DCOOLERPP_ENABLE_TESTING=ON     \
+                -S .                             \
+                -B build
+
+      - name: Build project
+        run: cmake --build build -j $(nproc)
+
+      - name: Run unit tests
+        working-directory: build
+        run: |
+          ctest --test-dir .        \
+                --schedule-random   \
+                --output-on-failure \
+                --no-tests=error    \
+                --timeout 240       \
+                -j $(nproc)
+
+      - name: Upload coverage reports to Codecov
+        uses: codecov/codecov-action@v3
+        with:
+          directory: build/coverage
+          fail_ci_if_error: true
+          gcov: true
+          gcov_executable: gcov-12
+          os: linux
+          token: ${{ secrets.CODECOV_TOKEN }}
+          verbose: true
+
+
+  codecov-status-check:
+    name: Status Check (Vodecov)
+    if: ${{ always() }}
+    runs-on: ubuntu-latest
+    needs:
+      - run-codecov
+
+    steps:
+      - name: Collect job results
+        if: needs.run-codecov.result != 'success'
+        run: exit 1
