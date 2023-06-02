@@ -18,7 +18,7 @@ using namespace coolerpp;
 template <typename N>
 static std::size_t print_pixels(typename PixelSelector<N>::iterator first_pixel,
                                 typename PixelSelector<N>::iterator last_pixel,
-                                const std::shared_ptr<Weights>& weights) {
+                                const std::shared_ptr<const Weights>& weights) {
   std::size_t nnz = 0;
   if (weights != nullptr) {
     const auto sel = Balancer<N>(first_pixel, last_pixel, weights);
@@ -37,7 +37,7 @@ static std::size_t print_pixels(typename PixelSelector<N>::iterator first_pixel,
 }
 
 static std::size_t dump(const File& cooler, const std::string& coord1, const std::string& coord2,
-                        const std::shared_ptr<Weights>& weights) {
+                        const std::shared_ptr<const Weights>& weights) {
   if (cooler.has_integral_pixels()) {
     auto selector = cooler.fetch<std::int64_t>(coord1, coord2);
     return print_pixels<std::int64_t>(selector.begin(), selector.end(), weights);
@@ -47,7 +47,7 @@ static std::size_t dump(const File& cooler, const std::string& coord1, const std
   return print_pixels<double>(selector.begin(), selector.end(), weights);
 }
 
-static std::size_t dump(const File& cooler, const std::shared_ptr<Weights>& weights) {
+static std::size_t dump(const File& cooler, const std::shared_ptr<const Weights>& weights) {
   if (cooler.has_integral_pixels()) {
     return print_pixels<std::int64_t>(cooler.begin<std::int64_t>(), cooler.end<std::int64_t>(),
                                       weights);

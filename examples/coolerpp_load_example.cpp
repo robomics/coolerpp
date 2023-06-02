@@ -38,13 +38,13 @@ void parse_bedpe_record(std::string_view line, std::array<std::string, 7>& buff,
     std::vector<Chromosome> chroms{};
 
     std::ifstream f(chrom_sizes);
-    while (std::getline(f, line)) {
+    for (std::uint32_t id = 0; std::getline(f, line); ++id) {
       const auto delim_pos = line.find(delim);
 
       const std::string chrom_name = line.substr(0, delim_pos);
       const std::string chrom_size_str = line.substr(delim_pos + 1);
 
-      chroms.emplace_back(chrom_name, std::stoull(chrom_size_str));
+      chroms.emplace_back(id, chrom_name, std::stoull(chrom_size_str));
     }
 
     return {chroms.begin(), chroms.end()};
@@ -55,7 +55,7 @@ void parse_bedpe_record(std::string_view line, std::array<std::string, 7>& buff,
   }
 }
 
-[[nodiscard]] Pixel<std::uint32_t> construct_pixel(const std::shared_ptr<const BinTable>& bins,
+[[nodiscard]] Pixel<std::uint32_t> construct_pixel(const BinTable& bins,
                                                    const std::array<std::string, 7>& bedpe_tokens) {
   const auto& chrom1_name = bedpe_tokens[0];
   const auto& chrom2_name = bedpe_tokens[3];
@@ -63,10 +63,10 @@ void parse_bedpe_record(std::string_view line, std::array<std::string, 7>& buff,
   const auto bin2_start = static_cast<std::uint32_t>(std::stoul(bedpe_tokens[4]));
 
   // NOLINTNEXTLINE(misc-const-correctness)
-  PixelCoordinates coords{bins, chrom1_name, chrom2_name, bin1_start, bin2_start};
+  PixelCoordinates coords{bins.at(chrom1_name, bin1_start), bins.at(chrom2_name, bin2_start)};
   const auto count = static_cast<std::uint32_t>(std::stoul(bedpe_tokens[6]));
 
-  return {coords, count};
+  return Pixel<std::uint32_t>{coords, count};
 }
 
 template <typename ContactT>
@@ -74,7 +74,7 @@ void ingest_pixels(const std::string& path_to_chrom_sizes, const std::string& pa
                    std::uint32_t bin_size, std::size_t batch_size = 100'000) {
   auto chromosomes = import_chromosomes(path_to_chrom_sizes);
   auto cooler = File::create_new_cooler<ContactT>(path_to_output_cooler, chromosomes, bin_size);
-  const auto& bins = cooler.bins_ptr();
+  const auto& bins = cooler.bins();
 
   std::vector<Pixel<ContactT>> write_buffer;
   write_buffer.reserve(batch_size);
