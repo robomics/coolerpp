@@ -34,6 +34,12 @@ on:
     - cron: '15 3 * * 0'
 
   workflow_dispatch:
+    inputs:
+      duration:
+        description: 'Test duration in seconds'
+        required: true
+        default: '600'
+        type: string
 
 
 # https://stackoverflow.com/a/72408109
@@ -242,20 +248,34 @@ jobs:
           fail-on-cache-miss: true
           path: test/data/
 
-      - name: Run test
+      - name: Prepare for test
+        id: test-params
         env:
           PYTHONHASHSEED: 0
         run: |
           seed="$(python3 -c 'import random; print(random.randint(0, 2**32))')"
-          2>&1 echo "Seed: ${seed}"
 
+          if [[ ${{ github.event_name }} == 'workflow_dispatch' ]]; then
+            duration='${{ inputs.duration }}'
+          else
+            duration=600
+          fi
+
+          2>&1 echo "Seed: ${seed}"
+          2>&1 echo "Duration: ${duration}"
+
+          echo "seed=$seed" >> $GITHUB_OUTPUT
+          echo "duration=$duration" >> $GITHUB_OUTPUT
+
+      - name: Run test
+        run: |
           chmod 755 coolerpp_dump
           coolerpp_dump="$(readlink -f ./coolerpp_dump)"
 
           test/scripts/fuzzy_test.py \
             --path-to-coolerpp-dump="$coolerpp_dump" \
-            --seed="$seed" \
-            --duration 600 \
+            --seed '${{ steps.test-params.outputs.seed }}' \
+            --duration '${{ steps.test-params.outputs.duration }}' \
             --balance ${{ matrix.balance }} \
             "${{ needs.preproc-test-dataset.outputs.cooler-uri }}"
 
