@@ -207,6 +207,7 @@ jobs:
                 -DOPT_ENABLE_SANITIZER_ADDRESS=ON            \
                 -DOPT_ENABLE_SANITIZER_LEAK=ON               \
                 -DOPT_ENABLE_SANITIZER_UNDEFINED_BEHAVIOR=ON \
+                -DOPT_ENABLE_CLANG_TIDY=OFF                  \
                 -DCOOLERPP_BUILD_EXAMPLES=ON                 \
                 -DCOOLERPP_ENABLE_TESTING=OFF                \
                 -S .                                         \
