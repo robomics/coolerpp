@@ -147,6 +147,10 @@ jobs:
     steps:
       - uses: actions/checkout@v3
 
+      - name: Fix permissions
+        run: |
+          chown -R $(id -u):$(id -g) $PWD
+
       - name: Generate cache key
         id: cache-key
         run: |
@@ -197,12 +201,16 @@ jobs:
 
       - name: Configure project
         run: |
-          cmake -DCMAKE_BUILD_TYPE=Release       \
-                -DCMAKE_PREFIX_PATH="$PWD/build" \
-                -DENABLE_DEVELOPER_MODE=OFF      \
-                -DCOOLERPP_BUILD_EXAMPLES=ON     \
-                -DCOOLERPP_ENABLE_TESTING=OFF    \
-                -S .                             \
+          cmake -DCMAKE_BUILD_TYPE=Release                   \
+                -DCMAKE_PREFIX_PATH="$PWD/build"             \
+                -DENABLE_DEVELOPER_MODE=ON                   \
+                -DOPT_ENABLE_SANITIZER_ADDRESS=ON            \
+                -DOPT_ENABLE_SANITIZER_LEAK=ON               \
+                -DOPT_ENABLE_SANITIZER_UNDEFINED_BEHAVIOR=ON \
+                -DOPT_ENABLE_CLANG_TIDY=OFF                  \
+                -DCOOLERPP_BUILD_EXAMPLES=ON                 \
+                -DCOOLERPP_ENABLE_TESTING=OFF                \
+                -S .                                         \
                 -B build
 
       - name: Build project

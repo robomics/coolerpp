@@ -23,18 +23,19 @@ include(FetchContent)
 # cmake-format: off
 FetchContent_Declare(
         _coolerpp_project_options
-        URL ${CMAKE_CURRENT_SOURCE_DIR}/external/project_options-v0.28.0.tar.xz
-        URL_HASH SHA512=216d0970ace00e3176788a2b5abb7b92490c005111d26365e7807a5e86c6323e38b33e2e5b01f4ee43438a8f8e96cacf16cedc6f905a7e0ad58752905b260b38
+        URL ${CMAKE_CURRENT_SOURCE_DIR}/external/project_options-v0.29.0.tar.xz
+        URL_HASH SHA512=5cef5c4aab91328d41d0c846db326075eebab0bdcd53919d0bde288eb3ff4544ec51116234af25cb93475bb1ed806c51cef757868a56ceafdcf08a553afb6bf5
 )
 # cmake-format: on
 
 FetchContent_MakeAvailable(_coolerpp_project_options)
 include(${_coolerpp_project_options_SOURCE_DIR}/Index.cmake)
 
+include(cmake/Versioning.cmake)
 project(
   coolerpp
   LANGUAGES CXX
-  VERSION 0.0.1
+  VERSION ${COOLERPP_PROJECT_VERSION_MAJOR}.${COOLERPP_PROJECT_VERSION_MINOR}.${COOLERPP_PROJECT_VERSION_PATCH}
   HOMEPAGE_URL https://github.com/robomics/coolerpp
   DESCRIPTION "High-performance C++ library to read and write .cool files.")
 
@@ -72,8 +73,7 @@ include(${CMAKE_CURRENT_SOURCE_DIR}/cmake/CompilerWarnings.cmake)
 
 set(ENABLE_CACHE_DEFAULT ON)
 set(ENABLE_COMPILE_COMMANDS_SYMLINK_DEFAULT OFF)
-set(ENABLE_CONAN_DEVELOPER ON)
-set(ENABLE_CONAN_USER OFF)
+set(ENABLE_CONAN_DEFAULT OFF)
 set(ENABLE_CPPCHECK_DEFAULT OFF)
 set(ENABLE_DOXYGEN_USER OFF)
 set(ENABLE_DOXYGEN_DEVELOPER ON)
@@ -117,15 +117,18 @@ target_compile_definitions(coolerpp_project_options INTERFACE FMT_ENFORCE_COMPIL
 
 add_subdirectory(src)
 
+option(COOLERPP_ENABLE_TESTING "Build unit tests" ON)
+option(COOLERPP_BUILD_EXAMPLES "Build examples" ON)
+
 if(COOLERPP_ENABLE_TESTING)
   enable_testing()
-  message("Building unit tests.")
+  message("-- Building unit tests.")
   target_compile_definitions(coolerpp_project_options INTERFACE COOLERPP_ENABLE_TESTING)
   add_subdirectory(test)
 endif()
 
 option(COOLERPP_BUILD_EXAMPLES "Build examples" ON)
 if(COOLERPP_BUILD_EXAMPLES)
-  message("Building examples.")
+  message("-- Building examples.")
   add_subdirectory(examples)
 endif()
