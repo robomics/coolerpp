@@ -19,6 +19,22 @@ inline const std::filesystem::path datadir{"test/data"};  // NOLINT(cert-err58-c
 }  // namespace coolerpp::test
 
 namespace coolerpp::test::coolerpp {
+// NOLINTNEXTLINE(readability-function-cognitive-complexity)
+TEST_CASE("Coolerpp: version", "[cooler][short]") {
+  // clang-format off
+  constexpr std::array<std::uint_fast8_t, 3> ver{config::version::major(),
+                                                 config::version::minor(),
+                                                 config::version::patch()};
+  // clang-format on
+
+  if (config::version::suffix().empty()) {
+    CHECK(COOLERPP_VERSION_STRING == fmt::format(FMT_STRING("{}"), fmt::join(ver, ".")));
+
+  } else {
+    CHECK(COOLERPP_VERSION_STRING ==
+          fmt::format(FMT_STRING("{}-{}"), fmt::join(ver, "."), config::version::suffix()));
+  }
+}
 
 // NOLINTNEXTLINE(readability-function-cognitive-complexity)
 TEST_CASE("Coolerpp: format checking", "[cooler][short]") {

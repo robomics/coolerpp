@@ -9,14 +9,11 @@
 #include <string_view>
 #include <type_traits>
 #include <utility>
+#include "coolerpp/internal/version.hpp"
 
 namespace coolerpp {
-// TODO generate with CMake
-inline constexpr std::uint_fast8_t COOLERPP_MAJOR_VERSION{0};
-inline constexpr std::uint_fast8_t COOLERPP_MINOR_VERSION{0};
-inline constexpr std::uint_fast8_t COOLERPP_PATCH_VERSION{1};
-inline constexpr std::string_view COOLERPP_VERSION_STR_SHORT{"v0.0.1"};
-inline constexpr std::string_view COOLERPP_VERSION_STR_LONG{"coolerpp-v0.0.1"};
+
+inline const std::string_view COOLERPP_VERSION_STRING{coolerpp::config::version::str()};
 
 // Magic values
 inline constexpr std::string_view COOL_MAGIC{"HDF5::Cooler"};
