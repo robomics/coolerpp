@@ -47,6 +47,10 @@ concurrency:
   group: ${{ github.workflow }}-${{ github.event.pull_request.number || github.ref }}
   cancel-in-progress: true
 
+defaults:
+  run:
+    shell: bash
+
 env:
   TEST_DATASET_URL: 'https://4dn-open-data-public.s3.amazonaws.com/fourfront-webprod/wfoutput/27bbfb40-0224-427c-be41-398b43d70c48/4DNFI9FVHJZQ.mcool'
   TEST_DATASET_SHA256: '1bd4b092fada8aedfcf878befba29b1ef3b7adbc7efeb539cd7e381eb3922158'
@@ -236,7 +240,19 @@ jobs:
         balance: [ 'raw', 'ICE', 'KR']
 
     steps:
+      - name: Install test dependencies
+        run: |
+          apt-get update
+          apt-get install -y git python3-pip zstd
+          pip install --no-cache-dir 'cooler>=0.9.1'
+
       - uses: actions/checkout@v3
+        with:
+          ref: ${{ github.event.after }}
+
+      - name: Fix permissions
+        run: |
+          chown -R $(id -u):$(id -g) $PWD
 
       - name: Detect CI type
         id: ci-type
@@ -246,12 +262,6 @@ jobs:
           else
             echo "type=short" >> $GITHUB_OUTPUT
           fi
-
-      - name: Install test dependencies
-        run: |
-          apt-get update
-          apt-get install -y python3-pip zstd
-          pip install --no-cache-dir 'cooler>=0.9.1'
 
       - name: Download coolerpp_dump
         uses: actions/download-artifact@v3
@@ -271,12 +281,11 @@ jobs:
           PYTHONHASHSEED: 0
         run: |
           seed="$(python3 -c 'import random; print(random.randint(0, 2**32))')"
-          set -x
 
           duration=600
-          if [[ '${{ github.event_name }}' == 'workflow_dispatch' ]]; then
+          if [[ ${{ github.event_name }} == 'workflow_dispatch' ]]; then
             duration='${{ inputs.duration }}'
-          elif [[ '${{ steps.ci-type.outputs.type }}' == 'long' ]]; then
+          elif [[ ${{ steps.ci-type.outputs.type }} == 'full' ]]; then
             duration=3600
           fi
 
