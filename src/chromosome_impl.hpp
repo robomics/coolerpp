@@ -145,7 +145,7 @@ inline auto ChromosomeSet::find(std::string_view chrom_name) const -> const_iter
     return this->end();
   }
 
-  return this->_buff.begin() + static_cast<std::ptrdiff_t>(it->second->id());
+  return this->_buff.begin() + static_cast<std::ptrdiff_t>(it->second);
 }
 
 inline auto ChromosomeSet::find(const Chromosome& chrom) const -> const_iterator {
@@ -215,15 +215,15 @@ inline const Chromosome& ChromosomeSet::longest_chromosome() const {
   if (this->empty()) {
     throw std::runtime_error("longest_chromosome() was called on an empty ChromosomeSet");
   }
-  assert(!!this->_longest_chrom);
-  return *this->_longest_chrom;
+  assert(this->_longest_chrom < this->_buff.size());
+  return this->_buff[this->_longest_chrom];
 }
 inline const Chromosome& ChromosomeSet::chromosome_with_longest_name() const {
   if (this->empty()) {
     throw std::runtime_error("chromosome_with_longest_name() was called on an empty ChromosomeSet");
   }
-  assert(!!this->_chrom_with_longest_name);
-  return *this->_chrom_with_longest_name;
+  assert(this->_chrom_with_longest_name < this->_buff.size());
+  return this->_buff[this->_chrom_with_longest_name];
 }
 
 inline void ChromosomeSet::validate_chrom_id(std::uint32_t chrom_id) const {
@@ -258,31 +258,35 @@ inline auto ChromosomeSet::construct_chrom_map(const ChromBuff& chroms) -> Chrom
                      throw std::runtime_error(fmt::format(
                          FMT_STRING("found multiple entries for chromosome \"{}\""), chrom.name()));
                    }
-                   return std::make_pair(chrom.name(), &chrom);
+                   return std::make_pair(chrom.name(), static_cast<std::size_t>(chrom.id()));
                  });
   return buff;
 }
 
-inline const Chromosome* ChromosomeSet::find_longest_chromosome(const ChromBuff& chroms) noexcept {
+inline std::size_t ChromosomeSet::find_longest_chromosome(const ChromBuff& chroms) noexcept {
   if (chroms.empty()) {
-    return nullptr;
+    return Chromosome{}.id();
   }
 
-  return &(*std::max_element(chroms.begin(), chroms.end(),
-                             [](const Chromosome& chrom1, const Chromosome& chrom2) {
-                               return chrom1.size() < chrom2.size();
-                             }));
+  const auto match = std::max_element(chroms.begin(), chroms.end(),
+                                      [](const Chromosome& chrom1, const Chromosome& chrom2) {
+                                        return chrom1.size() < chrom2.size();
+                                      });
+
+  return static_cast<std::size_t>(std::distance(chroms.begin(), match));
 }
-inline const Chromosome* ChromosomeSet::find_chromosome_with_longest_name(
+inline std::size_t ChromosomeSet::find_chromosome_with_longest_name(
     const ChromBuff& chroms) noexcept {
   if (chroms.empty()) {
-    return nullptr;
+    return Chromosome{}.id();
   }
 
-  return &(*std::max_element(chroms.begin(), chroms.end(),
-                             [](const Chromosome& chrom1, const Chromosome& chrom2) {
-                               return chrom1.name().size() < chrom2.name().size();
-                             }));
+  const auto match = std::max_element(chroms.begin(), chroms.end(),
+                                      [](const Chromosome& chrom1, const Chromosome& chrom2) {
+                                        return chrom1.name().size() < chrom2.name().size();
+                                      });
+
+  return static_cast<std::size_t>(std::distance(chroms.begin(), match));
 }
 
 inline void ChromosomeSet::validate() const {
@@ -290,8 +294,8 @@ inline void ChromosomeSet::validate() const {
     return;
   }
 
-  assert(!!this->_longest_chrom);
-  assert(!!this->_chrom_with_longest_name);
+  assert(this->_longest_chrom < this->_buff.size());
+  assert(this->_chrom_with_longest_name < this->_buff.size());
 
   if (!std::is_sorted(this->_buff.begin(), this->_buff.end())) {
     throw std::runtime_error("chromosomes are not sorted by ID");

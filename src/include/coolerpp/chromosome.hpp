@@ -63,13 +63,13 @@ class Chromosome {
 
 class ChromosomeSet {
   using ChromBuff = std::vector<Chromosome>;
-  using ChromMap = tsl::hopscotch_map<std::string_view, const Chromosome*>;
+  using ChromMap = tsl::hopscotch_map<std::string_view, std::size_t>;
 
   ChromBuff _buff{};
   ChromMap _map{};
 
-  const Chromosome* _longest_chrom{};
-  const Chromosome* _chrom_with_longest_name{};
+  std::size_t _longest_chrom{Chromosome{}.id()};
+  std::size_t _chrom_with_longest_name{Chromosome{}.id()};
 
  public:
   using value_type = typename ChromBuff::value_type;
@@ -142,8 +142,8 @@ class ChromosomeSet {
 
   [[nodiscard]] static auto construct_chrom_map(const ChromBuff& chroms) -> ChromMap;
 
-  [[nodiscard]] static const Chromosome* find_longest_chromosome(const ChromBuff& chroms) noexcept;
-  [[nodiscard]] static const Chromosome* find_chromosome_with_longest_name(
+  [[nodiscard]] static std::size_t find_longest_chromosome(const ChromBuff& chroms) noexcept;
+  [[nodiscard]] static std::size_t find_chromosome_with_longest_name(
       const ChromBuff& chroms) noexcept;
 
   void validate() const;
