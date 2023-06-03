@@ -77,31 +77,30 @@ struct ValidationStatusScool : public internal::ValidationStatusBase {
 
 }  // namespace coolerpp::utils
 
+namespace fmt {
 template <>
-struct fmt::formatter<coolerpp::utils::ValidationStatusCooler> {
-  constexpr auto parse(format_parse_context& ctx) -> decltype(ctx.begin());
+struct formatter<coolerpp::utils::ValidationStatusCooler> {
+  constexpr auto parse(format_parse_context& ctx) const -> format_parse_context::iterator;
 
-  template <typename FormatContext>
-  inline auto format(const coolerpp::utils::ValidationStatusCooler& s, FormatContext& ctx) const
-      -> decltype(ctx.out());
+  inline auto format(const coolerpp::utils::ValidationStatusCooler& s, format_context& ctx) const
+      -> format_context::iterator;
 };
 
 template <>
-struct fmt::formatter<coolerpp::utils::ValidationStatusMultiresCooler> {
-  constexpr auto parse(format_parse_context& ctx) -> decltype(ctx.begin());
+struct formatter<coolerpp::utils::ValidationStatusMultiresCooler> {
+  constexpr auto parse(format_parse_context& ctx) const -> format_parse_context::iterator;
 
-  template <typename FormatContext>
   inline auto format(const coolerpp::utils::ValidationStatusMultiresCooler& s,
-                     FormatContext& ctx) const -> decltype(ctx.out());
+                     format_context& ctx) const -> format_context::iterator;
 };
 
 template <>
-struct fmt::formatter<coolerpp::utils::ValidationStatusScool> {
-  constexpr auto parse(format_parse_context& ctx) -> decltype(ctx.begin());
+struct formatter<coolerpp::utils::ValidationStatusScool> {
+  constexpr auto parse(format_parse_context& ctx) const -> format_parse_context::iterator;
 
-  template <typename FormatContext>
-  inline auto format(const coolerpp::utils::ValidationStatusScool& s, FormatContext& ctx) const
-      -> decltype(ctx.out());
+  inline auto format(const coolerpp::utils::ValidationStatusScool& s, format_context& ctx) const
+      -> format_context::iterator;
 };
+}  // namespace fmt
 
 #include "../../utils_impl.hpp"

@@ -248,10 +248,10 @@ constexpr auto fmt::formatter<coolerpp::PixelCoordinates>::parse(format_parse_co
   const auto *it = ctx.begin();
   const auto *end = ctx.end();
 
-  if (fmt::starts_with(ctx, "bg2")) {
+  if (coolerpp::starts_with(ctx, "bg2")) {
     this->presentation = Presentation::bg2;
     it += std::string_view{"bg2"}.size();  // NOLINT
-  } else if (fmt::starts_with(ctx, "raw")) {
+  } else if (coolerpp::starts_with(ctx, "raw")) {
     this->presentation = Presentation::raw;
     it += std::string_view{"raw"}.size();  // NOLINT
   }

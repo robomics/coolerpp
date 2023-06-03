@@ -321,10 +321,10 @@ constexpr fmt::format_parse_context::iterator fmt::formatter<coolerpp::Chromosom
   auto* it = ctx.begin();
   const auto* end = ctx.end();
 
-  if (fmt::starts_with(ctx, "ucsc")) {
+  if (coolerpp::starts_with(ctx, "ucsc")) {
     this->presentation = Presentation::ucsc;
     it += std::string_view{"ucsc"}.size();
-  } else if (fmt::starts_with(ctx, "tsv")) {
+  } else if (coolerpp::starts_with(ctx, "tsv")) {
     this->presentation = Presentation::tsv;
     it += std::string_view{"tsv"}.size();
   }

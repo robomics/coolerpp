@@ -187,9 +187,8 @@ constexpr bool is_unary_operation_on_iterator<
     Operation, It,
     std::void_t<std::disjunction<is_iterable<It>, std::is_pointer<It>>,
                 is_unary_operation<Operation, decltype(*std::declval<It>())>>> = true;
-}  // namespace coolerpp
 
-namespace fmt {
+/// Checks whether a fmt format string starts with the given prefix
 template <typename FormatParseContext>
 [[nodiscard]] constexpr bool starts_with(const FormatParseContext &ctx, const char *prefix) {
   auto first = ctx.begin();
@@ -202,4 +201,4 @@ template <typename FormatParseContext>
   return *prefix == '\0';
 }
 
-}  // namespace fmt
+}  // namespace coolerpp

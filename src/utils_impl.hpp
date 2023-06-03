@@ -315,16 +315,15 @@ inline std::vector<std::uint32_t> list_resolutions(std::string_view uri) {
 }  // namespace coolerpp::utils
 
 constexpr auto fmt::formatter<coolerpp::utils::ValidationStatusCooler>::parse(
-    format_parse_context &ctx) -> decltype(ctx.begin()) {
+    format_parse_context &ctx) const -> format_parse_context::iterator {
   if (ctx.begin() != ctx.end() && *ctx.begin() != '}') {
     throw fmt::format_error("invalid format");
   }
   return ctx.end();
 }
 
-template <typename FormatContext>
 auto fmt::formatter<coolerpp::utils::ValidationStatusCooler>::format(
-    const coolerpp::utils::ValidationStatusCooler &s, FormatContext &ctx) const
+    const coolerpp::utils::ValidationStatusCooler &s, format_context &ctx) const
     -> decltype(ctx.out()) {
   // clang-format off
   return fmt::format_to(
@@ -347,16 +346,15 @@ auto fmt::formatter<coolerpp::utils::ValidationStatusCooler>::format(
 }
 
 constexpr auto fmt::formatter<coolerpp::utils::ValidationStatusMultiresCooler>::parse(
-    format_parse_context &ctx) -> decltype(ctx.begin()) {
+    format_parse_context &ctx) const -> format_parse_context::iterator {
   if (ctx.begin() != ctx.end() && *ctx.begin() != '}') {
     throw fmt::format_error("invalid format");
   }
   return ctx.end();
 }
 
-template <typename FormatContext>
 auto fmt::formatter<coolerpp::utils::ValidationStatusMultiresCooler>::format(
-    const coolerpp::utils::ValidationStatusMultiresCooler &s, FormatContext &ctx) const
+    const coolerpp::utils::ValidationStatusMultiresCooler &s, format_context &ctx) const
     -> decltype(ctx.out()) {
   // clang-format off
   return fmt::format_to(
@@ -382,19 +380,16 @@ auto fmt::formatter<coolerpp::utils::ValidationStatusMultiresCooler>::format(
 }
 
 constexpr auto fmt::formatter<coolerpp::utils::ValidationStatusScool>::parse(
-    format_parse_context &ctx) -> decltype(ctx.begin()) {
+    format_parse_context &ctx) const -> format_parse_context::iterator {
   if (ctx.begin() != ctx.end() && *ctx.begin() != '}') {
     throw fmt::format_error("invalid format");
   }
   return ctx.end();
 }
 
-template <typename FormatContext>
 auto fmt::formatter<coolerpp::utils::ValidationStatusScool>::format(
-    const coolerpp::utils::ValidationStatusScool &s, FormatContext &ctx) const
+    const coolerpp::utils::ValidationStatusScool &s, format_context &ctx) const
     -> decltype(ctx.out()) {
-  auto bool_to_str = [](bool x) { return x ? "true" : "false"; };
-
   // clang-format off
   return fmt::format_to(
       ctx.out(),

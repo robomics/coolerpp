@@ -205,10 +205,10 @@ constexpr fmt::format_parse_context::iterator fmt::formatter<coolerpp::GenomicIn
   const auto *it = ctx.begin();
   const auto *end = ctx.end();
 
-  if (fmt::starts_with(ctx, "bed")) {
+  if (coolerpp::starts_with(ctx, "bed")) {
     this->presentation = Presentation::bed;
     it += std::string_view{"bed"}.size();  // NOLINT
-  } else if (fmt::starts_with(ctx, "ucsc")) {
+  } else if (coolerpp::starts_with(ctx, "ucsc")) {
     this->presentation = Presentation::ucsc;
     it += std::string_view{"ucsc"}.size();  // NOLINT
   }
