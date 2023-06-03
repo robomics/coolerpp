@@ -31,10 +31,11 @@ FetchContent_Declare(
 FetchContent_MakeAvailable(_coolerpp_project_options)
 include(${_coolerpp_project_options_SOURCE_DIR}/Index.cmake)
 
+include(cmake/Versioning.cmake)
 project(
   coolerpp
   LANGUAGES CXX
-  VERSION 0.0.1
+  VERSION ${COOLERPP_PROJECT_VERSION_MAJOR}.${COOLERPP_PROJECT_VERSION_MINOR}.${COOLERPP_PROJECT_VERSION_PATCH}
   HOMEPAGE_URL https://github.com/robomics/coolerpp
   DESCRIPTION "High-performance C++ library to read and write .cool files.")
 
