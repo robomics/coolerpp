@@ -238,6 +238,15 @@ jobs:
     steps:
       - uses: actions/checkout@v3
 
+      - name: Detect CI type
+        id: ci-type
+        run: |
+          if git log --format=%B -n 1 ${{ github.event.after }} | grep -qF '[ci full]'; then
+            echo "type=full" >> $GITHUB_OUTPUT
+          else
+            echo "type=short" >> $GITHUB_OUTPUT
+          fi
+
       - name: Install test dependencies
         run: |
           apt-get update
@@ -262,23 +271,13 @@ jobs:
           PYTHONHASHSEED: 0
         run: |
           seed="$(python3 -c 'import random; print(random.randint(0, 2**32))')"
+          set -x
 
-          if [[ ${{ github.event_name }} == 'workflow_dispatch' ]]; then
+          duration=600
+          if [[ '${{ github.event_name }}' == 'workflow_dispatch' ]]; then
             duration='${{ inputs.duration }}'
-          else
-            duration=600
-          fi
-
-          2>&1 echo "Seed: ${seed}"
-          2>&1 echo "Duration: ${duration}"
-
-          echo "seed=$seed" >> $GITHUB_OUTPUT
-          echo "duration=$duration" >> $GITHUB_OUTPUT
-
-          if [[ ${{ github.event_name }} == 'workflow_dispatch' ]]; then
-            duration='${{ inputs.duration }}'
-          else
-            duration=600
+          elif [[ '${{ steps.ci-type.outputs.type }}' == 'long' ]]; then
+            duration=3600
           fi
 
           2>&1 echo "Seed: ${seed}"
