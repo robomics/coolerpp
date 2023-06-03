@@ -75,24 +75,24 @@ inline HighFive::DataType Dataset::get_h5type() const {
   }
 }
 
-template <typename T>
-inline auto Dataset::begin() const -> iterator<T> {
-  return iterator<T>(*this);
+template <typename T, std::size_t CHUNK_SIZE>
+inline auto Dataset::begin() const -> iterator<T, CHUNK_SIZE> {
+  return iterator<T, CHUNK_SIZE>(*this);
 }
 
-template <typename T>
-inline auto Dataset::end() const -> iterator<T> {
-  return iterator<T>::make_end_iterator(*this);
+template <typename T, std::size_t CHUNK_SIZE>
+inline auto Dataset::end() const -> iterator<T, CHUNK_SIZE> {
+  return iterator<T, CHUNK_SIZE>::make_end_iterator(*this);
 }
 
-template <typename T>
-inline auto Dataset::cbegin() const -> iterator<T> {
-  return this->begin<T>();
+template <typename T, std::size_t CHUNK_SIZE>
+inline auto Dataset::cbegin() const -> iterator<T, CHUNK_SIZE> {
+  return this->begin<T, CHUNK_SIZE>();
 }
 
-template <typename T>
-inline auto Dataset::cend() const -> iterator<T> {
-  return this->end<T>();
+template <typename T, std::size_t CHUNK_SIZE>
+inline auto Dataset::cend() const -> iterator<T, CHUNK_SIZE> {
+  return this->end<T, CHUNK_SIZE>();
 }
 
 }  // namespace coolerpp

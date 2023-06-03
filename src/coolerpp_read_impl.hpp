@@ -71,69 +71,87 @@ namespace internal {
 }
 }  // namespace internal
 
-template <typename N>
-inline PixelSelector<N> File::fetch(std::string_view query) const {
-  return this->fetch<N>(PixelSelector<N>::parse_query(this->_bins, query));
+template <typename N, std::size_t CHUNK_SIZE>
+inline PixelSelector<N, CHUNK_SIZE> File::fetch(std::string_view query,
+                                                QUERY_TYPE query_type) const {
+  const auto gi = query_type == QUERY_TYPE::BED
+                      ? GenomicInterval::parse_bed(this->chromosomes(), query)
+                      : GenomicInterval::parse_ucsc(this->chromosomes(), std::string{query});
+
+  return this->fetch<N, CHUNK_SIZE>(PixelCoordinates{this->bins().at(gi)});
 }
 
-template <typename N>
-inline PixelSelector<N> File::fetch(std::string_view chrom, std::uint32_t start,
-                                    std::uint32_t end) const {
-  return this->fetch<N>(PixelCoordinates{this->_bins, chrom, start, end - std::min(1U, end)});
+template <typename N, std::size_t CHUNK_SIZE>
+inline PixelSelector<N, CHUNK_SIZE> File::fetch(std::string_view chrom_name, std::uint32_t start,
+                                                std::uint32_t end) const {
+  assert(start < end);
+
+  return this->fetch<N, CHUNK_SIZE>(PixelCoordinates{
+      this->bins().at(chrom_name, start), this->bins().at(chrom_name, end - (std::min)(end, 1U))});
 }
 
-template <typename N>
-inline PixelSelector<N> File::fetch(PixelCoordinates query) const {
+template <typename N, std::size_t CHUNK_SIZE>
+inline PixelSelector<N, CHUNK_SIZE> File::fetch(PixelCoordinates coord) const {
   // clang-format off
-  return PixelSelector<N>(this->_index,
-                          this->dataset("pixels/bin1_id"),
-                          this->dataset("pixels/bin2_id"),
-                          this->dataset("pixels/count"),
-                          std::move(query));
+  return PixelSelector<N, CHUNK_SIZE>(this->_index,
+                                      this->dataset("pixels/bin1_id"),
+                                      this->dataset("pixels/bin2_id"),
+                                      this->dataset("pixels/count"),
+                                      std::move(coord)
+  );
   // clang-format on
 }
 
-template <typename N>
-inline PixelSelector<N> File::fetch(std::string_view range1, std::string_view range2) const {
+template <typename N, std::size_t CHUNK_SIZE>
+inline PixelSelector<N, CHUNK_SIZE> File::fetch(std::string_view range1, std::string_view range2,
+                                                QUERY_TYPE query_type) const {
   if (range1 == range2) {
-    return this->fetch<N>(range1);
+    return this->fetch<N, CHUNK_SIZE>(range1);
   }
 
-  return this->fetch<N>(PixelSelector<N>::parse_query(this->_bins, range1),
-                        PixelSelector<N>::parse_query(this->_bins, range2));
+  const auto gi1 = query_type == QUERY_TYPE::BED
+                       ? GenomicInterval::parse_bed(this->chromosomes(), range1)
+                       : GenomicInterval::parse_ucsc(this->chromosomes(), std::string{range1});
+
+  const auto gi2 = query_type == QUERY_TYPE::BED
+                       ? GenomicInterval::parse_bed(this->chromosomes(), range2)
+                       : GenomicInterval::parse_ucsc(this->chromosomes(), std::string{range2});
+
+  return this->fetch<N, CHUNK_SIZE>(PixelCoordinates{this->bins().at(gi1)},
+                                    PixelCoordinates{this->bins().at(gi2)});
 }
 
-template <typename N>
-inline PixelSelector<N> File::fetch(std::string_view chrom1, std::uint32_t start1,
-                                    std::uint32_t end1, std::string_view chrom2,
-                                    std::uint32_t start2, std::uint32_t end2) const {
+template <typename N, std::size_t CHUNK_SIZE>
+inline PixelSelector<N, CHUNK_SIZE> File::fetch(std::string_view chrom1, std::uint32_t start1,
+                                                std::uint32_t end1, std::string_view chrom2,
+                                                std::uint32_t start2, std::uint32_t end2) const {
+  assert(start1 < end1);
+  assert(start2 < end2);
   // clang-format off
-  return PixelSelector<N>(this->_index,
-                          this->dataset("pixels/bin1_id"),
-                          this->dataset("pixels/bin2_id"),
-                          this->dataset("pixels/count"),
-                          PixelCoordinates{this->_bins, chrom1, start1, end1 - std::min(1U, end1)},
-                          PixelCoordinates{this->_bins, chrom2, start2, end2 - std::min(1U, end2)});
+  return PixelSelector<N, CHUNK_SIZE>(this->_index,
+                                      this->dataset("pixels/bin1_id"),
+                                      this->dataset("pixels/bin2_id"),
+                                      this->dataset("pixels/count"),
+                                      PixelCoordinates{this->bins().at(chrom1, start1),
+                                                       this->bins().at(chrom1, end1 - (std::min)(end1, 1U))},
+                                      PixelCoordinates{this->bins().at(chrom2, start2),
+                                                       this->bins().at(chrom2, end2 - (std::min)(end2, 1U))}
+  );
   // clang-format on
 }
 
-template <typename N>
-inline PixelSelector<N> File::fetch(PixelCoordinates coord1, PixelCoordinates coord2) const {
+template <typename N, std::size_t CHUNK_SIZE>
+inline PixelSelector<N, CHUNK_SIZE> File::fetch(PixelCoordinates coord1,
+                                                PixelCoordinates coord2) const {
   // clang-format off
-  return PixelSelector<N>(this->_index,
-                          this->dataset("pixels/bin1_id"),
-                          this->dataset("pixels/bin2_id"),
-                          this->dataset("pixels/count"),
-                          std::move(coord1), std::move(coord2));
+  return PixelSelector<N, CHUNK_SIZE>(this->_index,
+                                      this->dataset("pixels/bin1_id"),
+                                      this->dataset("pixels/bin2_id"),
+                                      this->dataset("pixels/count"),
+                                      std::move(coord1),
+                                      std::move(coord2)
+  );
   // clang-format on
-}
-
-inline std::shared_ptr<Weights> File::read_weights(std::string_view name) const {
-  if (name.empty()) {
-    throw std::runtime_error("weight dataset name is empty");
-  }
-
-  return this->read_weights(name, Weights::infer_type(name));
 }
 
 inline bool File::has_weights(std::string_view name) const {
@@ -146,8 +164,16 @@ inline bool File::has_weights(std::string_view name) const {
   return this->_root_group().exist(dset_path);
 }
 
-inline std::shared_ptr<Weights> File::read_weights(std::string_view name,
-                                                   Weights::Type type) const {
+inline std::shared_ptr<const Weights> File::read_weights(std::string_view name) const {
+  if (name.empty()) {
+    throw std::runtime_error("weight dataset name is empty");
+  }
+
+  return this->read_weights(name, Weights::infer_type(name));
+}
+
+inline std::shared_ptr<const Weights> File::read_weights(std::string_view name,
+                                                         Weights::Type type) const {
   if (name.empty()) {
     throw std::runtime_error("weight dataset name is empty");
   }
@@ -165,7 +191,7 @@ inline std::shared_ptr<Weights> File::read_weights(std::string_view name,
   }
 
   const auto node = this->_weights.emplace(
-      name, std::make_shared<Weights>(
+      name, std::make_shared<const Weights>(
                 *this->_bins,
                 Dataset{this->_root_group, dset_path,
                         Dataset::generate_default_dset_access_props(
@@ -357,7 +383,7 @@ inline auto File::import_chroms(const Dataset &chrom_names, const Dataset &chrom
 
 inline Index File::import_indexes(const Dataset &chrom_offset_dset, const Dataset &bin_offset_dset,
                                   const ChromosomeSet &chroms,
-                                  std::shared_ptr<const BinTableLazy> bin_table,
+                                  std::shared_ptr<const BinTable> bin_table,
                                   std::uint64_t expected_nnz, bool missing_ok) {
   assert(bin_table);
   try {
@@ -407,13 +433,13 @@ inline Index File::import_indexes(const Dataset &chrom_offset_dset, const Datase
 
 inline bool File::check_sentinel_attr() { return File::check_sentinel_attr(this->_root_group()); }
 
-inline auto File::get_last_bin_written() const -> Bin {
+inline Bin File::get_last_bin_written() const {
   const auto &dset = this->dataset("pixels/bin1_id");
   if (dset.empty()) {
-    return this->bins().bin_id_to_coords(0);
+    return this->bins().at(0);
   }
   const auto bin1_id = dset.read_last<std::uint64_t>();
-  return this->bins().bin_id_to_coords(bin1_id);
+  return this->bins().at(bin1_id);
 }
 
 }  // namespace coolerpp

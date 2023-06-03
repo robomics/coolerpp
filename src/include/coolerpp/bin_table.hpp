@@ -12,18 +12,29 @@
 #include <string>
 #include <vector>
 
-#include "coolerpp/chromosome.hpp"
 #include "coolerpp/common.hpp"
+#include "coolerpp/genomic_interval.hpp"
 
 namespace coolerpp {
 
-struct Bin {
-  const Chromosome &chrom;
-  std::uint32_t start;
-  std::uint32_t end;
+class Bin {
+ public:
+  static constexpr std::uint64_t null_id{(std::numeric_limits<std::uint64_t>::max)()};
 
-  Bin() = delete;
-  constexpr Bin(const Chromosome &chrom_, std::uint32_t start_, std::uint32_t end_) noexcept;
+ private:
+  std::uint64_t _id{null_id};
+  GenomicInterval _interval{};
+
+ public:
+  constexpr Bin() = default;
+  Bin(const Chromosome &chrom_, std::uint32_t start_, std::uint32_t end) noexcept;
+  Bin(std::uint64_t id_, const Chromosome &chrom_, std::uint32_t start_,
+      std::uint32_t end_) noexcept;
+  explicit Bin(GenomicInterval interval) noexcept;
+  Bin(std::uint64_t id, GenomicInterval interval) noexcept;
+
+  [[nodiscard]] explicit operator bool() const noexcept;
+
   [[nodiscard]] bool operator==(const Bin &other) const noexcept;
   [[nodiscard]] bool operator!=(const Bin &other) const noexcept;
 
@@ -32,15 +43,23 @@ struct Bin {
 
   [[nodiscard]] bool operator>(const Bin &other) const noexcept;
   [[nodiscard]] bool operator>=(const Bin &other) const noexcept;
+
+  [[nodiscard]] constexpr std::uint64_t id() const noexcept;
+  [[nodiscard]] const GenomicInterval &interval() const noexcept;
+  [[nodiscard]] const Chromosome &chrom() const noexcept;
+  [[nodiscard]] constexpr std::uint32_t start() const noexcept;
+  [[nodiscard]] constexpr std::uint32_t end() const noexcept;
+
+  [[nodiscard]] constexpr bool has_null_id() const noexcept;
 };
 
-struct BinTable {
+struct BinTableConcrete {
   std::vector<const Chromosome *> chroms{};
   std::vector<std::uint32_t> bin_starts{};
   std::vector<std::uint32_t> bin_ends{};
 };
 
-class BinTableLazy {
+class BinTable {
   ChromosomeSet _chroms{};
   std::vector<std::uint64_t> _num_bins_prefix_sum{};
   std::uint32_t _bin_size{std::numeric_limits<std::uint32_t>::max()};
@@ -50,13 +69,13 @@ class BinTableLazy {
   using const_iterator = const iterator;
   friend iterator;
 
-  BinTableLazy() = default;
-  BinTableLazy(ChromosomeSet chroms, std::uint32_t bin_size);
+  BinTable() = default;
+  BinTable(ChromosomeSet chroms, std::uint32_t bin_size);
   template <typename ChromIt>
-  BinTableLazy(ChromIt first_chrom, ChromIt last_chrom, std::uint32_t bin_size);
+  BinTable(ChromIt first_chrom, ChromIt last_chrom, std::uint32_t bin_size);
   template <typename ChromNameIt, typename ChromSizeIt>
-  BinTableLazy(ChromNameIt first_chrom_name, ChromNameIt last_chrom_name,
-               ChromSizeIt first_chrom_size, std::uint32_t bin_size);
+  BinTable(ChromNameIt first_chrom_name, ChromNameIt last_chrom_name, ChromSizeIt first_chrom_size,
+           std::uint32_t bin_size);
 
   [[nodiscard]] std::size_t size() const noexcept;
   [[nodiscard]] bool empty() const noexcept;
@@ -73,23 +92,28 @@ class BinTableLazy {
   [[nodiscard]] constexpr auto cbegin() const -> const_iterator;
   [[nodiscard]] constexpr auto cend() const -> const_iterator;
 
-  [[nodiscard]] BinTableLazy at(const Chromosome &chrom) const;
-  [[nodiscard]] BinTableLazy at(std::string_view chrom_name) const;
-  [[nodiscard]] BinTableLazy at(std::uint32_t chrom_id) const;
+  [[nodiscard]] BinTable subset(const Chromosome &chrom) const;
+  [[nodiscard]] BinTable subset(std::string_view chrom_name) const;
+  [[nodiscard]] BinTable subset(std::uint32_t chrom_id) const;
 
-  // Map bin_id to chromosome + (relative) position
-  [[nodiscard]] Bin bin_id_to_coords(std::uint64_t bin_id) const;
+  // Map bin_id to Bin
+  [[nodiscard]] Bin at(std::uint64_t bin_id) const;
+  [[nodiscard]] std::pair<Bin, Bin> at(const GenomicInterval &gi) const;
+  [[nodiscard]] Bin at(const Chromosome &chrom, std::uint32_t pos) const;
+  [[nodiscard]] Bin at(std::string_view chrom_name, std::uint32_t pos) const;
+  [[nodiscard]] Bin at(std::uint32_t chrom_id, std::uint32_t pos) const;
 
   // Map genomic coords to bin_id
-  [[nodiscard]] std::uint64_t coord_to_bin_id(const Bin &bin) const;
-  [[nodiscard]] std::uint64_t coord_to_bin_id(const Chromosome &chrom, std::uint32_t pos) const;
-  [[nodiscard]] std::uint64_t coord_to_bin_id(std::string_view chrom_name, std::uint32_t pos) const;
-  [[nodiscard]] std::uint64_t coord_to_bin_id(std::uint32_t chrom_id, std::uint32_t pos) const;
+  [[nodiscard]] std::pair<std::uint64_t, std::uint64_t> map_to_bin_ids(
+      const GenomicInterval &gi) const;
+  [[nodiscard]] std::uint64_t map_to_bin_id(const Chromosome &chrom, std::uint32_t pos) const;
+  [[nodiscard]] std::uint64_t map_to_bin_id(std::string_view chrom_name, std::uint32_t pos) const;
+  [[nodiscard]] std::uint64_t map_to_bin_id(std::uint32_t chrom_id, std::uint32_t pos) const;
 
-  [[nodiscard]] BinTable concretize() const;
+  [[nodiscard]] BinTableConcrete concretize() const;
 
-  [[nodiscard]] bool operator==(const BinTableLazy &other) const;
-  [[nodiscard]] bool operator!=(const BinTableLazy &other) const;
+  [[nodiscard]] bool operator==(const BinTable &other) const;
+  [[nodiscard]] bool operator!=(const BinTable &other) const;
 
  private:
   [[nodiscard]] static std::vector<std::uint64_t> compute_num_bins_prefix_sum(
@@ -97,14 +121,14 @@ class BinTableLazy {
 
  public:
   class iterator {
-    friend BinTableLazy;
-    const BinTableLazy *_bin_table{};
+    friend BinTable;
+    const BinTable *_bin_table{};
     std::size_t _idx{0};
     std::uint32_t _chrom_id{0};
 
     static constexpr auto npos = std::numeric_limits<std::size_t>::max();
 
-    constexpr explicit iterator(const BinTableLazy &bin_table) noexcept;
+    constexpr explicit iterator(const BinTable &bin_table) noexcept;
 
    public:
     using difference_type = std::ptrdiff_t;
@@ -124,7 +148,7 @@ class BinTableLazy {
     auto operator--(int) -> iterator;
 
    private:
-    [[nodiscard]] static constexpr auto make_end_iterator(const BinTableLazy &table) noexcept
+    [[nodiscard]] static constexpr auto make_end_iterator(const BinTable &table) noexcept
         -> iterator;
     [[nodiscard]] const Chromosome &chromosome(std::uint32_t chrom_id) const;
     [[nodiscard]] const Chromosome &chromosome() const;
@@ -136,12 +160,21 @@ class BinTableLazy {
 
 }  // namespace coolerpp
 
+namespace std {
+template <>
+struct hash<coolerpp::Bin> {
+  size_t operator()(const coolerpp::Bin &b) const;
+};
+}  // namespace std
+
 namespace fmt {
 template <>
 struct formatter<coolerpp::Bin> {
-  constexpr auto parse(format_parse_context &ctx) -> decltype(ctx.begin());
-  template <typename FormatContext>
-  auto format(const coolerpp::Bin &b, FormatContext &ctx) const -> decltype(ctx.out());
+  enum Presentation { bed, raw, ucsc };
+  Presentation presentation{Presentation::raw};
+
+  constexpr format_parse_context::iterator parse(format_parse_context &ctx);
+  format_context::iterator format(const coolerpp::Bin &b, format_context &ctx) const;
 };
 }  // namespace fmt
 

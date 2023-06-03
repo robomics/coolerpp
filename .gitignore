@@ -7,11 +7,14 @@
 .idea/
 .run/
 .vscode/
+benchmarks/data
+benchmarks/Benchmarking
 build/
 cmake-build*/
+conan-envs/
 scratch/
+test/data
 test/Testing
-test/reference_impl
 
 # Ignored files
 gmon.out

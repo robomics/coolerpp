@@ -31,8 +31,7 @@
 namespace coolerpp {
 
 template <typename PixelIt, typename>
-inline void File::append_pixels(PixelIt first_pixel, PixelIt last_pixel, bool validate,
-                                [[maybe_unused]] std::size_t chunk_size) {
+inline void File::append_pixels(PixelIt first_pixel, PixelIt last_pixel, bool validate) {
   using PixelT = typename std::iterator_traits<PixelIt>::value_type;
   using T = decltype(std::declval<PixelT>().count);
 
@@ -47,11 +46,11 @@ inline void File::append_pixels(PixelIt first_pixel, PixelIt last_pixel, bool va
   }
 
   this->dataset("pixels/bin1_id").append(first_pixel, last_pixel, [&](const Pixel<T> &pixel) {
-    return pixel.coords.bin1_id();
+    return pixel.coords.bin1.id();
   });
 
   this->dataset("pixels/bin2_id").append(first_pixel, last_pixel, [&](const Pixel<T> &pixel) {
-    return pixel.coords.bin2_id();
+    return pixel.coords.bin2.id();
   });
 
   T sum = 0;
@@ -62,7 +61,7 @@ inline void File::append_pixels(PixelIt first_pixel, PixelIt last_pixel, bool va
           fmt::format(FMT_STRING("Found pixel with 0 interactions: {}"), pixel.coords));
     }
     sum += pixel.count;
-    if (pixel.coords.chrom1_id() == pixel.coords.chrom2_id()) {
+    if (pixel.coords.bin1.chrom().id() == pixel.coords.bin2.chrom().id()) {
       cis_sum += pixel.count;
     }
     return pixel.count;
@@ -100,11 +99,11 @@ inline void File::write_weights(std::string_view name, It first_weight, It last_
                     expected_num_weights, num_weights));
   }
 
-  auto dset = [&]() {
+  auto dset = [&, name_ = std::string{name}]() {
     // Return existing dataset
     auto &grp = this->group("bins").group;
-    if (overwrite_if_exists && grp.exist(std::string{name})) {
-      return Dataset(this->_root_group, grp.getDataSet(std::string{name}));
+    if (overwrite_if_exists && grp.exist(name_)) {
+      return Dataset(this->_root_group, grp.getDataSet(name_));
     }
 
     // Create new dataset or throw
@@ -112,7 +111,8 @@ inline void File::write_weights(std::string_view name, It first_weight, It last_
     return Dataset(this->_root_group, path, *first_weight, HighFive::DataSpace::UNLIMITED);
   }();
 
-  dset.write(first_weight, last_weight, 0, true);
+  dset.resize(static_cast<std::size_t>(std::distance(first_weight, last_weight)));
+  dset.write(first_weight, last_weight);
   dset.write_attribute("divisive_weights", std::uint8_t(divisive), overwrite_if_exists);
 }
 
@@ -152,8 +152,8 @@ inline auto File::create_datasets(RootGroup &root_grp, const ChromosomeSet &chro
   auto create_dataset = [&](const auto &path, const auto &type, auto aprop) {
     using T = remove_cvref_t<decltype(type)>;
     if constexpr (is_string_v<T>) {
-      const auto &chrom_with_longest_name = chroms.find_chromosome_with_longest_name();
-      datasets.emplace(path, Dataset{root_grp, path, chrom_with_longest_name.name,
+      const auto &chrom_with_longest_name = chroms.chromosome_with_longest_name();
+      datasets.emplace(path, Dataset{root_grp, path, chrom_with_longest_name.name(),
                                      HighFive::DataSpace::UNLIMITED, aprop});
     } else {
       datasets.emplace(path, Dataset{root_grp, path, type, HighFive::DataSpace::UNLIMITED, aprop});
@@ -250,7 +250,7 @@ inline void File::write_chromosomes(Dataset &name_dset, Dataset &size_dset, Chro
 
   try {
     name_dset.write(first_chrom, last_chrom, 0, true,
-                    [&](const auto &chrom) { return op(chrom).name; });
+                    [&](const auto &chrom) { return std::string{op(chrom).name()}; });
   } catch (const HighFive::Exception &e) {
     throw std::runtime_error(
         fmt::format(FMT_STRING("Failed to write {} chromosome name(s) to \"{}\": {}"), num_chroms,
@@ -258,7 +258,7 @@ inline void File::write_chromosomes(Dataset &name_dset, Dataset &size_dset, Chro
   }
   try {
     size_dset.write(first_chrom, last_chrom, 0, true,
-                    [&](const auto &chrom) { return op(chrom).size; });
+                    [&](const auto &chrom) { return op(chrom).size(); });
   } catch (const HighFive::Exception &e) {
     throw std::runtime_error(
         fmt::format(FMT_STRING("Failed to write {} chromosome size(s) to \"{}\": {}"), num_chroms,
@@ -281,13 +281,13 @@ inline void File::write_bin_table(Dataset &chrom_dset, Dataset &start_dset, Data
   assert(!bin_table.empty());
 
   chrom_dset.write(bin_table.begin(), bin_table.end(), 0, true,
-                   [&](const Bin &bin) { return bin_table.chromosomes().get_id(bin.chrom); });
+                   [&](const Bin &bin) { return bin.chrom().id(); });
 
   start_dset.write(bin_table.begin(), bin_table.end(), 0, true,
-                   [&](const Bin &bin) { return bin.start; });
+                   [&](const Bin &bin) { return bin.start(); });
 
   end_dset.write(bin_table.begin(), bin_table.end(), 0, true,
-                 [&](const Bin &bin) { return bin.end; });
+                 [&](const Bin &bin) { return bin.end(); });
 
   assert(chrom_dset.size() == bin_table.size());
   assert(start_dset.size() == bin_table.size());
@@ -303,16 +303,13 @@ inline void File::update_indexes(PixelIt first_pixel, PixelIt last_pixel) {
     return;
   }
 
-  const auto last_bin_written = this->get_last_bin_written();
-
   auto nnz = static_cast<std::uint64_t>(*this->_attrs.nnz);
-  PixelCoordinates first_pixel_in_row{this->_bins, last_bin_written.chrom.name,
-                                      last_bin_written.start, last_bin_written.start};
+  PixelCoordinates first_pixel_in_row(this->get_last_bin_written());
 
   std::for_each(first_pixel, last_pixel, [&](const Pixel<T> &p) {
-    if (first_pixel_in_row.bin1().start != p.coords.bin1().start) {
+    if (first_pixel_in_row.bin1.start() != p.coords.bin1.start()) {
       first_pixel_in_row = p.coords;
-      this->index().set_offset_by_bin_id(first_pixel_in_row.bin1_id(), nnz);
+      this->index().set_offset_by_bin_id(first_pixel_in_row.bin1.id(), nnz);
     }
     nnz++;
   });

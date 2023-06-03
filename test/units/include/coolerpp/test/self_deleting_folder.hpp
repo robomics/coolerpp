@@ -85,12 +85,12 @@ class SelfDeletingFolder {
         continue;
       }
 
-      dir = tmpdir / std::filesystem::path(std::string{"coolerpp-ci-"} + std::string{str});
+      dir = tmpdir / std::filesystem::path(std::string{"coolerpp-tmp-"} + std::string{str});
     } while (!std::filesystem::create_directories(dir));
 
     return dir;
 #else
-    return {mkdtemp((tmpdir / "coolerpp-ci-XXXXXXXXXX").string().data())};
+    return {mkdtemp((tmpdir / "coolerpp-tmp-XXXXXXXXXX").string().data())};
 #endif
   }
 };

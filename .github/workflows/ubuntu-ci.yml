@@ -182,11 +182,11 @@ jobs:
           conan_key_prefix="conan-$os-$compiler-$conanfile_hash-$build_type-$generator"
           ccache_key_prefix="ccache-$os-$compiler-$conanfile_hash-$build_type-$generator"
 
-          echo "conan-key=$conan_key_prefix" >> $GITHUB_OUTPUT
-          echo "conan-restore-key=$conan_key_prefix" >> $GITHUB_OUTPUT
+          echo "conan-key=$conan_key_prefix" | tee -a $GITHUB_OUTPUT
+          echo "conan-restore-key=$conan_key_prefix" | tee -a $GITHUB_OUTPUT
 
-          echo "ccache-key=${ccache_key_prefix}-${current_date}" >> $GITHUB_OUTPUT
-          echo "ccache-restore-key=$ccache_key_prefix" >> $GITHUB_OUTPUT
+          echo "ccache-key=${ccache_key_prefix}-${current_date}" | tee -a $GITHUB_OUTPUT
+          echo "ccache-restore-key=$ccache_key_prefix" | tee -a $GITHUB_OUTPUT
 
       - name: Restore Conan cache
         id: cache-conan

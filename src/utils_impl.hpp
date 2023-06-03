@@ -16,6 +16,7 @@
 
 #include "coolerpp/attribute.hpp"
 #include "coolerpp/common.hpp"
+#include "coolerpp/internal/numeric_utils.hpp"
 #include "coolerpp/uri.hpp"
 
 namespace coolerpp::utils {
@@ -94,6 +95,10 @@ inline ValidationStatusCooler is_cooler(const HighFive::Group &root_group) {
 
   // Check file has the mandatory groups
   for (const auto &group : MANDATORY_GROUP_NAMES) {
+    if (!root_group.exist(std::string{group})) {
+      status.missing_groups.emplace_back(group);
+      continue;
+    }
     try {
       root_group.getGroup(std::string{group});
     } catch (const HighFive::Exception &e) {
@@ -283,19 +288,42 @@ inline ValidationStatusScool is_scool_file(const HighFive::File &fp, bool valida
   return status;
 }
 
+inline std::vector<std::uint32_t> list_resolutions(std::string_view uri) {
+  [[maybe_unused]] const HighFive::SilenceHDF5 silencer{};  // NOLINT
+  try {
+    if (!is_multires_file(uri, false)) {
+      throw std::runtime_error("not a valid .mcool file");
+    }
+
+    const HighFive::File fp(std::string{uri}, HighFive::File::ReadOnly);
+    auto root_grp = fp.getGroup("/resolutions");
+
+    const auto resolutions_ = root_grp.listObjectNames();
+    std::vector<std::uint32_t> resolutions(resolutions_.size());
+    std::transform(resolutions_.begin(), resolutions_.end(), resolutions.begin(),
+                   [](const auto &res) {
+                     return coolerpp::internal::parse_numeric_or_throw<std::uint32_t>(res);
+                   });
+
+    return resolutions;
+  } catch (const std::exception &e) {
+    throw std::runtime_error(
+        fmt::format(FMT_STRING("failed to read resolutions from \"{}\": {}"), uri, e.what()));
+  }
+}
+
 }  // namespace coolerpp::utils
 
 constexpr auto fmt::formatter<coolerpp::utils::ValidationStatusCooler>::parse(
-    format_parse_context &ctx) -> decltype(ctx.begin()) {
+    format_parse_context &ctx) const -> format_parse_context::iterator {
   if (ctx.begin() != ctx.end() && *ctx.begin() != '}') {
     throw fmt::format_error("invalid format");
   }
   return ctx.end();
 }
 
-template <typename FormatContext>
 auto fmt::formatter<coolerpp::utils::ValidationStatusCooler>::format(
-    const coolerpp::utils::ValidationStatusCooler &s, FormatContext &ctx) const
+    const coolerpp::utils::ValidationStatusCooler &s, format_context &ctx) const
     -> decltype(ctx.out()) {
   // clang-format off
   return fmt::format_to(
@@ -318,16 +346,15 @@ auto fmt::formatter<coolerpp::utils::ValidationStatusCooler>::format(
 }
 
 constexpr auto fmt::formatter<coolerpp::utils::ValidationStatusMultiresCooler>::parse(
-    format_parse_context &ctx) -> decltype(ctx.begin()) {
+    format_parse_context &ctx) const -> format_parse_context::iterator {
   if (ctx.begin() != ctx.end() && *ctx.begin() != '}') {
     throw fmt::format_error("invalid format");
   }
   return ctx.end();
 }
 
-template <typename FormatContext>
 auto fmt::formatter<coolerpp::utils::ValidationStatusMultiresCooler>::format(
-    const coolerpp::utils::ValidationStatusMultiresCooler &s, FormatContext &ctx) const
+    const coolerpp::utils::ValidationStatusMultiresCooler &s, format_context &ctx) const
     -> decltype(ctx.out()) {
   // clang-format off
   return fmt::format_to(
@@ -353,19 +380,16 @@ auto fmt::formatter<coolerpp::utils::ValidationStatusMultiresCooler>::format(
 }
 
 constexpr auto fmt::formatter<coolerpp::utils::ValidationStatusScool>::parse(
-    format_parse_context &ctx) -> decltype(ctx.begin()) {
+    format_parse_context &ctx) const -> format_parse_context::iterator {
   if (ctx.begin() != ctx.end() && *ctx.begin() != '}') {
     throw fmt::format_error("invalid format");
   }
   return ctx.end();
 }
 
-template <typename FormatContext>
 auto fmt::formatter<coolerpp::utils::ValidationStatusScool>::format(
-    const coolerpp::utils::ValidationStatusScool &s, FormatContext &ctx) const
+    const coolerpp::utils::ValidationStatusScool &s, format_context &ctx) const
     -> decltype(ctx.out()) {
-  auto bool_to_str = [](bool x) { return x ? "true" : "false"; };
-
   // clang-format off
   return fmt::format_to(
       ctx.out(),

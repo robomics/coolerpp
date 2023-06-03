@@ -4,6 +4,9 @@
 
 #pragma once
 
+#include <tsl/hopscotch_map.h>
+
+#include <memory>
 #include <vector>
 
 #include "coolerpp/bin_table.hpp"
@@ -22,8 +25,8 @@ class Weights {
 
  public:
   Weights() = default;
-  explicit Weights(const BinTableLazy &bins, const Dataset &dset, bool rescale = false);
-  Weights(const BinTableLazy &bins, const Dataset &dset, Type type, bool rescale = false);
+  explicit Weights(const BinTable &bins, const Dataset &dset, bool rescale = false);
+  Weights(const BinTable &bins, const Dataset &dset, Type type, bool rescale = false);
   Weights(std::vector<double> weights, Type type) noexcept;
   Weights(std::vector<double> weights, std::string_view name);
 
@@ -39,21 +42,22 @@ class Weights {
   [[nodiscard]] static auto infer_type(const Dataset &dset) -> Type;
 };
 
-template <typename N>
+template <typename N, std::size_t CHUNK_SIZE = DEFAULT_HDF5_DATASET_ITERATOR_BUFFER_SIZE>
 class Balancer {
  public:
   class iterator;
 
  private:
-  typename PixelSelector<N>::iterator _first;
-  typename PixelSelector<N>::iterator _last;
-  std::shared_ptr<Weights> _weights;
+  typename PixelSelector<N, CHUNK_SIZE>::iterator _first;
+  typename PixelSelector<N, CHUNK_SIZE>::iterator _last;
+  std::shared_ptr<const Weights> _weights;
 
  public:
   Balancer() = delete;
-  Balancer(const PixelSelector<N> &selector, std::shared_ptr<Weights> weights);
-  Balancer(typename PixelSelector<N>::iterator first, typename PixelSelector<N>::iterator last,
-           std::shared_ptr<Weights> weights);
+  Balancer(const PixelSelector<N, CHUNK_SIZE> &selector, std::shared_ptr<const Weights> weights);
+  Balancer(typename PixelSelector<N, CHUNK_SIZE>::iterator first,
+           typename PixelSelector<N, CHUNK_SIZE>::iterator last,
+           std::shared_ptr<const Weights> weights);
 
   [[nodiscard]] Weights::Type type() const noexcept;
 
@@ -64,19 +68,22 @@ class Balancer {
   [[nodiscard]] auto cend() const -> iterator;
 
   class iterator {
-    typename PixelSelector<N>::iterator _it{};
-    std::shared_ptr<Weights> _weights{};
+    typename PixelSelector<N, CHUNK_SIZE>::iterator _it{};
+    std::shared_ptr<const Weights> _weights{};
+    mutable Pixel<double> _value{};
 
    public:
     using difference_type = std::ptrdiff_t;
     using value_type = Pixel<double>;
     using pointer = value_type *;
+    using const_pointer = const value_type *;
     using reference = value_type &;
-    // using iterator_category = std::random_access_iterator_tag;
+    using const_reference = const value_type &;
     using iterator_category = std::forward_iterator_tag;
 
     iterator() = default;
-    iterator(typename PixelSelector<N>::iterator it, std::shared_ptr<Weights> weights);
+    iterator(typename PixelSelector<N, CHUNK_SIZE>::iterator it,
+             std::shared_ptr<const Weights> weights);
 
     [[nodiscard]] constexpr bool operator==(const iterator &other) const noexcept;
     [[nodiscard]] constexpr bool operator!=(const iterator &other) const noexcept;
@@ -87,20 +94,15 @@ class Balancer {
     [[nodiscard]] constexpr bool operator>(const iterator &other) const noexcept;
     [[nodiscard]] constexpr bool operator>=(const iterator &other) const noexcept;
 
-    [[nodiscard]] auto operator*() const -> value_type;
+    [[nodiscard]] auto operator*() const -> const_reference;
+    [[nodiscard]] auto operator->() const -> const_pointer;
 
     auto operator++() -> iterator &;
     auto operator++(int) -> iterator;
-    // auto operator+=(std::size_t i) -> iterator &;
-    // [[nodiscard]] auto operator+(std::size_t i) const -> iterator;
-
-    // auto operator--() -> iterator &;
-    // auto operator--(int) -> iterator;
-    // auto operator-=(std::size_t i) -> iterator &;
-    // [[nodiscard]] auto operator-(std::size_t i) const -> iterator;
-    // [[nodiscard]] auto operator-(const iterator &other) const -> difference_type;
   };
 };
+
+using WeightMap = tsl::hopscotch_map<std::string, std::shared_ptr<const Weights>>;
 
 }  // namespace coolerpp
 

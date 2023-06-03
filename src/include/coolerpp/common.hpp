@@ -21,10 +21,11 @@ inline constexpr std::string_view MCOOL_MAGIC{"HDF5::MCOOL"};
 inline constexpr std::string_view SCOOL_MAGIC{"HDF5::SCOOL"};
 
 inline constexpr std::uint_fast8_t DEFAULT_COMPRESSION_LEVEL = 6;
-inline constexpr std::size_t DEFAULT_HDF5_CHUNK_SIZE = 64ULL << 10U;         // 64KB
-inline constexpr std::size_t DEFAULT_HDF5_SMALL_CACHE_SIZE = 1ULL << 20U;    // 1MB
-inline constexpr std::size_t DEFAULT_HDF5_LARGE_CACHE_SIZE = 256ULL << 20U;  // 256MB
+inline constexpr std::size_t DEFAULT_HDF5_CHUNK_SIZE = 64ULL << 10U;  // 64KB
 inline constexpr double DEFAULT_HDF5_CACHE_W0 = 0.75;
+inline constexpr std::size_t DEFAULT_HDF5_SMALL_CACHE_SIZE = 1ULL << 20U;               // 1MB
+inline constexpr std::size_t DEFAULT_HDF5_LARGE_CACHE_SIZE = 4ULL << 20U;               // 4MB
+inline constexpr std::size_t DEFAULT_HDF5_DATASET_ITERATOR_BUFFER_SIZE = 32ULL << 10U;  // 32K
 
 // clang-format off
 inline constexpr std::array<std::string_view, 4> MANDATORY_GROUP_NAMES{
@@ -183,4 +184,18 @@ constexpr bool is_unary_operation_on_iterator<
     Operation, It,
     std::void_t<std::disjunction<is_iterable<It>, std::is_pointer<It>>,
                 is_unary_operation<Operation, decltype(*std::declval<It>())>>> = true;
+
+/// Checks whether a fmt format string starts with the given prefix
+template <typename FormatParseContext>
+[[nodiscard]] constexpr bool starts_with(const FormatParseContext &ctx, const char *prefix) {
+  auto first = ctx.begin();
+  auto last = ctx.end();
+  while (first != last && *prefix != '\0') {
+    if (*prefix++ != *first++) {  // NOLINT
+      return false;
+    }
+  }
+  return *prefix == '\0';
+}
+
 }  // namespace coolerpp

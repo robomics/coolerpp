@@ -28,7 +28,7 @@ inline Weights::Weights(std::vector<double> weights, std::string_view name)
   }
 }
 
-inline Weights::Weights(const BinTableLazy& bins, const Dataset& dset, bool rescale)
+inline Weights::Weights(const BinTable& bins, const Dataset& dset, bool rescale)
     : Weights(bins, dset, Weights::infer_type(dset), rescale) {
   assert(_type != Type::INFER);
   if (_type == Type::UNKNOWN) {
@@ -37,7 +37,7 @@ inline Weights::Weights(const BinTableLazy& bins, const Dataset& dset, bool resc
   }
 }
 
-inline Weights::Weights(const BinTableLazy& bins, const Dataset& dset, Type type, bool rescale)
+inline Weights::Weights(const BinTable& bins, const Dataset& dset, Type type, bool rescale)
     : _weights(dset.read_all<std::vector<double>>()), _type(type) {
   if (_type == Type::INFER || type == Type::UNKNOWN) {
     if (dset.has_attribute("divisive_weights")) {
@@ -131,106 +131,125 @@ inline auto Weights::infer_type(std::string_view name) -> Type {
   return it->second;
 }
 
-template <typename N>
-inline Balancer<N>::Balancer(const PixelSelector<N>& selector, std::shared_ptr<Weights> weights)
+template <typename N, std::size_t CHUNK_SIZE>
+inline Balancer<N, CHUNK_SIZE>::Balancer(const PixelSelector<N, CHUNK_SIZE>& selector,
+                                         std::shared_ptr<const Weights> weights)
     : Balancer(selector.begin(), selector.end(), std::move(weights)) {}
 
-template <typename N>
-inline Balancer<N>::Balancer(typename PixelSelector<N>::iterator first,
-                             typename PixelSelector<N>::iterator last,
-                             std::shared_ptr<Weights> weights)
+template <typename N, std::size_t CHUNK_SIZE>
+inline Balancer<N, CHUNK_SIZE>::Balancer(typename PixelSelector<N, CHUNK_SIZE>::iterator first,
+                                         typename PixelSelector<N, CHUNK_SIZE>::iterator last,
+                                         std::shared_ptr<const Weights> weights)
     : _first(std::move(first)), _last(std::move(last)), _weights(std::move(weights)) {}
 
-template <typename N>
-inline Weights::Type Balancer<N>::type() const noexcept {
+template <typename N, std::size_t CHUNK_SIZE>
+inline Weights::Type Balancer<N, CHUNK_SIZE>::type() const noexcept {
   if (!this->_weights) {
     return Weights::Type::UNKNOWN;
   }
   return this->_weights->type();
 }
 
-template <typename N>
-inline auto Balancer<N>::begin() const -> iterator {
+template <typename N, std::size_t CHUNK_SIZE>
+inline auto Balancer<N, CHUNK_SIZE>::begin() const -> iterator {
   return this->cbegin();
 }
 
-template <typename N>
-inline auto Balancer<N>::end() const -> iterator {
+template <typename N, std::size_t CHUNK_SIZE>
+inline auto Balancer<N, CHUNK_SIZE>::end() const -> iterator {
   return this->cend();
 }
 
-template <typename N>
-inline auto Balancer<N>::cbegin() const -> iterator {
+template <typename N, std::size_t CHUNK_SIZE>
+inline auto Balancer<N, CHUNK_SIZE>::cbegin() const -> iterator {
   return iterator{this->_first, this->_weights};
 }
 
-template <typename N>
-inline auto Balancer<N>::cend() const -> iterator {
+template <typename N, std::size_t CHUNK_SIZE>
+inline auto Balancer<N, CHUNK_SIZE>::cend() const -> iterator {
   return iterator{this->_last, this->_weights};
 }
 
-template <typename N>
-inline Balancer<N>::iterator::iterator(typename PixelSelector<N>::iterator it,
-                                       std::shared_ptr<Weights> weights)
+template <typename N, std::size_t CHUNK_SIZE>
+inline Balancer<N, CHUNK_SIZE>::iterator::iterator(
+    typename PixelSelector<N, CHUNK_SIZE>::iterator it, std::shared_ptr<const Weights> weights)
     : _it(std::move(it)), _weights(std::move(weights)) {}
 
-template <typename N>
-constexpr bool Balancer<N>::iterator::operator==(const Balancer::iterator& other) const noexcept {
+template <typename N, std::size_t CHUNK_SIZE>
+constexpr bool Balancer<N, CHUNK_SIZE>::iterator::operator==(
+    const Balancer::iterator& other) const noexcept {
   return this->_it == other._it && this->_weights == other._weights;
 }
 
-template <typename N>
-constexpr bool Balancer<N>::iterator::operator!=(const Balancer::iterator& other) const noexcept {
+template <typename N, std::size_t CHUNK_SIZE>
+constexpr bool Balancer<N, CHUNK_SIZE>::iterator::operator!=(
+    const Balancer::iterator& other) const noexcept {
   return !(*this == other);
 }
 
-template <typename N>
-constexpr bool Balancer<N>::iterator::operator<(const Balancer::iterator& other) const noexcept {
+template <typename N, std::size_t CHUNK_SIZE>
+constexpr bool Balancer<N, CHUNK_SIZE>::iterator::operator<(
+    const Balancer::iterator& other) const noexcept {
   assert(this->_weights == other._weights);
-  return this->_it < other.it;
+  return this->_it < other._it;
 }
 
-template <typename N>
-constexpr bool Balancer<N>::iterator::operator<=(const Balancer::iterator& other) const noexcept {
+template <typename N, std::size_t CHUNK_SIZE>
+constexpr bool Balancer<N, CHUNK_SIZE>::iterator::operator<=(
+    const Balancer::iterator& other) const noexcept {
   assert(this->_weights == other._weights);
-  return this->_it <= other.it;
+  return this->_it <= other._it;
 }
 
-template <typename N>
-constexpr bool Balancer<N>::iterator::operator>(const Balancer::iterator& other) const noexcept {
+template <typename N, std::size_t CHUNK_SIZE>
+constexpr bool Balancer<N, CHUNK_SIZE>::iterator::operator>(
+    const Balancer::iterator& other) const noexcept {
   assert(this->_weights == other._weights);
-  return this->_it > other.it;
+  return this->_it > other._it;
 }
 
-template <typename N>
-constexpr bool Balancer<N>::iterator::operator>=(const Balancer::iterator& other) const noexcept {
+template <typename N, std::size_t CHUNK_SIZE>
+constexpr bool Balancer<N, CHUNK_SIZE>::iterator::operator>=(
+    const Balancer::iterator& other) const noexcept {
   assert(this->_weights == other._weights);
-  return this->_it >= other.it;
+  return this->_it >= other._it;
 }
 
-template <typename N>
-inline auto Balancer<N>::iterator::operator*() const -> value_type {
-  Pixel<N> raw_pixel = *this->_it;
-  const auto w1 = (*this->_weights)[raw_pixel.coords.bin1_id()];
-  const auto w2 = (*this->_weights)[raw_pixel.coords.bin2_id()];
+template <typename N, std::size_t CHUNK_SIZE>
+inline auto Balancer<N, CHUNK_SIZE>::iterator::operator*() const -> const_reference {
+  const auto& raw_pixel = *this->_it;
+  const auto w1 = (*this->_weights)[raw_pixel.coords.bin1.id()];
+  const auto w2 = (*this->_weights)[raw_pixel.coords.bin2.id()];
   if (this->_weights->type() == Weights::Type::MULTIPLICATIVE) {
-    return {std::move(raw_pixel.coords),
-            conditional_static_cast<double>(raw_pixel.count) * w1 * w2};
+    this->_value = value_type{std::move(raw_pixel.coords),
+                              conditional_static_cast<double>(raw_pixel.count) * w1 * w2};
   } else {
-    return {std::move(raw_pixel.coords),
-            conditional_static_cast<double>(raw_pixel.count) * (1.0 / w1) * (1.0 / w2)};
+    this->_value =
+        value_type{std::move(raw_pixel.coords),
+                   conditional_static_cast<double>(raw_pixel.count) * (1.0 / w1) * (1.0 / w2)};
   }
+  return this->_value;
 }
 
-template <typename N>
-inline auto Balancer<N>::iterator::operator++() -> iterator& {
+template <typename N, std::size_t CHUNK_SIZE>
+inline auto Balancer<N, CHUNK_SIZE>::iterator::operator->() const -> const_pointer {
+  return &(*(*this));
+}
+
+template <typename N, std::size_t CHUNK_SIZE>
+inline auto Balancer<N, CHUNK_SIZE>::iterator::operator++() -> iterator& {
   ++this->_it;
+
+  // signal _value is outdated
+  this->_value.count = 0;
   return *this;
 }
 
-template <typename N>
-inline auto Balancer<N>::iterator::operator++(int) -> iterator {
-  return {this->_it++, this->_weights};
+template <typename N, std::size_t CHUNK_SIZE>
+inline auto Balancer<N, CHUNK_SIZE>::iterator::operator++(int) -> iterator {
+  auto it = *this;
+  std::ignore = ++(*this);
+  return it;
 }
 
 }  // namespace coolerpp

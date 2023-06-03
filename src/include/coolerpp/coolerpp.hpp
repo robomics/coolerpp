@@ -87,7 +87,7 @@ void init_mcool(std::string_view file_path, bool force_overwrite = false);
 
 class File {
  public:
-  using BinTable = BinTableLazy;
+  enum class QUERY_TYPE { BED, UCSC };
 
  private:
   unsigned int _mode{HighFive::File::ReadOnly};
@@ -95,7 +95,7 @@ class File {
   RootGroup _root_group{};
   GroupMap _groups{};
   DatasetMap _datasets{};
-  mutable tsl::hopscotch_map<std::string, std::shared_ptr<Weights>> _weights{};
+  mutable WeightMap _weights{};
   StandardAttributes _attrs{StandardAttributes::init(0)};
   internal::NumericVariant _pixel_variant{};
   std::shared_ptr<const BinTable> _bins{};
@@ -185,35 +185,37 @@ class File {
   [[nodiscard]] bool has_float_pixels() const noexcept;
 
   template <typename PixelIt, typename = std::enable_if_t<is_iterable_v<PixelIt>>>
-  void append_pixels(PixelIt first_pixel, PixelIt last_pixel, bool validate = false,
-                     std::size_t chunk_size = 64 * 1024);
+  void append_pixels(PixelIt first_pixel, PixelIt last_pixel, bool validate = false);
 
-  template <typename N>
-  [[nodiscard]] typename PixelSelector<N>::iterator begin() const;
-  template <typename N>
-  [[nodiscard]] typename PixelSelector<N>::iterator end() const;
+  template <typename N, std::size_t CHUNK_SIZE = DEFAULT_HDF5_DATASET_ITERATOR_BUFFER_SIZE>
+  [[nodiscard]] typename PixelSelector<N, CHUNK_SIZE>::iterator begin() const;
+  template <typename N, std::size_t CHUNK_SIZE = DEFAULT_HDF5_DATASET_ITERATOR_BUFFER_SIZE>
+  [[nodiscard]] typename PixelSelector<N, CHUNK_SIZE>::iterator end() const;
 
-  template <typename N>
-  [[nodiscard]] typename PixelSelector<N>::iterator cbegin() const;
-  template <typename N>
-  [[nodiscard]] typename PixelSelector<N>::iterator cend() const;
+  template <typename N, std::size_t CHUNK_SIZE = DEFAULT_HDF5_DATASET_ITERATOR_BUFFER_SIZE>
+  [[nodiscard]] typename PixelSelector<N, CHUNK_SIZE>::iterator cbegin() const;
+  template <typename N, std::size_t CHUNK_SIZE = DEFAULT_HDF5_DATASET_ITERATOR_BUFFER_SIZE>
+  [[nodiscard]] typename PixelSelector<N, CHUNK_SIZE>::iterator cend() const;
 
-  template <typename N>
-  [[nodiscard]] PixelSelector<N> fetch(std::string_view query) const;
-  template <typename N>
-  [[nodiscard]] PixelSelector<N> fetch(std::string_view chrom, std::uint32_t start,
-                                       std::uint32_t end) const;
+  template <typename N, std::size_t CHUNK_SIZE = DEFAULT_HDF5_DATASET_ITERATOR_BUFFER_SIZE>
+  [[nodiscard]] PixelSelector<N, CHUNK_SIZE> fetch(std::string_view query,
+                                                   QUERY_TYPE query_type = QUERY_TYPE::UCSC) const;
+  template <typename N, std::size_t CHUNK_SIZE = DEFAULT_HDF5_DATASET_ITERATOR_BUFFER_SIZE>
+  [[nodiscard]] PixelSelector<N, CHUNK_SIZE> fetch(std::string_view chrom_name, std::uint32_t start,
+                                                   std::uint32_t end) const;
 
-  template <typename N>
-  [[nodiscard]] PixelSelector<N> fetch(std::string_view range1, std::string_view range2) const;
-  template <typename N>
-  [[nodiscard]] PixelSelector<N> fetch(std::string_view chrom1, std::uint32_t start1,
-                                       std::uint32_t end1, std::string_view chrom2,
-                                       std::uint32_t start2, std::uint32_t end2) const;
+  template <typename N, std::size_t CHUNK_SIZE = DEFAULT_HDF5_DATASET_ITERATOR_BUFFER_SIZE>
+  [[nodiscard]] PixelSelector<N, CHUNK_SIZE> fetch(std::string_view range1, std::string_view range2,
+                                                   QUERY_TYPE query_type = QUERY_TYPE::UCSC) const;
+  template <typename N, std::size_t CHUNK_SIZE = DEFAULT_HDF5_DATASET_ITERATOR_BUFFER_SIZE>
+  [[nodiscard]] PixelSelector<N, CHUNK_SIZE> fetch(std::string_view chrom1_name,
+                                                   std::uint32_t start1, std::uint32_t end1,
+                                                   std::string_view chrom2_name,
+                                                   std::uint32_t start2, std::uint32_t end2) const;
 
   bool has_weights(std::string_view name) const;
-  std::shared_ptr<Weights> read_weights(std::string_view name) const;
-  std::shared_ptr<Weights> read_weights(std::string_view name, Weights::Type type) const;
+  std::shared_ptr<const Weights> read_weights(std::string_view name) const;
+  std::shared_ptr<const Weights> read_weights(std::string_view name, Weights::Type type) const;
 
   bool purge_weights(std::string_view name = "");
 
@@ -264,7 +266,7 @@ class File {
   [[nodiscard]] static Index import_indexes(const Dataset &chrom_offset_dset,
                                             const Dataset &bin_offset_dset,
                                             const ChromosomeSet &chroms,
-                                            std::shared_ptr<const BinTableLazy> bin_table,
+                                            std::shared_ptr<const BinTable> bin_table,
                                             std::uint64_t expected_nnz, bool missing_ok);
 
   void validate_bins() const;
@@ -298,7 +300,7 @@ class File {
   void write_sentinel_attr();
   [[nodiscard]] bool check_sentinel_attr();
 
-  [[nodiscard]] auto get_last_bin_written() const -> Bin;
+  [[nodiscard]] Bin get_last_bin_written() const;
 
   template <typename N, bool cis = false>
   void update_pixel_sum(N partial_sum);
@@ -307,10 +309,11 @@ class File {
   void validate_pixel_type() const noexcept;
 
   // IMPORTANT: the private fetch() methods interpret queries as open-open
-  template <typename N>
-  [[nodiscard]] PixelSelector<N> fetch(PixelCoordinates query) const;
-  template <typename N>
-  [[nodiscard]] PixelSelector<N> fetch(PixelCoordinates coord1, PixelCoordinates coord2) const;
+  template <typename N, std::size_t CHUNK_SIZE>
+  [[nodiscard]] PixelSelector<N, CHUNK_SIZE> fetch(PixelCoordinates coord) const;
+  template <typename N, std::size_t CHUNK_SIZE>
+  [[nodiscard]] PixelSelector<N, CHUNK_SIZE> fetch(PixelCoordinates coord1,
+                                                   PixelCoordinates coord2) const;
 };
 
 }  // namespace coolerpp
