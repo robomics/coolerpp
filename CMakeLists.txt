@@ -72,8 +72,7 @@ include(${CMAKE_CURRENT_SOURCE_DIR}/cmake/CompilerWarnings.cmake)
 
 set(ENABLE_CACHE_DEFAULT ON)
 set(ENABLE_COMPILE_COMMANDS_SYMLINK_DEFAULT OFF)
-set(ENABLE_CONAN_DEVELOPER ON)
-set(ENABLE_CONAN_USER OFF)
+set(ENABLE_CONAN_DEFAULT OFF)
 set(ENABLE_CPPCHECK_DEFAULT OFF)
 set(ENABLE_DOXYGEN_USER OFF)
 set(ENABLE_DOXYGEN_DEVELOPER ON)
@@ -117,15 +116,18 @@ target_compile_definitions(coolerpp_project_options INTERFACE FMT_ENFORCE_COMPIL
 
 add_subdirectory(src)
 
+option(COOLERPP_ENABLE_TESTING "Build unit tests" ON)
+option(COOLERPP_BUILD_EXAMPLES "Build examples" ON)
+
 if(COOLERPP_ENABLE_TESTING)
   enable_testing()
-  message("Building unit tests.")
+  message("-- Building unit tests.")
   target_compile_definitions(coolerpp_project_options INTERFACE COOLERPP_ENABLE_TESTING)
   add_subdirectory(test)
 endif()
 
 option(COOLERPP_BUILD_EXAMPLES "Build examples" ON)
 if(COOLERPP_BUILD_EXAMPLES)
-  message("Building examples.")
+  message("-- Building examples.")
   add_subdirectory(examples)
 endif()
