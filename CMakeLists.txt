@@ -23,8 +23,8 @@ include(FetchContent)
 # cmake-format: off
 FetchContent_Declare(
         _coolerpp_project_options
-        URL ${CMAKE_CURRENT_SOURCE_DIR}/external/project_options-v0.28.0.tar.xz
-        URL_HASH SHA512=216d0970ace00e3176788a2b5abb7b92490c005111d26365e7807a5e86c6323e38b33e2e5b01f4ee43438a8f8e96cacf16cedc6f905a7e0ad58752905b260b38
+        URL ${CMAKE_CURRENT_SOURCE_DIR}/external/project_options-v0.29.0.tar.xz
+        URL_HASH SHA512=5cef5c4aab91328d41d0c846db326075eebab0bdcd53919d0bde288eb3ff4544ec51116234af25cb93475bb1ed806c51cef757868a56ceafdcf08a553afb6bf5
 )
 # cmake-format: on
 
