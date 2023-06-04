@@ -59,10 +59,11 @@ class PixelSelector {
   [[nodiscard]] const PixelCoordinates &coord2() const noexcept;
 
   class iterator {
+    using BinIDT = std::uint64_t;
     friend PixelSelector<N, CHUNK_SIZE>;
 
-    Dataset::iterator<std::uint64_t, CHUNK_SIZE> _bin1_id_it{};
-    Dataset::iterator<std::uint64_t, CHUNK_SIZE> _bin2_id_it{};
+    Dataset::iterator<BinIDT, CHUNK_SIZE> _bin1_id_it{};
+    Dataset::iterator<BinIDT, CHUNK_SIZE> _bin2_id_it{};
     Dataset::iterator<N, CHUNK_SIZE> _count_it{};
 
     mutable Pixel<N> _value{};
@@ -82,15 +83,6 @@ class PixelSelector {
 
     static auto at_end(std::shared_ptr<const Index> index, const Dataset &pixels_bin1_id,
                        const Dataset &pixels_bin2_id, const Dataset &pixels_count) -> iterator;
-
-    static auto at_end(std::shared_ptr<const Index> index, const Dataset &pixels_bin1_id,
-                       const Dataset &pixels_bin2_id, const Dataset &pixels_count,
-                       PixelCoordinates coord1, PixelCoordinates coord2) -> iterator;
-
-    static auto at_end(std::shared_ptr<const Index> index, const Dataset &pixels_bin1_id,
-                       const Dataset &pixels_bin2_id, const Dataset &pixels_count,
-                       std::shared_ptr<const PixelCoordinates> coord1,
-                       std::shared_ptr<const PixelCoordinates> coord2) -> iterator;
 
    public:
     using difference_type = std::ptrdiff_t;
@@ -123,15 +115,17 @@ class PixelSelector {
     void jump_to_col(std::uint64_t bin_id);
     void jump(std::uint64_t bin1_id, std::uint64_t bin2_id);
     void jump_to_next_overlap();
-    [[nodiscard]] bool discard() const;
+
     [[nodiscard]] std::size_t h5_offset() const noexcept;
     void jump_at_end();
     void refresh();
-    [[nodiscard]] constexpr bool pixel_is_outdated() const noexcept;
     void read_pixel() const;
-    constexpr void assert_within_bound() const noexcept;
+
+    [[nodiscard]] constexpr bool overlaps_coord1() const noexcept;
+    [[nodiscard]] constexpr bool overlaps_coord2() const noexcept;
+
+    [[nodiscard]] bool discard() const;
     constexpr bool is_at_end() const noexcept;
-    constexpr bool is_past_end() const noexcept;
   };
 };
 
