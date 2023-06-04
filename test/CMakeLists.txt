@@ -17,7 +17,7 @@ target_sources(
           ${CMAKE_CURRENT_SOURCE_DIR}/units/balancing_test.cpp
           ${CMAKE_CURRENT_SOURCE_DIR}/units/bin_table_test.cpp
           ${CMAKE_CURRENT_SOURCE_DIR}/units/chromosome_test.cpp
-          ${CMAKE_CURRENT_SOURCE_DIR}/units/cooler_test.cpp
+          ${CMAKE_CURRENT_SOURCE_DIR}/units/file_test.cpp
           ${CMAKE_CURRENT_SOURCE_DIR}/units/dataset_test.cpp
           ${CMAKE_CURRENT_SOURCE_DIR}/units/index_test.cpp
           ${CMAKE_CURRENT_SOURCE_DIR}/units/pixel_test.cpp
@@ -52,7 +52,8 @@ catch_discover_tests(
   OUTPUT_DIR
   ${CMAKE_CURRENT_SOURCE_DIR}/Testing/
   EXTRA_ARGS
-  --success)
+  --success
+  --skip-benchmarks)
 
 catch_discover_tests(
   coolerpp_test_main
@@ -63,7 +64,8 @@ catch_discover_tests(
   WORKING_DIRECTORY
   ${CMAKE_CURRENT_SOURCE_DIR}/../
   EXTRA_ARGS
-  --success)
+  --success
+  --skip-benchmarks)
 
 catch_discover_tests(
   coolerpp_test_main
@@ -74,4 +76,5 @@ catch_discover_tests(
   WORKING_DIRECTORY
   ${CMAKE_CURRENT_SOURCE_DIR}/../
   EXTRA_ARGS
-  --success)
+  --success
+  --skip-benchmarks)

@@ -14,12 +14,51 @@
 namespace coolerpp::test::chromosome {
 
 // NOLINTNEXTLINE(readability-function-cognitive-complexity)
-TEST_CASE("ChromosomeSet: ctors", "[chromosome][short]") {
+TEST_CASE("Chromosome", "[chromosome][short]") {
+  const Chromosome chrom1{0, "chr1", 50001};
+  const Chromosome chrom2{1, "chr2", 25017};
+
+  SECTION("accessors") {
+    CHECK(chrom1.id() == 0);
+    CHECK(chrom1.name() == "chr1");
+    CHECK(chrom1.size() == 50001);
+  }
+
+  SECTION("operators") {
+    CHECK(!Chromosome{});
+
+    CHECK(chrom1 == chrom1);
+    CHECK(chrom1 != chrom2);
+    CHECK(chrom1 < chrom2);
+    CHECK(chrom1 <= chrom2);
+    CHECK(chrom2 > chrom1);
+    CHECK(chrom2 >= chrom1);
+
+    CHECK(0 == chrom1);
+    CHECK(1 != chrom1);
+    CHECK(1 > chrom1);
+    CHECK(1 >= chrom1);
+    CHECK(0 < chrom2);
+    CHECK(0 <= chrom2);
+
+    CHECK("chr1" == chrom1);
+    CHECK("chr2" != chrom1);
+  }
+
+  SECTION("fmt") {
+    CHECK(fmt::format(FMT_STRING("{}"), chrom1) == "chr1:50001");
+    CHECK(fmt::format(FMT_STRING("{:tsv}"), chrom1) == "chr1\t50001");
+    CHECK(fmt::format(FMT_STRING("{:ucsc}"), chrom1) == "chr1:50001");
+  }
+}
+
+// NOLINTNEXTLINE(readability-function-cognitive-complexity)
+TEST_CASE("ChromosomeSet", "[chromosome][short]") {
   // clang-format off
   const std::array<Chromosome, 3> expected{
-      Chromosome{"chr1", 50001},
-      Chromosome{"chr2", 25017},
-      Chromosome{"chr3", 10000}
+      Chromosome{0, "chr1", 50001},
+      Chromosome{1, "chr2", 25017},
+      Chromosome{2, "chr3", 10000}
   };
   // clang-format on
 
@@ -44,7 +83,7 @@ TEST_CASE("ChromosomeSet: ctors", "[chromosome][short]") {
     expected_.push_back(expected.back());
 
     CHECK_THROWS_WITH(ChromosomeSet(expected_.begin(), expected_.end()),
-                      Catch::Matchers::ContainsSubstring("found duplicate chromosome"));
+                      Catch::Matchers::ContainsSubstring("found multiple entries for chromosome"));
   }
 
   SECTION("ctor w/ iterator of chrom names and sizes") {
@@ -56,44 +95,68 @@ TEST_CASE("ChromosomeSet: ctors", "[chromosome][short]") {
 
     CHECK_THROWS_WITH(
         ChromosomeSet(expected_names_.begin(), expected_names_.end(), expected_sizes_.begin()),
-        Catch::Matchers::ContainsSubstring("found duplicate chromosome"));
+        Catch::Matchers::ContainsSubstring("found multiple entries for chromosome"));
   }
-}
-
-// NOLINTNEXTLINE(readability-function-cognitive-complexity)
-TEST_CASE("ChromosomeSet: lookups", "[chromosome][short]") {
-  // clang-format off
-  const ChromosomeSet chroms{{
-      Chromosome{"chr1", 50001},
-      Chromosome{"chr2", 25017},
-      Chromosome{"chr3", 10000}}
-  };
-  // clang-format on
 
   SECTION("contains") {
-    CHECK(chroms.contains(Chromosome{"chr1", 50001}));
+    const ChromosomeSet chroms(expected.begin(), expected.end());
+    CHECK(chroms.contains(Chromosome{0, "chr1", 50001}));
     CHECK(chroms.contains(0));
     CHECK(chroms.contains("chr1"));
 
-    CHECK_FALSE(chroms.contains(Chromosome{"chr0", 50001}));
+    CHECK_FALSE(chroms.contains(Chromosome{0, "chr0", 50001}));
+    CHECK_FALSE(chroms.contains(Chromosome{3, "chr0", 50001}));
     CHECK_FALSE(chroms.contains(7));
     CHECK_FALSE(chroms.contains("chr0"));
     CHECK_FALSE(chroms.contains(""));
   }
 
   SECTION("at") {
-    CHECK(chroms.at(0) == Chromosome{"chr1", 50001});
-    CHECK(chroms.at("chr1") == Chromosome{"chr1", 50001});
+    const ChromosomeSet chroms(expected.begin(), expected.end());
+    CHECK(chroms.at(0) == Chromosome{0, "chr1", 50001});
+    CHECK(chroms.at("chr1") == Chromosome{0, "chr1", 50001});
 
     CHECK_THROWS_AS(chroms.at(3), std::out_of_range);
     CHECK_THROWS_AS(chroms.at("chr0"), std::out_of_range);
   }
 
+  SECTION("opertor[]") {
+    const ChromosomeSet chroms(expected.begin(), expected.end());
+    CHECK(chroms[0] == Chromosome{0, "chr1", 50001});
+    CHECK(chroms["chr1"] == Chromosome{0, "chr1", 50001});
+  }
+
   SECTION("get_id") {
+    const ChromosomeSet chroms(expected.begin(), expected.end());
     CHECK(chroms.get_id("chr1") == 0);
-    CHECK(chroms.get_id(Chromosome{"chr3", 10000}) == 2);
+    CHECK(chroms.get_id("chr3") == 2);
 
     CHECK_THROWS_AS(chroms.get_id("a"), std::out_of_range);
+  }
+
+  SECTION("iteration") {
+    const ChromosomeSet chroms(expected.begin(), expected.end());
+    CHECK(std::equal(chroms.begin(), chroms.end(), expected.begin(), expected.end()));
+    CHECK(std::equal(chroms.rbegin(), chroms.rend(), expected.rbegin(), expected.rend()));
+  }
+
+  SECTION("operators") {
+    const ChromosomeSet chroms1(expected.begin(), expected.end());
+    const ChromosomeSet chroms2(expected.begin(), expected.end() - 1);
+
+    CHECK(chroms1 == chroms1);
+    CHECK(chroms1 != chroms2);
+  }
+
+  SECTION("accessors") {
+    const ChromosomeSet chroms1(expected.begin(), expected.end());
+    const ChromosomeSet chroms2{{Chromosome{0, "chr1", 1000}, Chromosome{1, "chr123", 5}}};
+
+    CHECK(chroms1.chromosome_with_longest_name().name() == "chr1");
+    CHECK(chroms1.longest_chromosome().name() == "chr1");
+
+    CHECK(chroms2.chromosome_with_longest_name().name() == "chr123");
+    CHECK(chroms2.longest_chromosome().name() == "chr1");
   }
 }
 }  // namespace coolerpp::test::chromosome

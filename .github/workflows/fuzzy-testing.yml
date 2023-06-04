@@ -34,12 +34,22 @@ on:
     - cron: '15 3 * * 0'
 
   workflow_dispatch:
+    inputs:
+      duration:
+        description: 'Test duration in seconds'
+        required: true
+        default: '600'
+        type: string
 
 
 # https://stackoverflow.com/a/72408109
 concurrency:
   group: ${{ github.workflow }}-${{ github.event.pull_request.number || github.ref }}
   cancel-in-progress: true
+
+defaults:
+  run:
+    shell: bash
 
 env:
   TEST_DATASET_URL: 'https://4dn-open-data-public.s3.amazonaws.com/fourfront-webprod/wfoutput/27bbfb40-0224-427c-be41-398b43d70c48/4DNFI9FVHJZQ.mcool'
@@ -132,18 +142,18 @@ jobs:
   build-project:
     runs-on: ubuntu-latest
     container:
-      image: conanio/clang14-ubuntu16.04:2.0.4
+      image: ghcr.io/paulsengroup/ci-docker-images/ubuntu-22.04-cxx-clang-15
       options: "--user=root"
 
     env:
-      CONAN_HOME: '/home/conan/.conan2'
+      CONAN_HOME: '/root/.conan2'
 
     steps:
       - uses: actions/checkout@v3
 
-      - name: Install build dependencies
+      - name: Fix permissions
         run: |
-          pip install --no-cache-dir 'cmake>=3.20'
+          chown -R $(id -u):$(id -g) $PWD
 
       - name: Generate cache key
         id: cache-key
@@ -152,11 +162,11 @@ jobs:
 
           echo "key=fuzzy-testing-$hash" >> $GITHUB_OUTPUT
 
-      - name: Cache Conan packages
+      - name: Restore Conan cache
         id: cache-conan
-        uses: actions/cache@v3
+        uses: actions/cache/restore@v3
         with:
-          key: ${{ steps.cache-key.outputs.key }}
+          key: conan-${{ steps.cache-key.outputs.key }}
           path: ${{ env.CONAN_HOME }}
 
       - name: Clean Conan cache (pre-build)
@@ -169,13 +179,14 @@ jobs:
 
       - name: Install build dependencies
         run: |
-          conan install .                   \
-             --build=missing                \
-             --build=cascade                \
-             -pr default                    \
-             -s build_type=Release          \
-             -s compiler.libcxx=libstdc++11 \
-             -s compiler.cppstd=17          \
+          conan install .                             \
+             --build=missing                          \
+             --build=cascade                          \
+             -pr:b="$CONAN_DEFAULT_PROFILE_PATH"      \
+             -pr:h="$CONAN_DEFAULT_PROFILE_PATH"      \
+             -s build_type=Release                    \
+             -s compiler.libcxx=libstdc++11           \
+             -s compiler.cppstd=17                    \
              --output-folder=build
 
       - name: Clean Conan cache (post-build)
@@ -185,14 +196,25 @@ jobs:
           conan cache clean "*" --download
           conan cache clean "*" --source
 
+      - name: Save Conan cache
+        uses: actions/cache/save@v3
+        if: steps.cache-conan.outputs.cache-hit != 'true'
+        with:
+          key: conan-${{ steps.cache-key.outputs.key }}
+          path: ${{ env.CONAN_HOME }}
+
       - name: Configure project
         run: |
-          cmake -DCMAKE_BUILD_TYPE=Release       \
-                -DCMAKE_PREFIX_PATH="$PWD/build" \
-                -DENABLE_DEVELOPER_MODE=OFF      \
-                -DCOOLERPP_BUILD_EXAMPLES=ON     \
-                -DCOOLERPP_ENABLE_TESTING=OFF    \
-                -S .                             \
+          cmake -DCMAKE_BUILD_TYPE=Release                   \
+                -DCMAKE_PREFIX_PATH="$PWD/build"             \
+                -DENABLE_DEVELOPER_MODE=ON                   \
+                -DOPT_ENABLE_SANITIZER_ADDRESS=ON            \
+                -DOPT_ENABLE_SANITIZER_LEAK=ON               \
+                -DOPT_ENABLE_SANITIZER_UNDEFINED_BEHAVIOR=ON \
+                -DOPT_ENABLE_CLANG_TIDY=OFF                  \
+                -DCOOLERPP_BUILD_EXAMPLES=ON                 \
+                -DCOOLERPP_ENABLE_TESTING=OFF                \
+                -S .                                         \
                 -B build
 
       - name: Build project
@@ -218,13 +240,28 @@ jobs:
         balance: [ 'raw', 'ICE', 'KR']
 
     steps:
-      - uses: actions/checkout@v3
-
       - name: Install test dependencies
         run: |
           apt-get update
-          apt-get install -y python3-pip zstd
+          apt-get install -y git python3-pip zstd
           pip install --no-cache-dir 'cooler>=0.9.1'
+
+      - uses: actions/checkout@v3
+        with:
+          ref: ${{ github.event.after }}
+
+      - name: Fix permissions
+        run: |
+          chown -R $(id -u):$(id -g) $PWD
+
+      - name: Detect CI type
+        id: ci-type
+        run: |
+          if git log --format=%B -n 1 ${{ github.event.after }} | grep -qF '[ci full]'; then
+            echo "type=full" >> $GITHUB_OUTPUT
+          else
+            echo "type=short" >> $GITHUB_OUTPUT
+          fi
 
       - name: Download coolerpp_dump
         uses: actions/download-artifact@v3
@@ -238,20 +275,35 @@ jobs:
           fail-on-cache-miss: true
           path: test/data/
 
-      - name: Run test
+      - name: Prepare for test
+        id: test-params
         env:
           PYTHONHASHSEED: 0
         run: |
           seed="$(python3 -c 'import random; print(random.randint(0, 2**32))')"
-          2>&1 echo "Seed: ${seed}"
 
+          duration=600
+          if [[ ${{ github.event_name }} == 'workflow_dispatch' ]]; then
+            duration='${{ inputs.duration }}'
+          elif [[ ${{ steps.ci-type.outputs.type }} == 'full' ]]; then
+            duration=3600
+          fi
+
+          2>&1 echo "Seed: ${seed}"
+          2>&1 echo "Duration: ${duration}"
+
+          echo "seed=$seed" >> $GITHUB_OUTPUT
+          echo "duration=$duration" >> $GITHUB_OUTPUT
+
+      - name: Run test
+        run: |
           chmod 755 coolerpp_dump
           coolerpp_dump="$(readlink -f ./coolerpp_dump)"
 
           test/scripts/fuzzy_test.py \
             --path-to-coolerpp-dump="$coolerpp_dump" \
-            --seed="$seed" \
-            --duration 600 \
+            --seed '${{ steps.test-params.outputs.seed }}' \
+            --duration '${{ steps.test-params.outputs.duration }}' \
             --balance ${{ matrix.balance }} \
             "${{ needs.preproc-test-dataset.outputs.cooler-uri }}"
 

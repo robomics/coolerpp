@@ -7,14 +7,19 @@
 .idea/
 .run/
 .vscode/
+benchmarks/data
+benchmarks/Benchmarking
 build/
 cmake-build*/
+conan-envs/
 scratch/
+test/data
 test/Testing
-test/reference_impl
 
 # Ignored files
 gmon.out
 perf.*
 compile_commands.json
 CMakeUserPresets.json
+src/include/coolerpp/internal/git.hpp
+src/include/coolerpp/internal/version.hpp

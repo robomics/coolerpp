@@ -114,6 +114,8 @@ jobs:
         run: |
           ctest --test-dir build    \
                 --schedule-random   \
+                --output-on-failure \
+                --schedule-random   \
                 --no-tests=error    \
                 --timeout 240
 

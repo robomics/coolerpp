@@ -19,6 +19,22 @@ inline const std::filesystem::path datadir{"test/data"};  // NOLINT(cert-err58-c
 }  // namespace coolerpp::test
 
 namespace coolerpp::test::coolerpp {
+// NOLINTNEXTLINE(readability-function-cognitive-complexity)
+TEST_CASE("Coolerpp: version", "[cooler][short]") {
+  // clang-format off
+  constexpr std::array<std::uint_fast8_t, 3> ver{config::version::major(),
+                                                 config::version::minor(),
+                                                 config::version::patch()};
+  // clang-format on
+
+  if (config::version::suffix().empty()) {
+    CHECK(COOLERPP_VERSION_STRING == fmt::format(FMT_STRING("{}"), fmt::join(ver, ".")));
+
+  } else {
+    CHECK(COOLERPP_VERSION_STRING ==
+          fmt::format(FMT_STRING("{}-{}"), fmt::join(ver, "."), config::version::suffix()));
+  }
+}
 
 // NOLINTNEXTLINE(readability-function-cognitive-complexity)
 TEST_CASE("Coolerpp: format checking", "[cooler][short]") {
@@ -135,7 +151,7 @@ TEST_CASE("Coolerpp: file ctors", "[cooler][short]") {
     CHECK(f.has_pixel_of_type<std::int32_t>());
   }
   SECTION("move #2") {
-    const ChromosomeSet chroms{Chromosome{"chr1", 10000}, Chromosome{"chr2", 5000}};
+    const ChromosomeSet chroms{Chromosome{0, "chr1", 10000}, Chromosome{1, "chr2", 5000}};
     const auto path = testdir() / "move_ctor.cool";
 
     constexpr std::uint32_t bin_size = 1000;
@@ -146,10 +162,11 @@ TEST_CASE("Coolerpp: file ctors", "[cooler][short]") {
 
       std::vector<PixelT> pixels{};
       f = File::create_new_cooler(path.string(), chroms, bin_size, true);
-      for (std::uint32_t pos1 = 0; pos1 < chroms.at("chr1").size; pos1 += bin_size) {
-        for (std::uint32_t pos2 = pos1; pos2 < chroms.at("chr1").size; pos2 += bin_size) {
-          pixels.emplace_back(PixelT{{f.bins_ptr(), "chr1", pos1, pos2},
-                                     static_cast<std::int32_t>(pixels.size() + 1)});
+      const auto chr1_bins = f.bins().subset("chr1");
+      for (std::uint64_t bin1_id = 0; bin1_id < chr1_bins.size(); ++bin1_id) {
+        for (std::uint64_t bin2_id = bin1_id; bin2_id < chr1_bins.size(); ++bin2_id) {
+          pixels.emplace_back(f.bins(), bin1_id, bin2_id,
+                              static_cast<std::int32_t>(pixels.size() + 1));
         }
       }
       f.append_pixels(pixels.begin(), pixels.end(), true);
@@ -233,11 +250,53 @@ TEST_CASE("Coolerpp: file ctors", "[cooler][short]") {
                             Catch::Matchers::ContainsSubstring("/chroms/length shape mismatch"));
     }
   }
+
+  SECTION("open .cool custom aprops") {
+    const auto path = datadir / "cooler_test_file.cool";
+    SECTION("read-once") {
+      const auto f = File::open_read_only_read_once(path.string());
+      CHECK(std::distance(f.begin<std::int32_t>(), f.end<std::int32_t>()) == 107041);
+    }
+
+    SECTION("read-random") {
+      const auto f = File::open_read_only_random_access(path.string());
+      CHECK(std::distance(f.begin<std::int32_t>(), f.end<std::int32_t>()) == 107041);
+    }
+  }
+}
+
+// NOLINTNEXTLINE(readability-function-cognitive-complexity)
+TEST_CASE("Coolerpp: accessors", "[cooler][short]") {
+  const auto path = datadir / "cooler_test_file.cool";
+  const auto f = File::open_read_only(path.string());
+
+  SECTION("group") {
+    CHECK(f.group("bins").group.getPath() == "/bins");
+    CHECK_THROWS(f.group("foo"));
+  }
+
+  SECTION("dataset") {
+    CHECK(f.dataset("bins/chrom").hdf5_path() == "/bins/chrom");
+    CHECK_THROWS(f.dataset("foo"));
+  }
+
+  SECTION("pixel type") {
+    const auto v = f.pixel_variant();
+    using T = std::int32_t;
+    CHECK(std::holds_alternative<T>(v));
+    CHECK(f.has_pixel_of_type<T>());
+
+    CHECK(f.has_signed_pixels());
+    CHECK_FALSE(f.has_unsigned_pixels());
+
+    CHECK(f.has_integral_pixels());
+    CHECK_FALSE(f.has_float_pixels());
+  }
 }
 
 // NOLINTNEXTLINE(readability-function-cognitive-complexity)
 TEST_CASE("Coolerpp: init files", "[cooler][short]") {
-  const ChromosomeSet chroms{Chromosome{"chr1", 10000}, Chromosome{"chr2", 5000}};
+  const ChromosomeSet chroms{Chromosome{0, "chr1", 10000}, Chromosome{1, "chr2", 5000}};
 
   SECTION(".cool") {
     const auto path = testdir() / "test_init.cool";
@@ -279,7 +338,7 @@ TEST_CASE("Coolerpp: init files", "[cooler][short]") {
 
 // NOLINTNEXTLINE(readability-function-cognitive-complexity)
 TEST_CASE("Coolerpp: sentinel attribute", "[cooler][short]") {
-  const ChromosomeSet chroms{Chromosome{"chr1", 10000}, Chromosome{"chr2", 5000}};
+  const ChromosomeSet chroms{Chromosome{0, "chr1", 10000}, Chromosome{1, "chr2", 5000}};
 
   const auto path = testdir() / "test_sentinel_attr.cool";
   constexpr std::uint32_t bin_size = 1000;
@@ -345,8 +404,8 @@ TEST_CASE("Coolerpp: read/write chromosomes", "[cooler][short]") {
   const auto path = (testdir() / "test_write_chroms.cool").string();
 
   constexpr std::uint32_t bin_size = 5000;
-  const ChromosomeSet chroms{Chromosome{"chr1", 50001}, Chromosome{"chr2", 25017},
-                             Chromosome{"chr3", 10000}};
+  const ChromosomeSet chroms{Chromosome{0, "chr1", 50001}, Chromosome{1, "chr2", 25017},
+                             Chromosome{2, "chr3", 10000}};
 
   {
     auto f = File::create_new_cooler(path, chroms, bin_size, true);
@@ -361,11 +420,11 @@ TEST_CASE("Coolerpp: read/write chromosomes", "[cooler][short]") {
 TEST_CASE("Coolerpp: read/write bin table", "[cooler][short]") {
   const auto path = (testdir() / "test_write_bin_table.cool").string();
 
-  const ChromosomeSet chroms{Chromosome{"chr1", 50001}, Chromosome{"chr2", 25017},
-                             Chromosome{"chr3", 10000}};
+  const ChromosomeSet chroms{Chromosome{0, "chr1", 50001}, Chromosome{1, "chr2", 25017},
+                             Chromosome{2, "chr3", 10000}};
 
   constexpr std::uint32_t bin_size = 5000;
-  const BinTableLazy table(chroms, bin_size);
+  const BinTable table(chroms, bin_size);
 
   { auto f = File::create_new_cooler(path, chroms, bin_size, true); }
 
@@ -377,9 +436,9 @@ TEST_CASE("Coolerpp: read/write bin table", "[cooler][short]") {
   REQUIRE(start_it != f.dataset("bins/start").end<std::uint32_t>());
   REQUIRE(end_it != f.dataset("bins/end").end<std::uint32_t>());
 
-  for (const auto [_, start, end] : table) {
-    CHECK(*start_it++ == start);
-    CHECK(*end_it++ == end);
+  for (const auto bin : table) {
+    CHECK(*start_it++ == bin.start());
+    CHECK(*end_it++ == bin.end());
   }
 
   CHECK(start_it == f.dataset("bins/start").end<std::uint32_t>());
@@ -481,7 +540,7 @@ TEST_CASE("Coolerpp: write weights", "[cooler][short]") {
   std::filesystem::remove(path2);
   std::filesystem::remove(path3);
   std::filesystem::copy(path1, path2);
-  REQUIRE_THROWS(File::open_read_only(path2.string()).dataset("bins/weight"));
+  REQUIRE_FALSE(File::open_read_only(path2.string()).has_weights("weight"));
 
   const auto num_bins = File::open_read_only(path1.string()).bins().size();
 
@@ -489,8 +548,8 @@ TEST_CASE("Coolerpp: write weights", "[cooler][short]") {
     const std::vector<double> weights(num_bins, 1.23);
     File::write_weights(path2.string(), "weight", weights.begin(), weights.end());
 
-    auto f = File::open_read_only(path2.string());
-    CHECK(f.dataset("bins/weight").size() == num_bins);
+    const auto w = *File::open_read_only(path2.string()).read_weights("weight");
+    CHECK(w().size() == weights.size());
   }
 
   SECTION("incorrect shape") {

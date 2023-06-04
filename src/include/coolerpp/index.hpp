@@ -14,16 +14,16 @@
 
 namespace coolerpp {
 
-struct Bin;
-struct Chromosome;
+class GenomicInterval;
+class BinTable;
+class Chromosome;
 class ChromosomeSet;
-class BinTableLazy;
 
 class Index {
   using ChromID = std::uint32_t;
   using OffsetVect = std::vector<std::uint64_t>;
 
-  std::shared_ptr<const BinTableLazy> _bins{};
+  std::shared_ptr<const BinTable> _bins{};
   std::vector<OffsetVect> _idx{};
   std::size_t _size{};
   std::uint64_t _nnz{};
@@ -49,11 +49,11 @@ class Index {
   using const_iterator = iterator;
 
   Index() = default;
-  explicit Index(std::shared_ptr<const BinTableLazy> bins, std::uint64_t nnz = 0);
+  explicit Index(std::shared_ptr<const BinTable> bins, std::uint64_t nnz = 0);
 
   [[nodiscard]] const ChromosomeSet& chromosomes() const noexcept;
-  [[nodiscard]] const BinTableLazy& bins() const noexcept;
-  [[nodiscard]] std::shared_ptr<const BinTableLazy> bins_ptr() const noexcept;
+  [[nodiscard]] const BinTable& bins() const noexcept;
+  [[nodiscard]] std::shared_ptr<const BinTable> bins_ptr() const noexcept;
 
   [[nodiscard]] std::size_t num_chromosomes() const noexcept;
   [[nodiscard]] constexpr std::size_t size() const noexcept { return this->_size; }
@@ -98,8 +98,8 @@ class Index {
   void compute_chrom_offsets(std::vector<std::uint64_t>& buff) const noexcept;
   [[nodiscard]] std::vector<std::uint64_t> compute_chrom_offsets() const;
   // Return first bin1_id corresponding to chrom_name/id
-  [[nodiscard]] std::uint64_t get_bin1_offset(std::string_view chrom_name) const;
-  [[nodiscard]] std::uint64_t get_bin1_offset(std::uint32_t chrom_id) const;
+  [[nodiscard]] std::uint64_t chrom_to_bin1_offset(std::string_view chrom_name) const;
+  [[nodiscard]] std::uint64_t chrom_to_bin1_offset(std::uint32_t chrom_id) const;
 
   void finalize(std::uint64_t nnz);
 
@@ -118,7 +118,7 @@ class Index {
 
     static constexpr auto npos = std::numeric_limits<std::size_t>::max();
 
-    const Index* _idx;
+    const Index* _idx{};
     std::uint32_t _chrom_id{};
     std::size_t _offset_idx{npos};
 

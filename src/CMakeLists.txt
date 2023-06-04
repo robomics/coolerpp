@@ -8,7 +8,6 @@ find_package(fmt CONFIG REQUIRED)
 find_package(HDF5 CONFIG REQUIRED)
 find_package(HighFive CONFIG REQUIRED)
 find_package(tsl-hopscotch-map CONFIG REQUIRED)
-find_package(tsl-ordered-map CONFIG REQUIRED)
 
 add_library(coolerpp INTERFACE)
 add_library(Coolerpp::Coolerpp ALIAS coolerpp)
@@ -52,7 +51,6 @@ target_link_system_libraries(
   HDF5::HDF5
   HighFive
   tsl::hopscotch_map
-  tsl::ordered_map
   std::filesystem)
 
 install(TARGETS coolerpp INCLUDES)

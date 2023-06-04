@@ -49,7 +49,7 @@ struct StandardAttributes {
   // Reserved attributes
   std::optional<std::string> creation_date{fmt::format(
       FMT_STRING("{:%FT%T}"), fmt::gmtime(std::time(nullptr)))};  // e.g. 2022-07-26T20:35:19
-  std::optional<std::string> generated_by{COOLERPP_VERSION_STR_LONG};
+  std::optional<std::string> generated_by{COOLERPP_VERSION_STRING};
   std::optional<std::string> assembly{"unknown"};
   std::optional<std::string> metadata{"{}"};
 
@@ -87,7 +87,7 @@ void init_mcool(std::string_view file_path, bool force_overwrite = false);
 
 class File {
  public:
-  using BinTable = BinTableLazy;
+  enum class QUERY_TYPE { BED, UCSC };
 
  private:
   unsigned int _mode{HighFive::File::ReadOnly};
@@ -95,7 +95,7 @@ class File {
   RootGroup _root_group{};
   GroupMap _groups{};
   DatasetMap _datasets{};
-  mutable tsl::hopscotch_map<std::string, std::shared_ptr<const Weights>> _weights{};
+  mutable WeightMap _weights{};
   StandardAttributes _attrs{StandardAttributes::init(0)};
   internal::NumericVariant _pixel_variant{};
   std::shared_ptr<const BinTable> _bins{};
@@ -104,11 +104,16 @@ class File {
 
   // Constructors are private. Cooler files are opened using factory methods
   explicit File(std::string_view uri, unsigned mode = HighFive::File::ReadOnly,
-                bool validate = true);
+                std::size_t small_cache_size = DEFAULT_HDF5_SMALL_CACHE_SIZE,
+                std::size_t large_cache_size = DEFAULT_HDF5_LARGE_CACHE_SIZE,
+                double w0 = DEFAULT_HDF5_CACHE_W0, bool validate = true);
 
   template <typename PixelT>
   explicit File(std::string_view uri, ChromosomeSet chroms, PixelT pixel,
-                StandardAttributes attributes);
+                StandardAttributes attributes,
+                std::size_t small_cache_size = DEFAULT_HDF5_SMALL_CACHE_SIZE,
+                std::size_t large_cache_size = DEFAULT_HDF5_LARGE_CACHE_SIZE,
+                double w0 = DEFAULT_HDF5_CACHE_W0);
 
  public:
   File() = default;
@@ -117,6 +122,9 @@ class File {
 
   // Simple constructor. Open file in read-only mode. Automatically detects pixel count type
   [[nodiscard]] static File open_read_only(std::string_view uri, bool validate = true);
+  [[nodiscard]] static File open_read_only_random_access(std::string_view uri,
+                                                         bool validate = true);
+  [[nodiscard]] static File open_read_only_read_once(std::string_view uri, bool validate = true);
   template <typename PixelT = DefaultPixelT>
   [[nodiscard]] static File create_new_cooler(
       std::string_view uri, const ChromosomeSet &chroms, std::uint32_t bin_size,
@@ -177,32 +185,35 @@ class File {
   [[nodiscard]] bool has_float_pixels() const noexcept;
 
   template <typename PixelIt, typename = std::enable_if_t<is_iterable_v<PixelIt>>>
-  void append_pixels(PixelIt first_pixel, PixelIt last_pixel, bool validate = false,
-                     std::size_t chunk_size = 64 * 1024);
+  void append_pixels(PixelIt first_pixel, PixelIt last_pixel, bool validate = false);
 
-  template <typename N>
-  [[nodiscard]] typename PixelSelector<N>::iterator begin() const;
-  template <typename N>
-  [[nodiscard]] typename PixelSelector<N>::iterator end() const;
+  template <typename N, std::size_t CHUNK_SIZE = DEFAULT_HDF5_DATASET_ITERATOR_BUFFER_SIZE>
+  [[nodiscard]] typename PixelSelector<N, CHUNK_SIZE>::iterator begin() const;
+  template <typename N, std::size_t CHUNK_SIZE = DEFAULT_HDF5_DATASET_ITERATOR_BUFFER_SIZE>
+  [[nodiscard]] typename PixelSelector<N, CHUNK_SIZE>::iterator end() const;
 
-  template <typename N>
-  [[nodiscard]] typename PixelSelector<N>::iterator cbegin() const;
-  template <typename N>
-  [[nodiscard]] typename PixelSelector<N>::iterator cend() const;
+  template <typename N, std::size_t CHUNK_SIZE = DEFAULT_HDF5_DATASET_ITERATOR_BUFFER_SIZE>
+  [[nodiscard]] typename PixelSelector<N, CHUNK_SIZE>::iterator cbegin() const;
+  template <typename N, std::size_t CHUNK_SIZE = DEFAULT_HDF5_DATASET_ITERATOR_BUFFER_SIZE>
+  [[nodiscard]] typename PixelSelector<N, CHUNK_SIZE>::iterator cend() const;
 
-  template <typename N>
-  [[nodiscard]] PixelSelector<N> fetch(std::string_view query) const;
-  template <typename N>
-  [[nodiscard]] PixelSelector<N> fetch(std::string_view chrom, std::uint32_t start,
-                                       std::uint32_t end) const;
+  template <typename N, std::size_t CHUNK_SIZE = DEFAULT_HDF5_DATASET_ITERATOR_BUFFER_SIZE>
+  [[nodiscard]] PixelSelector<N, CHUNK_SIZE> fetch(std::string_view query,
+                                                   QUERY_TYPE query_type = QUERY_TYPE::UCSC) const;
+  template <typename N, std::size_t CHUNK_SIZE = DEFAULT_HDF5_DATASET_ITERATOR_BUFFER_SIZE>
+  [[nodiscard]] PixelSelector<N, CHUNK_SIZE> fetch(std::string_view chrom_name, std::uint32_t start,
+                                                   std::uint32_t end) const;
 
-  template <typename N>
-  [[nodiscard]] PixelSelector<N> fetch(std::string_view range1, std::string_view range2) const;
-  template <typename N>
-  [[nodiscard]] PixelSelector<N> fetch(std::string_view chrom1, std::uint32_t start1,
-                                       std::uint32_t end1, std::string_view chrom2,
-                                       std::uint32_t start2, std::uint32_t end2) const;
+  template <typename N, std::size_t CHUNK_SIZE = DEFAULT_HDF5_DATASET_ITERATOR_BUFFER_SIZE>
+  [[nodiscard]] PixelSelector<N, CHUNK_SIZE> fetch(std::string_view range1, std::string_view range2,
+                                                   QUERY_TYPE query_type = QUERY_TYPE::UCSC) const;
+  template <typename N, std::size_t CHUNK_SIZE = DEFAULT_HDF5_DATASET_ITERATOR_BUFFER_SIZE>
+  [[nodiscard]] PixelSelector<N, CHUNK_SIZE> fetch(std::string_view chrom1_name,
+                                                   std::uint32_t start1, std::uint32_t end1,
+                                                   std::string_view chrom2_name,
+                                                   std::uint32_t start2, std::uint32_t end2) const;
 
+  bool has_weights(std::string_view name) const;
   std::shared_ptr<const Weights> read_weights(std::string_view name) const;
   std::shared_ptr<const Weights> read_weights(std::string_view name, Weights::Type type) const;
 
@@ -232,8 +243,8 @@ class File {
   [[nodiscard]] static auto open_root_group(const HighFive::File &f, std::string_view uri)
       -> RootGroup;
   [[nodiscard]] static auto open_groups(const RootGroup &root_grp) -> GroupMap;
-  [[nodiscard]] static auto open_datasets(const RootGroup &root_grp,
-                                          std::string_view weight_dataset = "weight") -> DatasetMap;
+  [[nodiscard]] static auto open_datasets(const RootGroup &root_grp, std::size_t small_cache_size,
+                                          std::size_t large_cache_size, double w0) -> DatasetMap;
   [[nodiscard]] static auto read_standard_attributes(const RootGroup &root_grp,
                                                      bool initialize_missing = false)
       -> StandardAttributes;
@@ -243,8 +254,9 @@ class File {
                                               bool write_sentinel_attr = true) -> RootGroup;
   [[nodiscard]] static auto create_groups(RootGroup &root_grp) -> GroupMap;
   template <typename PixelT>
-  [[nodiscard]] static auto create_datasets(RootGroup &root_grp, const ChromosomeSet &chroms)
-      -> DatasetMap;
+  [[nodiscard]] static auto create_datasets(RootGroup &root_grp, const ChromosomeSet &chroms,
+                                            std::size_t small_cache_size,
+                                            std::size_t large_cache_size, double w0) -> DatasetMap;
   static void write_standard_attributes(RootGroup &root_grp, const StandardAttributes &attributes,
                                         bool skip_sentinel_attr = true);
 
@@ -254,7 +266,7 @@ class File {
   [[nodiscard]] static Index import_indexes(const Dataset &chrom_offset_dset,
                                             const Dataset &bin_offset_dset,
                                             const ChromosomeSet &chroms,
-                                            std::shared_ptr<const BinTableLazy> bin_table,
+                                            std::shared_ptr<const BinTable> bin_table,
                                             std::uint64_t expected_nnz, bool missing_ok);
 
   void validate_bins() const;
@@ -288,7 +300,7 @@ class File {
   void write_sentinel_attr();
   [[nodiscard]] bool check_sentinel_attr();
 
-  [[nodiscard]] auto get_last_bin_written() const -> Bin;
+  [[nodiscard]] Bin get_last_bin_written() const;
 
   template <typename N, bool cis = false>
   void update_pixel_sum(N partial_sum);
@@ -297,10 +309,11 @@ class File {
   void validate_pixel_type() const noexcept;
 
   // IMPORTANT: the private fetch() methods interpret queries as open-open
-  template <typename N>
-  [[nodiscard]] PixelSelector<N> fetch(PixelCoordinates query) const;
-  template <typename N>
-  [[nodiscard]] PixelSelector<N> fetch(PixelCoordinates coord1, PixelCoordinates coord2) const;
+  template <typename N, std::size_t CHUNK_SIZE>
+  [[nodiscard]] PixelSelector<N, CHUNK_SIZE> fetch(PixelCoordinates coord) const;
+  template <typename N, std::size_t CHUNK_SIZE>
+  [[nodiscard]] PixelSelector<N, CHUNK_SIZE> fetch(PixelCoordinates coord1,
+                                                   PixelCoordinates coord2) const;
 };
 
 }  // namespace coolerpp
