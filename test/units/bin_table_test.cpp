@@ -239,7 +239,7 @@ TEST_CASE("BinTable", "[bin-table][short]") {
 
       auto it = table.begin() + 5;
       for (std::size_t i = 0; i < expected.size() - 5; ++i) {
-        CHECK(*(it + i) == expected[i + 5]);
+        CHECK(*(it + i) == expected[i + 5]);  // NOLINT
       }
     }
 
@@ -248,9 +248,9 @@ TEST_CASE("BinTable", "[bin-table][short]") {
       CHECK(*(table.end() - 5) == *(expected.end() - 5));
 
       auto it1 = table.end();
-      auto it2 = expected.end();
+      auto it2 = expected.end();  // NOLINT
       for (std::size_t i = 1; i < expected.size(); ++i) {
-        CHECK(*(it1 - i) == *(it2 - i));
+        CHECK(*(it1 - i) == *(it2 - i));  // NOLINT
       }
     }
   }
