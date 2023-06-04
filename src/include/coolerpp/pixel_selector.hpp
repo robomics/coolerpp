@@ -69,8 +69,8 @@ class PixelSelector {
     mutable Pixel<N> _value{};
     std::shared_ptr<const Index> _index{};
 
-    std::shared_ptr<const PixelCoordinates> _coord1{};
-    std::shared_ptr<const PixelCoordinates> _coord2{};
+    PixelCoordinates _coord1{};
+    PixelCoordinates _coord2{};
 
     std::uint64_t _h5_end_offset{};
 
