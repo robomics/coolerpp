@@ -15,27 +15,19 @@
 
 namespace coolerpp::tools {
 
-static void print(const Chromosome& chrom) {
-  fmt::print(FMT_COMPILE("{:s}\t{:d}\n"), chrom.name, chrom.size);
-}
-
-static void print(const Bin& bin) {
-  fmt::print(FMT_COMPILE("{:s}\t{:d}\t{:d}\n"), bin.chrom.name, bin.start, bin.end);
-}
-
 template <bool join>
 static void print(const Pixel<std::int64_t>& pixel) {
   if constexpr (join) {
-    fmt::print(FMT_COMPILE("{:bedpe}\t{:d}\n"), pixel.coords, pixel.count);
+    fmt::print(FMT_COMPILE("{:bg2}\n"), pixel);
   } else {
-    fmt::print(FMT_COMPILE("{:raw}\t{:d}\n"), pixel.coords, pixel.count);
+    fmt::print(FMT_COMPILE("{:raw}\n"), pixel);
   }
 }
 
 template <bool join>
 static void print(const Pixel<double>& pixel) {
   if constexpr (join) {
-    fmt::print(FMT_COMPILE("{:bedpe}\t{:g}\n"), pixel.coords, pixel.count);
+    fmt::print(FMT_COMPILE("{:bg2}\t{:g}\n"), pixel.coords, pixel.count);
   } else {
     fmt::print(FMT_COMPILE("{:raw}\t{:g}\n"), pixel.coords, pixel.count);
   }
@@ -43,34 +35,32 @@ static void print(const Pixel<double>& pixel) {
 
 static void dump_chroms(const File& clr, std::string_view range) {
   if (range == "all") {
-    for (const auto& chrom : clr.chromosomes()) {
-      print(chrom);
+    for (const Chromosome& chrom : clr.chromosomes()) {
+      fmt::print(FMT_COMPILE("{:s}\t{:d}\n"), chrom.name(), chrom.size());
     }
     return;
   }
 
-  const auto coords = PixelSelector<int>::parse_query(clr.bins_ptr(), range);
-  auto it = clr.chromosomes().find(coords.chrom1());
+  const auto coords = GenomicInterval::parse_ucsc(clr.chromosomes(), std::string{range});
+  auto it = clr.chromosomes().find(coords.chrom());
   if (it != clr.chromosomes().end()) {
-    print(*it);
+    fmt::print(FMT_COMPILE("{:s}\t{:d}\n"), it->name(), it->size());
   }
 }
 
 static void dump_bins(const File& clr, std::string_view range) {
   if (range == "all") {
     for (const auto& bin : clr.bins()) {
-      print(bin);
+      fmt::print(FMT_COMPILE("{:s}\t{:d}\t{:d}\n"), bin.chrom().name(), bin.start(), bin.end());
     }
     return;
   }
 
-  const auto coords = PixelSelector<int>::parse_query(clr.bins_ptr(), range);
-  const auto bins = clr.bins().at(coords.chrom1());
-
-  auto first_bin = std::lower_bound(bins.begin(), bins.end(), coords.bin1());
-  auto last_bin = std::upper_bound(first_bin, bins.end(), coords.bin2());
-
-  std::for_each(first_bin, last_bin, [](const Bin& bin) { print(bin); });
+  const auto coords = GenomicInterval::parse_ucsc(clr.chromosomes(), std::string{range});
+  auto [first_bin, last_bin] = clr.bins().find_overlap(coords);
+  std::for_each(first_bin, last_bin, [](const Bin& bin) {
+    fmt::print(FMT_COMPILE("{:s}\t{:d}\t{:d}\n"), bin.chrom().name(), bin.start(), bin.end());
+  });
 }
 
 template <typename N, bool join>

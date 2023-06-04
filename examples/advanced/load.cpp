@@ -17,8 +17,7 @@
 namespace coolerpp::tools {
 
 template <typename N>
-[[nodiscard]] static Pixel<N> parse_pixel(const std::shared_ptr<const BinTableLazy>& bins,
-                                          std::string_view line) {
+[[nodiscard]] static Pixel<N> parse_pixel(const BinTable& bins, std::string_view line) {
   auto next_token = [&]() {
     assert(!line.empty());
     const auto pos = line.find('\t');
@@ -36,7 +35,7 @@ template <typename N>
   std::ignore = next_token();
 
   const auto count = internal::parse_numeric_or_throw<N>(next_token());
-  return {PixelCoordinates{bins, chrom1, chrom2, start1, start2}, count};
+  return Pixel<N>{{bins.at(chrom1, start1), bins.at(chrom2, start2)}, count};
 }
 
 [[nodiscard]] static ChromosomeSet import_chromosomes(std::string_view chrom_sizes) {
@@ -51,7 +50,7 @@ template <typename N>
       const auto chrom_name = line.substr(0, delim_pos);
       const auto chrom_size = std::stoull(line.substr(delim_pos + 1));
 
-      chroms.emplace_back(chrom_name, chrom_size);
+      chroms.emplace_back(0, chrom_name, chrom_size);
     }
 
     return {chroms.begin(), chroms.end()};
@@ -63,8 +62,8 @@ template <typename N>
 }
 
 template <typename N>
-[[nodiscard]] static bool process_batch(const std::shared_ptr<const BinTableLazy>& bins,
-                                        std::size_t batch_size, std::vector<Pixel<N>>& buffer) {
+[[nodiscard]] static bool process_batch(const BinTable& bins, std::size_t batch_size,
+                                        std::vector<Pixel<N>>& buffer) {
   buffer.clear();
   std::string line;
   try {
@@ -87,7 +86,7 @@ template <typename N>
 template <typename N, std::size_t chunk_size = std::numeric_limits<std::size_t>::max()>
 static std::string ingest_pixels(coolerpp::File&& clr, std::size_t batch_size = 1'000'000) {
   batch_size = std::min(batch_size, chunk_size);
-  const auto& bins = clr.bins_ptr();
+  const auto& bins = clr.bins();
 
   std::vector<Pixel<N>> write_buffer(batch_size);
 
