@@ -75,7 +75,7 @@ function(ConfigureVersioning input_config_folder output_config_folder)
   set(PRE_CONFIGURE_FILE "${input_config_folder}/version.hpp.in")
   set(POST_CONFIGURE_FILE "${output_config_folder}/version.hpp")
 
-  file(TOUCH POST_CONFIGURE_FILE)
+  file(TOUCH ${POST_CONFIGURE_FILE})
   configure_file(${PRE_CONFIGURE_FILE} ${POST_CONFIGURE_FILE} @ONLY)
 endfunction()
 
