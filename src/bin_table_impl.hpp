@@ -146,8 +146,12 @@ inline bool BinTable::operator==(const BinTable &other) const {
 inline bool BinTable::operator!=(const BinTable &other) const { return !(*this == other); }
 
 inline BinTable BinTable::subset(const Chromosome &chrom) const {
-  const auto &chrom_ = this->_chroms.at(chrom.id());  // Throw exception in case chrom is not valid
-  return {ChromosomeSet{chrom_}, this->_bin_size};
+  if constexpr (ndebug_not_defined()) {
+    if (!this->_chroms.contains(chrom)) {
+      throw std::out_of_range(fmt::format(FMT_STRING("chromosome \"{}\" not found"), chrom.name()));
+    }
+  }
+  return {ChromosomeSet{chrom}, this->_bin_size};
 }
 inline BinTable BinTable::subset(std::string_view chrom_name) const {
   return this->subset(this->_chroms.at(chrom_name));
@@ -195,26 +199,28 @@ inline Bin BinTable::at(std::uint64_t bin_id) const {
     throw std::out_of_range(fmt::format(FMT_STRING("bin id {} not found: out of range"), bin_id));
   }
   assert(match != this->_num_bins_prefix_sum.begin());
-  --match;
 
   const auto chrom_id =
-      static_cast<std::uint32_t>(std::distance(this->_num_bins_prefix_sum.begin(), match));
-  assert(this->_chroms.contains(chrom_id));
-  const auto &chrom = this->_chroms.at(chrom_id);
+      static_cast<std::uint32_t>(std::distance(this->_num_bins_prefix_sum.begin(), --match));
+  return this->at_hint(bin_id, this->_chroms[chrom_id]);
+}
 
-  const auto relative_bin_id = bin_id - *match;
+inline Bin BinTable::at_hint(std::uint64_t bin_id, const Chromosome &chrom) const {
+  const auto offset = this->_num_bins_prefix_sum[chrom.id()];
+  const auto relative_bin_id = bin_id - offset;
   const auto start = static_cast<uint32_t>(relative_bin_id * this->bin_size());
   assert(start < chrom.size());
   const auto end = (std::min)(start + this->bin_size(), chrom.size());
 
   return {bin_id, chrom, start, end};
 }
+
 inline std::pair<Bin, Bin> BinTable::at(const GenomicInterval &gi) const {
   const auto [bin1_id, bin2_id] = this->map_to_bin_ids(gi);
-  return std::make_pair(this->at(bin1_id), this->at(bin2_id));
+  return std::make_pair(this->at_hint(bin1_id, gi.chrom()), this->at_hint(bin2_id, gi.chrom()));
 }
 inline Bin BinTable::at(const Chromosome &chrom, std::uint32_t pos) const {
-  return this->at(this->map_to_bin_id(chrom, pos));
+  return this->at_hint(this->map_to_bin_id(chrom, pos), chrom);
 }
 inline Bin BinTable::at(std::string_view chrom_name, std::uint32_t pos) const {
   return this->at(this->map_to_bin_id(chrom_name, pos));
@@ -230,8 +236,10 @@ inline std::pair<std::uint64_t, std::uint64_t> BinTable::map_to_bin_ids(
 }
 
 inline std::uint64_t BinTable::map_to_bin_id(const Chromosome &chrom, std::uint32_t pos) const {
-  if (!this->_chroms.contains(chrom)) {
-    throw std::out_of_range(fmt::format(FMT_STRING("chromosome \"{}\" not found"), chrom.name()));
+  if constexpr (ndebug_not_defined()) {
+    if (!this->_chroms.contains(chrom)) {
+      throw std::out_of_range(fmt::format(FMT_STRING("chromosome \"{}\" not found"), chrom.name()));
+    }
   }
 
   if (pos > chrom.size()) {

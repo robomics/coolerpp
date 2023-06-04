@@ -536,8 +536,15 @@ constexpr bool PixelSelector<N, CHUNK_SIZE>::iterator::pixel_is_outdated() const
 template <typename N, std::size_t CHUNK_SIZE>
 inline void PixelSelector<N, CHUNK_SIZE>::iterator::read_pixel() const {
   assert(this->pixel_is_outdated());
-  this->_value.coords = PixelCoordinates{this->_index->bins().at(*this->_bin1_id_it),
-                                         this->_index->bins().at(*this->_bin2_id_it)};
+  if (!!this->_coord1) {
+    this->_value.coords = PixelCoordinates{
+        this->_index->bins().at_hint(*this->_bin1_id_it, this->_coord1->bin1.chrom()),
+        this->_index->bins().at_hint(*this->_bin2_id_it, this->_coord2->bin1.chrom())};
+
+  } else {
+    this->_value.coords = PixelCoordinates{this->_index->bins().at(*this->_bin1_id_it),
+                                           this->_index->bins().at(*this->_bin2_id_it)};
+  }
   this->_value.count = *this->_count_it;
 }
 

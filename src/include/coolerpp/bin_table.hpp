@@ -111,6 +111,7 @@ class BinTable {
   [[nodiscard]] Bin at(const Chromosome &chrom, std::uint32_t pos) const;
   [[nodiscard]] Bin at(std::string_view chrom_name, std::uint32_t pos) const;
   [[nodiscard]] Bin at(std::uint32_t chrom_id, std::uint32_t pos) const;
+  [[nodiscard]] Bin at_hint(std::uint64_t bin_id, const Chromosome &chrom) const;
 
   // Map genomic coords to bin_id
   [[nodiscard]] std::pair<std::uint64_t, std::uint64_t> map_to_bin_ids(
