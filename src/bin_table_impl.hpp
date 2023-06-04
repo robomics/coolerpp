@@ -114,14 +114,10 @@ constexpr const std::vector<std::uint64_t> &BinTable::num_bin_prefix_sum() const
   return this->_num_bins_prefix_sum;
 }
 
-constexpr auto BinTable::begin() -> iterator { return iterator(*this); }
-constexpr auto BinTable::end() -> iterator { return iterator::make_end_iterator(*this); }
-constexpr auto BinTable::begin() const -> const_iterator { return const_iterator(*this); }
-constexpr auto BinTable::end() const -> const_iterator {
-  return const_iterator::make_end_iterator(*this);
-}
-constexpr auto BinTable::cbegin() const -> const_iterator { return this->begin(); }
-constexpr auto BinTable::cend() const -> const_iterator { return this->end(); }
+constexpr auto BinTable::begin() const -> iterator { return iterator(*this); }
+constexpr auto BinTable::end() const -> iterator { return iterator::make_end_iterator(*this); }
+constexpr auto BinTable::cbegin() const -> iterator { return this->begin(); }
+constexpr auto BinTable::cend() const -> iterator { return this->end(); }
 
 constexpr std::uint32_t BinTable::iterator::bin_size() const noexcept {
   assert(this->_bin_table);
@@ -150,7 +146,8 @@ inline bool BinTable::operator==(const BinTable &other) const {
 inline bool BinTable::operator!=(const BinTable &other) const { return !(*this == other); }
 
 inline BinTable BinTable::subset(const Chromosome &chrom) const {
-  return {ChromosomeSet{chrom}, this->_bin_size};
+  const auto &chrom_ = this->_chroms.at(chrom.id());  // Throw exception in case chrom is not valid
+  return {ChromosomeSet{chrom_}, this->_bin_size};
 }
 inline BinTable BinTable::subset(std::string_view chrom_name) const {
   return this->subset(this->_chroms.at(chrom_name));
@@ -160,29 +157,29 @@ inline BinTable BinTable::subset(std::uint32_t chrom_id) const {
 }
 
 inline auto BinTable::find_overlap(const GenomicInterval &query) const
-    -> std::pair<BinTable::const_iterator, BinTable::const_iterator> {
+    -> std::pair<BinTable::iterator, BinTable::iterator> {
   return this->find_overlap(query.chrom(), query.start(), query.end());
 }
 
 inline auto BinTable::find_overlap(const Chromosome &chrom, std::uint32_t start,
                                    std::uint32_t end) const
-    -> std::pair<BinTable::const_iterator, BinTable::const_iterator> {
+    -> std::pair<BinTable::iterator, BinTable::iterator> {
   assert(start < end);
 
   const auto bin1_id = this->at(chrom, start).id();
   const auto bin2_id = this->at(chrom, end - (std::min)(end, 1U)).id();
 
   return std::make_pair(std::next(this->begin(), static_cast<std::ptrdiff_t>(bin1_id)),
-                        std::next(this->begin(), static_cast<std::ptrdiff_t>(bin2_id)));
+                        std::next(this->begin(), static_cast<std::ptrdiff_t>(bin2_id + 1)));
 }
 inline auto BinTable::find_overlap(std::string_view chrom_name, std::uint32_t start,
                                    std::uint32_t end) const
-    -> std::pair<BinTable::const_iterator, BinTable::const_iterator> {
+    -> std::pair<BinTable::iterator, BinTable::iterator> {
   return this->find_overlap(this->_chroms.at(chrom_name), start, end);
 }
 inline auto BinTable::find_overlap(std::uint32_t chrom_id, std::uint32_t start,
                                    std::uint32_t end) const
-    -> std::pair<BinTable::const_iterator, BinTable::const_iterator> {
+    -> std::pair<BinTable::iterator, BinTable::iterator> {
   return this->find_overlap(this->_chroms.at(chrom_id), start, end);
 }
 
