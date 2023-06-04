@@ -120,10 +120,10 @@ std::string_view Cli::get_printable_subcommand() const noexcept {
 }
 
 auto Cli::parse_arguments() -> Config {
-  this->_cli.name(this->_exec_name);
-  this->_cli.parse(this->_argc, this->_argv);
-
   try {
+    this->_cli.name(this->_exec_name);
+    this->_cli.parse(this->_argc, this->_argv);
+
     if (this->_cli.get_subcommand("dump")->parsed()) {
       this->_subcommand = subcommand::dump;
     } else if (this->_cli.get_subcommand("load")->parsed()) {
@@ -212,6 +212,13 @@ void Cli::make_dump_subcommand() {
       ->capture_default_str();
 
   sc.add_option(
+      "--query-file",
+      c.query_file,
+      "Path to a BEDPE file with the list of coordinates to be fetched (pass - to read queries from stdin).")
+      ->check(CLI::ExistingFile | CLI::IsMember({"-"}))
+      ->capture_default_str();
+
+  sc.add_option(
       "-b,--balanced",
       c.balanced,
       "Apply balancing weight to data")
@@ -230,6 +237,9 @@ void Cli::make_dump_subcommand() {
       ->capture_default_str();
 
   // clang-format on
+
+  sc.get_option("--query-file")->excludes(sc.get_option("--range"));
+  sc.get_option("--query-file")->excludes(sc.get_option("--range2"));
 
   this->_config = std::monostate{};
 }

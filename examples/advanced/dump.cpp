@@ -7,6 +7,7 @@
 
 #include <algorithm>
 #include <cassert>
+#include <fstream>
 #include <string_view>
 
 #include "coolerpp/coolerpp.hpp"
@@ -79,7 +80,7 @@ template <bool join>
 static void dump_pixels(const File& clr, std::string_view range1, std::string_view range2,
                         std::string_view balanced) {
   const auto has_int_pixels = clr.has_integral_pixels();
-  const auto weights =
+  const auto weights = // TODO: pass ptr to dump_pixels
       balanced.empty() ? std::shared_ptr<const Weights>(nullptr) : clr.read_weights(balanced);
 
   if (range1 == "all") {
@@ -99,21 +100,59 @@ static void dump_pixels(const File& clr, std::string_view range1, std::string_vi
   return print_pixels<double, join>(sel.begin(), sel.end(), weights);
 }
 
+template <bool join>
+void process_query(const File& clr, std::string_view table, std::string_view range1,
+                   std::string_view range2, std::string_view balanced) {
+  if (table == "chroms") {
+    return dump_chroms(clr, range1);
+  }
+  if (table == "bins") {
+    return dump_bins(clr, range1);
+  }
+
+  assert(table == "pixels");
+  return dump_pixels<join>(clr, range1, range2, balanced);
+}
+
+[[nodiscard]] static std::pair<std::string, std::string> parse_bedpe(std::string_view line) {
+  auto next_token = [&]() {
+    assert(!line.empty());
+    const auto pos1 = line.find('\t');
+    const auto pos2 = line.find('\t', pos1 + 1);
+    const auto pos3 = line.find('\t', pos2 + 1);
+
+    auto tok = std::string{line.substr(0, pos3)};
+    tok[pos1] = ':';
+    tok[pos2] = '-';
+    line.remove_prefix(pos3 + 1);
+    return tok;
+  };
+
+  return std::make_pair(next_token(), next_token());
+}
+
 void dump_subcmd(const DumpConfig& c) {
   const auto clr = File::open_read_only(c.uri);
 
-  if (c.table == "chroms") {
-    return dump_chroms(clr, c.range1);
-  }
-  if (c.table == "bins") {
-    return dump_bins(clr, c.range1);
+  if (c.query_file.empty()) {
+    c.join ? process_query<true>(clr, c.table, c.range1, c.range2, c.balanced)
+           : process_query<false>(clr, c.table, c.range1, c.range2, c.balanced);
   }
 
-  assert(c.table == "pixels");
-  if (c.join) {
-    dump_pixels<true>(clr, c.range1, c.range2, c.balanced);
-  } else {
-    dump_pixels<false>(clr, c.range1, c.range2, c.balanced);
+  const auto read_from_stdin = c.query_file == "-";
+  std::ifstream ifs{};
+  ifs.exceptions(ifs.exceptions() | std::ios_base::badbit | std::ios_base::failbit);
+
+  if (!read_from_stdin) {
+    assert(std::filesystem::exists(c.query_file));
+    ifs.open(c.query_file);
+  }
+
+  std::string line;
+  while (std::getline(read_from_stdin ? std::cin : ifs, line)) {
+    const auto [range1, range2] = parse_bedpe(line);
+    c.join ? process_query<true>(clr, c.table, range1, range2, c.balanced)
+           : process_query<false>(clr, c.table, range1, range2, c.balanced);
   }
 }
 

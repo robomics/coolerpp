@@ -4,6 +4,7 @@
 
 #include <fmt/compile.h>
 #include <fmt/format.h>
+#include <fmt/std.h>
 
 #include <algorithm>
 #include <cassert>
@@ -38,12 +39,12 @@ template <typename N>
   return Pixel<N>{{bins.at(chrom1, start1), bins.at(chrom2, start2)}, count};
 }
 
-[[nodiscard]] static ChromosomeSet import_chromosomes(std::string_view chrom_sizes) {
+[[nodiscard]] static ChromosomeSet import_chromosomes(const std::filesystem::path& chrom_sizes) {
   try {
     std::string line;
     std::vector<Chromosome> chroms{};
 
-    std::ifstream f(std::string{chrom_sizes});
+    std::ifstream f(chrom_sizes);
     while (std::getline(f, line)) {
       const auto delim_pos = line.find('\t');
 

@@ -18,6 +18,7 @@ struct DumpConfig {
 
   std::string range1{"all"};
   std::string range2{"all"};
+  std::filesystem::path query_file{};
 
   std::string table{"pixels"};
   bool join{true};
@@ -29,7 +30,7 @@ struct DumpConfig {
 struct LoadConfig {
   std::string uri{};
 
-  std::string path_to_chrom_sizes{};
+  std::filesystem::path path_to_chrom_sizes{};
   std::uint32_t bin_size{};
   std::string format{"bg2"};
   std::string assembly{"unknown"};
