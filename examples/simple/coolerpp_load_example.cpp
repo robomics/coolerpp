@@ -51,10 +51,9 @@ struct BG2 {
     count = static_cast<std::int32_t>(std::stol(next_token()));
   }
 
-  [[nodiscard]] Pixel<std::int32_t> to_pixel(
-      const std::shared_ptr<const BinTableLazy>& bins) const {
-    return {PixelCoordinates{bins, this->chrom1, this->chrom2, this->start1, this->start2},
-            this->count};
+  [[nodiscard]] Pixel<std::int32_t> to_pixel(const BinTable& bins) const {
+    return Pixel<std::int32_t>{
+        {bins.at(this->chrom1, this->start1), bins.at(this->chrom2, this->start2)}, this->count};
   }
 };
 
@@ -74,10 +73,11 @@ struct BG2 {
     while (std::getline(f, line)) {
       const auto delim_pos = line.find(delim);
 
+      const auto chrom_id = static_cast<std::uint32_t>(chroms.size());
       const auto chrom_name = line.substr(0, delim_pos);
       const auto chrom_size = std::stoull(line.substr(delim_pos + 1));
 
-      chroms.emplace_back(chrom_name, chrom_size);
+      chroms.emplace_back(chrom_id, chrom_name, chrom_size);
     }
 
     return {chroms.begin(), chroms.end()};
@@ -89,8 +89,7 @@ struct BG2 {
 }
 
 /// Process a chunk of pixels and return true as long as there's more data to be processed
-[[nodiscard]] static bool process_chunk(const std::shared_ptr<const BinTableLazy>& bins,
-                                        std::size_t batch_size,
+[[nodiscard]] static bool process_chunk(const BinTable& bins, std::size_t batch_size,
                                         std::vector<Pixel<std::int32_t>>& buffer) {
   buffer.clear();
   std::string line;
@@ -117,7 +116,7 @@ static std::size_t ingest_pixels(std::string_view path_to_chrom_sizes,
                                  std::size_t batch_size = 100'000) {
   auto cooler = File::create_new_cooler(path_to_output_cooler,
                                         import_chromosomes(path_to_chrom_sizes), bin_size);
-  const auto& bins = cooler.bins_ptr();
+  const auto& bins = cooler.bins();
 
   std::vector<Pixel<std::int32_t>> write_buffer;
   write_buffer.reserve(batch_size);

@@ -16,7 +16,7 @@ using namespace coolerpp;
 template <typename It>
 static void print_pixels(It first_pixel, It last_pixel) {
   std::for_each(first_pixel, last_pixel,
-                [](const auto& pixel) { fmt::print(FMT_STRING("{:bedpe}\n"), pixel); });
+                [](const auto& pixel) { fmt::print(FMT_STRING("{:bg2}\n"), pixel); });
 }
 
 template <typename N>
