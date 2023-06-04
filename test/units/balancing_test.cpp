@@ -98,10 +98,6 @@ TEST_CASE("Coolerpp: Balancer", "[cooler][short]") {
         const auto sel = Balancer(
             clr.fetch<std::int32_t>("chr1", 5'000'000, 10'000'000, "chr2", 5'000'000, 10'000'000),
             clr.read_weights("weight"));
-        for (const auto& p : clr.fetch<std::int32_t>("chr1", 5'000'000, 10'000'000, "chr2",
-                                                     5'000'000, 10'000'000)) {
-          fmt::print(FMT_STRING("{}\n"), p);
-        }
         constexpr std::array<double, 4> expected{0.001782, 0.002756, 0.002047, 0.004749};
         balancer_test_helper(sel, expected);
       }
