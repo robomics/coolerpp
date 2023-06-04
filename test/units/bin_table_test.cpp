@@ -122,19 +122,6 @@ TEST_CASE("BinTable", "[bin-table][short]") {
   }
 
   SECTION("at") {
-    const BinTable expected{{Chromosome{1, "chr2", 25017}}, bin_size};
-
-    CHECK(table.subset(Chromosome{1, "chr2", 25017}) == expected);
-    CHECK(table.subset("chr2") == expected);
-    CHECK(table.subset(1) == expected);
-    CHECK(table.subset("chr1") != expected);
-
-    CHECK_THROWS_AS(table.subset(Chromosome{4, "chr5", 1}), std::out_of_range);
-    CHECK_THROWS_AS(table.subset("a"), std::out_of_range);
-    CHECK_THROWS_AS(table.subset(10), std::out_of_range);
-  }
-
-  SECTION("bin id to coord") {
     const auto& chr1 = table.chromosomes().at("chr1");
     const auto& chr2 = table.chromosomes().at("chr2");
 
@@ -157,6 +144,36 @@ TEST_CASE("BinTable", "[bin-table][short]") {
     CHECK_THROWS_AS(table.map_to_bin_id("chr1", 99999), std::out_of_range);
     CHECK_THROWS_AS(table.map_to_bin_id(chr2, 99999), std::out_of_range);
     CHECK_THROWS_AS(table.map_to_bin_id(1, 99999), std::out_of_range);
+  }
+
+  SECTION("subset") {
+    const BinTable expected{{Chromosome{1, "chr2", 25017}}, bin_size};
+
+    CHECK(table.subset(Chromosome{1, "chr2", 25017}) == expected);
+    CHECK(table.subset("chr2") == expected);
+    CHECK(table.subset(1) == expected);
+    CHECK(table.subset("chr1") != expected);
+
+    CHECK_THROWS_AS(table.subset(Chromosome{4, "chr5", 1}), std::out_of_range);
+    CHECK_THROWS_AS(table.subset("a"), std::out_of_range);
+    CHECK_THROWS_AS(table.subset(10), std::out_of_range);
+  }
+
+  SECTION("find overlap") {
+    const auto& chrom = *table.chromosomes().begin();
+
+    auto its = table.find_overlap({chrom, 10'000, 10'001});
+    CHECK(std::distance(its.first, its.second) == 1);
+
+    its = table.find_overlap({chrom, 0, bin_size - 1});
+    CHECK(std::distance(its.first, its.second) == 1);
+
+    its = table.find_overlap({chrom, 10'000, 20'000});
+    CHECK(std::distance(its.first, its.second) == 2);
+
+    its = table.find_overlap({chrom, 0, chrom.size()});
+    const auto table1 = table.subset(chrom);
+    CHECK(std::distance(its.first, its.second) == std::distance(table1.begin(), table1.end()));
   }
 
   SECTION("iterators") {
