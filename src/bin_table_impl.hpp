@@ -114,14 +114,10 @@ constexpr const std::vector<std::uint64_t> &BinTable::num_bin_prefix_sum() const
   return this->_num_bins_prefix_sum;
 }
 
-constexpr auto BinTable::begin() -> iterator { return iterator(*this); }
-constexpr auto BinTable::end() -> iterator { return iterator::make_end_iterator(*this); }
-constexpr auto BinTable::begin() const -> const_iterator { return const_iterator(*this); }
-constexpr auto BinTable::end() const -> const_iterator {
-  return const_iterator::make_end_iterator(*this);
-}
-constexpr auto BinTable::cbegin() const -> const_iterator { return this->begin(); }
-constexpr auto BinTable::cend() const -> const_iterator { return this->end(); }
+constexpr auto BinTable::begin() const -> iterator { return iterator(*this); }
+constexpr auto BinTable::end() const -> iterator { return iterator::make_end_iterator(*this); }
+constexpr auto BinTable::cbegin() const -> iterator { return this->begin(); }
+constexpr auto BinTable::cend() const -> iterator { return this->end(); }
 
 constexpr std::uint32_t BinTable::iterator::bin_size() const noexcept {
   assert(this->_bin_table);
@@ -149,15 +145,41 @@ inline bool BinTable::operator==(const BinTable &other) const {
 }
 inline bool BinTable::operator!=(const BinTable &other) const { return !(*this == other); }
 
-inline BinTable BinTable::subset(const Chromosome &chrom) const { return this->subset(chrom.id()); }
-
+inline BinTable BinTable::subset(const Chromosome &chrom) const {
+  const auto &chrom_ = this->_chroms.at(chrom.id());  // Throw exception in case chrom is not valid
+  return {ChromosomeSet{chrom_}, this->_bin_size};
+}
 inline BinTable BinTable::subset(std::string_view chrom_name) const {
   return this->subset(this->_chroms.at(chrom_name));
 }
-
 inline BinTable BinTable::subset(std::uint32_t chrom_id) const {
-  const auto &chrom = this->_chroms.at(chrom_id);
-  return {ChromosomeSet{chrom}, this->_bin_size};
+  return this->subset(this->_chroms.at(chrom_id));
+}
+
+inline auto BinTable::find_overlap(const GenomicInterval &query) const
+    -> std::pair<BinTable::iterator, BinTable::iterator> {
+  return this->find_overlap(query.chrom(), query.start(), query.end());
+}
+
+inline auto BinTable::find_overlap(const Chromosome &chrom, std::uint32_t start,
+                                   std::uint32_t end) const
+    -> std::pair<BinTable::iterator, BinTable::iterator> {
+  assert(start < end);
+
+  const auto bin1_id = this->at(chrom, start).id();
+  const auto bin2_id = this->at(chrom, end - (std::min)(end, 1U)).id();
+
+  return std::make_pair(this->begin() + bin1_id, this->begin() + bin2_id + 1);
+}
+inline auto BinTable::find_overlap(std::string_view chrom_name, std::uint32_t start,
+                                   std::uint32_t end) const
+    -> std::pair<BinTable::iterator, BinTable::iterator> {
+  return this->find_overlap(this->_chroms.at(chrom_name), start, end);
+}
+inline auto BinTable::find_overlap(std::uint32_t chrom_id, std::uint32_t start,
+                                   std::uint32_t end) const
+    -> std::pair<BinTable::iterator, BinTable::iterator> {
+  return this->find_overlap(this->_chroms.at(chrom_id), start, end);
 }
 
 inline Bin BinTable::at(std::uint64_t bin_id) const {
@@ -262,10 +284,38 @@ constexpr bool BinTable::iterator::operator!=(const iterator &other) const noexc
   return !(*this == other);
 }
 
+constexpr bool BinTable::iterator::operator<(const iterator &other) const noexcept {
+  if (this->_chrom_id == other._chrom_id) {
+    return this->_idx < other._idx;
+  }
+  return this->_chrom_id < other._chrom_id;
+}
+
+constexpr bool BinTable::iterator::operator<=(const iterator &other) const noexcept {
+  if (this->_chrom_id == other._chrom_id) {
+    return this->_idx <= other._idx;
+  }
+  return this->_chrom_id <= other._chrom_id;
+}
+
+constexpr bool BinTable::iterator::operator>(const iterator &other) const noexcept {
+  if (this->_chrom_id == other._chrom_id) {
+    return this->_idx > other._idx;
+  }
+  return this->_chrom_id > other._chrom_id;
+}
+
+constexpr bool BinTable::iterator::operator>=(const iterator &other) const noexcept {
+  if (this->_chrom_id == other._chrom_id) {
+    return this->_idx >= other._idx;
+  }
+  return this->_chrom_id >= other._chrom_id;
+}
+
 constexpr auto BinTable::iterator::make_end_iterator(const BinTable &table) noexcept -> iterator {
   iterator it(table);
 
-  it._chrom_id = std::numeric_limits<std::uint32_t>::max();
+  it._chrom_id = nchrom;
   it._idx = npos;
   return it;
 }
@@ -284,7 +334,7 @@ inline auto BinTable::iterator::operator*() const -> value_type {
 
 inline auto BinTable::iterator::operator++() -> iterator & {
   assert(this->_bin_table);
-  if (this->_chrom_id == std::numeric_limits<std::uint32_t>::max()) {
+  if (this->_chrom_id == nchrom) {
     return *this;
   }
 
@@ -305,8 +355,37 @@ inline auto BinTable::iterator::operator++(int) -> iterator {
   return it;
 }
 
+inline auto BinTable::iterator::operator+=(std::size_t i) -> iterator & {
+  assert(this->_bin_table);
+  if (this->_chrom_id == nchrom) {
+    if (i == 0) {
+      return *this;
+    }
+    throw std::out_of_range("BinTable::iterator: caught attempt to increment iterator past end()");
+  }
+
+  const auto num_bins = this->compute_num_bins();
+  if (this->_idx + i < num_bins) {
+    this->_idx += i;
+    return *this;
+  }
+
+  this->_chrom_id++;
+  i -= (num_bins - this->_idx);
+  this->_idx = 0;
+  return *this += i;
+}
+
+inline auto BinTable::iterator::operator+(std::size_t i) const -> iterator {
+  auto it = *this;
+  return it += i;
+}
+
 inline auto BinTable::iterator::operator--() -> iterator & {
   assert(this->_bin_table);
+  if (this->_idx == 0 && this->_chrom_id == 0) {
+    return *this;
+  }
 
   if (this->_idx == npos) {
     assert(*this == make_end_iterator(*this->_bin_table));
@@ -328,6 +407,57 @@ inline auto BinTable::iterator::operator--(int) -> iterator {
   std::ignore = --(*this);
   return it;
 }
+
+inline auto BinTable::iterator::operator-=(std::size_t i) -> iterator & {
+  assert(this->_bin_table);
+
+  if (this->_chrom_id == 0 && this->_idx == 0 && i == 0) {
+    return *this;
+  }
+
+  if (this->_chrom_id == 0 && this->_idx < i) {
+    throw std::out_of_range(
+        "BinTable::iterator: caught attempt to decrement iterator past begin()");
+  }
+
+  if (this->_idx == npos) {
+    assert(*this == make_end_iterator(*this->_bin_table));
+    this->_chrom_id = static_cast<std::uint32_t>(this->num_chromosomes() - 1);
+    this->_idx = this->compute_num_bins();
+    return *this -= i;
+  }
+
+  if (i <= this->_idx) {
+    this->_idx -= i;
+    return *this;
+  }
+
+  this->_chrom_id--;
+  i -= this->_idx;
+  this->_idx = this->compute_num_bins();
+  return *this -= i;
+}
+
+inline auto BinTable::iterator::operator-(std::size_t i) const -> iterator {
+  auto it = *this;
+  return it -= i;
+}
+
+inline auto BinTable::iterator::operator-(const iterator &other) const -> difference_type {
+  assert(this->_bin_table);
+  assert(other._bin_table);
+
+  const auto offset1 = this->_chrom_id == nchrom
+                           ? this->_bin_table->size()
+                           : this->_bin_table->map_to_bin_id(this->_chrom_id, 0) + this->_idx;
+  const auto offset2 = other._chrom_id == nchrom
+                           ? other._bin_table->size()
+                           : other._bin_table->map_to_bin_id(other._chrom_id, 0) + other._idx;
+
+  return static_cast<difference_type>(offset1) - static_cast<difference_type>(offset2);
+}
+
+inline auto BinTable::iterator::operator[](std::size_t i) const -> iterator { return (*this + i); }
 
 inline const Chromosome &BinTable::iterator::chromosome() const {
   return this->chromosome(this->_chrom_id);

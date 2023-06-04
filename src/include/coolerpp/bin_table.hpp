@@ -66,7 +66,6 @@ class BinTable {
 
  public:
   class iterator;
-  using const_iterator = const iterator;
   friend iterator;
 
   BinTable() = default;
@@ -85,16 +84,26 @@ class BinTable {
 
   [[nodiscard]] constexpr const std::vector<std::uint64_t> &num_bin_prefix_sum() const noexcept;
 
-  [[nodiscard]] constexpr auto begin() -> iterator;
-  [[nodiscard]] constexpr auto end() -> iterator;
-  [[nodiscard]] constexpr auto begin() const -> const_iterator;
-  [[nodiscard]] constexpr auto end() const -> const_iterator;
-  [[nodiscard]] constexpr auto cbegin() const -> const_iterator;
-  [[nodiscard]] constexpr auto cend() const -> const_iterator;
+  [[nodiscard]] constexpr auto begin() const -> iterator;
+  [[nodiscard]] constexpr auto end() const -> iterator;
+  [[nodiscard]] constexpr auto cbegin() const -> iterator;
+  [[nodiscard]] constexpr auto cend() const -> iterator;
 
   [[nodiscard]] BinTable subset(const Chromosome &chrom) const;
   [[nodiscard]] BinTable subset(std::string_view chrom_name) const;
   [[nodiscard]] BinTable subset(std::uint32_t chrom_id) const;
+
+  [[nodiscard]] auto find_overlap(const GenomicInterval &query) const
+      -> std::pair<BinTable::iterator, BinTable::iterator>;
+  [[nodiscard]] auto find_overlap(const Chromosome &chrom, std::uint32_t start,
+                                  std::uint32_t end) const
+      -> std::pair<BinTable::iterator, BinTable::iterator>;
+  [[nodiscard]] auto find_overlap(std::string_view chrom_name, std::uint32_t start,
+                                  std::uint32_t end) const
+      -> std::pair<BinTable::iterator, BinTable::iterator>;
+  [[nodiscard]] auto find_overlap(std::uint32_t chrom_id, std::uint32_t start,
+                                  std::uint32_t end) const
+      -> std::pair<BinTable::iterator, BinTable::iterator>;
 
   // Map bin_id to Bin
   [[nodiscard]] Bin at(std::uint64_t bin_id) const;
@@ -126,7 +135,8 @@ class BinTable {
     std::size_t _idx{0};
     std::uint32_t _chrom_id{0};
 
-    static constexpr auto npos = std::numeric_limits<std::size_t>::max();
+    static constexpr auto npos = (std::numeric_limits<std::size_t>::max)();
+    static constexpr auto nchrom = (std::numeric_limits<std::uint32_t>::max)();
 
     constexpr explicit iterator(const BinTable &bin_table) noexcept;
 
@@ -135,17 +145,30 @@ class BinTable {
     using value_type = Bin;
     using pointer = value_type *;
     using reference = value_type &;
-    using iterator_category = std::bidirectional_iterator_tag;
+    using iterator_category = std::random_access_iterator_tag;
 
     constexpr iterator() noexcept = default;
 
     constexpr bool operator==(const iterator &other) const noexcept;
     constexpr bool operator!=(const iterator &other) const noexcept;
+    constexpr bool operator<(const iterator &other) const noexcept;
+    constexpr bool operator<=(const iterator &other) const noexcept;
+    constexpr bool operator>(const iterator &other) const noexcept;
+    constexpr bool operator>=(const iterator &other) const noexcept;
+
     auto operator*() const -> value_type;
+    auto operator[](std::size_t i) const -> iterator;
+
     auto operator++() -> iterator &;
     auto operator++(int) -> iterator;
+    auto operator+=(std::size_t i) -> iterator &;
+    auto operator+(std::size_t i) const -> iterator;
+
     auto operator--() -> iterator &;
     auto operator--(int) -> iterator;
+    auto operator-=(std::size_t i) -> iterator &;
+    auto operator-(std::size_t i) const -> iterator;
+    auto operator-(const iterator &other) const -> difference_type;
 
    private:
     [[nodiscard]] static constexpr auto make_end_iterator(const BinTable &table) noexcept
