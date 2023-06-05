@@ -221,6 +221,11 @@ inline auto PixelSelector<N, CHUNK_SIZE>::iterator::operator++() -> iterator & {
   std::ignore = ++this->_bin2_id_it;
   std::ignore = ++this->_count_it;
 
+  if (this->is_at_end()) {
+    this->jump_at_end();
+    return *this;
+  }
+
   if (this->discard()) {
     this->jump_to_next_overlap();
   }
