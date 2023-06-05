@@ -154,7 +154,9 @@ TEST_CASE("BinTable", "[bin-table][short]") {
     CHECK(table.subset(1) == expected);
     CHECK(table.subset("chr1") != expected);
 
-    CHECK_THROWS_AS(table.subset(Chromosome{4, "chr5", 1}), std::out_of_range);
+    if constexpr (ndebug_not_defined()) {
+      CHECK_THROWS_AS(table.subset(Chromosome{4, "chr5", 1}), std::out_of_range);
+    }
     CHECK_THROWS_AS(table.subset("a"), std::out_of_range);
     CHECK_THROWS_AS(table.subset(10), std::out_of_range);
   }
@@ -229,6 +231,27 @@ TEST_CASE("BinTable", "[bin-table][short]") {
       }
 
       CHECK(first_bin == last_bin);
+    }
+
+    SECTION("operator+") {
+      CHECK(table.begin() + 0 == table.begin());
+      CHECK(*(table.begin() + 5) == expected[5]);
+
+      auto it = table.begin() + 5;
+      for (std::size_t i = 0; i < expected.size() - 5; ++i) {
+        CHECK(*(it + i) == expected[i + 5]);  // NOLINT
+      }
+    }
+
+    SECTION("operator-") {
+      CHECK(table.begin() - 0 == table.begin());
+      CHECK(*(table.end() - 5) == *(expected.end() - 5));
+
+      auto it1 = table.end();
+      auto it2 = expected.end();  // NOLINT
+      for (std::size_t i = 1; i < expected.size(); ++i) {
+        CHECK(*(it1 - i) == *(it2 - i));  // NOLINT
+      }
     }
   }
 
