@@ -146,11 +146,13 @@ inline bool BinTable::operator==(const BinTable &other) const {
 inline bool BinTable::operator!=(const BinTable &other) const { return !(*this == other); }
 
 inline BinTable BinTable::subset(const Chromosome &chrom) const {
-  if constexpr (ndebug_not_defined()) {
-    if (!this->_chroms.contains(chrom)) {
-      throw std::out_of_range(fmt::format(FMT_STRING("chromosome \"{}\" not found"), chrom.name()));
-    }
+  // GCC8 fails to compile when using if constexpr instead #ifndef
+  // See: https://github.com/fmtlib/fmt/issues/1455
+#ifndef NDEBUG
+  if (!this->_chroms.contains(chrom)) {
+    throw std::out_of_range(fmt::format(FMT_STRING("chromosome \"{}\" not found"), chrom.name()));
   }
+#endif
   return {ChromosomeSet{chrom}, this->_bin_size};
 }
 inline BinTable BinTable::subset(std::string_view chrom_name) const {
@@ -236,11 +238,13 @@ inline std::pair<std::uint64_t, std::uint64_t> BinTable::map_to_bin_ids(
 }
 
 inline std::uint64_t BinTable::map_to_bin_id(const Chromosome &chrom, std::uint32_t pos) const {
-  if constexpr (ndebug_not_defined()) {
-    if (!this->_chroms.contains(chrom)) {
-      throw std::out_of_range(fmt::format(FMT_STRING("chromosome \"{}\" not found"), chrom.name()));
-    }
+  // GCC8 fails to compile when using if constexpr instead #ifndef
+  // See: https://github.com/fmtlib/fmt/issues/1455
+#ifndef NDEBUG
+  if (!this->_chroms.contains(chrom)) {
+    throw std::out_of_range(fmt::format(FMT_STRING("chromosome \"{}\" not found"), chrom.name()));
   }
+#endif
 
   if (pos > chrom.size()) {
     throw std::out_of_range(fmt::format(
