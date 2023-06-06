@@ -62,7 +62,7 @@ jobs:
       - name: Generate cache key
         id: cache-key
         run: |
-          hash="${{ hashFiles('conanfile.txt', '.github/workflows/run-codecov.yml') }}"
+          hash="${{ hashFiles('conanfile.txt', '.github/workflows/codecov.yml') }}"
 
           # This can be used by to always update a cache entry (useful e.g. for ccache)
           current_date="$(date '+%s')"
