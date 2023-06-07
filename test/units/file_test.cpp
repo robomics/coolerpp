@@ -412,7 +412,7 @@ TEST_CASE("Coolerpp: read/write chromosomes", "[cooler][short]") {
     CHECK(chroms == f.chromosomes());
   }
 
-  const auto f = File::open_read_only(path, false);
+  const auto f = File::open_read_only(path, DEFAULT_HDF5_CACHE_SIZE, false);
   CHECK(chroms == f.chromosomes());
 }
 

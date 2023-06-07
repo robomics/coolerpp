@@ -51,28 +51,32 @@ class Dataset {
   template <typename T, std::size_t CHUNK_SIZE = DEFAULT_HDF5_DATASET_ITERATOR_BUFFER_SIZE>
   using const_iterator = iterator<T, CHUNK_SIZE>;
 
-  [[nodiscard]] static HighFive::DataSetCreateProps generate_default_dset_create_props(
-      std::uint_fast8_t compression_lvl = DEFAULT_COMPRESSION_LEVEL,
-      std::size_t chunk_size = DEFAULT_HDF5_CHUNK_SIZE);
-  [[nodiscard]] static HighFive::DataSetAccessProps generate_default_dset_access_props(
-      std::size_t chunk_size = DEFAULT_HDF5_CHUNK_SIZE,
-      std::size_t cache_size = DEFAULT_HDF5_LARGE_CACHE_SIZE, double w0 = DEFAULT_HDF5_CACHE_W0);
+  [[nodiscard]] static HighFive::DataSetCreateProps init_create_props(
+      std::uint_fast8_t compression_lvl, std::size_t chunk_size);
+  [[nodiscard]] static HighFive::DataSetAccessProps init_access_props(std::size_t chunk_size,
+                                                                      std::size_t cache_size,
+                                                                      double w0);
+
+  [[nodiscard]] static HighFive::DataSetCreateProps default_create_props();
+  [[nodiscard]] static HighFive::DataSetAccessProps default_access_props();
 
   Dataset() = default;
   Dataset(RootGroup root_group, HighFive::DataSet dset);
   Dataset(RootGroup root_group, std::string_view path_to_dataset,
-          const HighFive::DataSetAccessProps &aprops = generate_default_dset_access_props());
+          const HighFive::DataSetAccessProps &aprops = default_access_props());
 
   template <typename T, typename = std::enable_if_t<std::is_arithmetic_v<T>>>
   Dataset(RootGroup root_group, std::string_view path_to_dataset, const T &type,
           std::size_t max_dim = HighFive::DataSpace::UNLIMITED,
-          const HighFive::DataSetAccessProps &aprops = generate_default_dset_access_props(),
-          const HighFive::DataSetCreateProps &cprops = generate_default_dset_create_props());
+          const HighFive::DataSetAccessProps &aprops = init_access_props(
+              DEFAULT_HDF5_CHUNK_SIZE, DEFAULT_HDF5_CACHE_SIZE * 4, DEFAULT_HDF5_CACHE_W0),
+          const HighFive::DataSetCreateProps &cprops = default_create_props());
 
   Dataset(RootGroup root_group, std::string_view path_to_dataset, std::string_view longest_str,
           std::size_t max_dim = HighFive::DataSpace::UNLIMITED,
-          const HighFive::DataSetAccessProps &aprops = generate_default_dset_access_props(),
-          const HighFive::DataSetCreateProps &cprops = generate_default_dset_create_props());
+          const HighFive::DataSetAccessProps &aprops = init_access_props(
+              DEFAULT_HDF5_CHUNK_SIZE, DEFAULT_HDF5_DATASET_CACHE_SIZE * 4, DEFAULT_HDF5_CACHE_W0),
+          const HighFive::DataSetCreateProps &cprops = default_create_props());
 
   const HighFive::DataSet &operator()() const noexcept;
   HighFive::DataSet operator()();
