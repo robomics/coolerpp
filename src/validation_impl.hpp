@@ -288,7 +288,7 @@ inline ValidationStatusScool is_scool_file(const HighFive::File &fp, bool valida
   return status;
 }
 
-inline std::vector<std::uint32_t> list_resolutions(std::string_view uri) {
+inline std::vector<std::uint32_t> list_resolutions(std::string_view uri, bool sorted) {
   [[maybe_unused]] const HighFive::SilenceHDF5 silencer{};  // NOLINT
   try {
     if (!is_multires_file(uri, false)) {
@@ -305,6 +305,9 @@ inline std::vector<std::uint32_t> list_resolutions(std::string_view uri) {
                      return coolerpp::internal::parse_numeric_or_throw<std::uint32_t>(res);
                    });
 
+    if (sorted) {
+      std::sort(resolutions.begin(), resolutions.end());
+    }
     return resolutions;
   } catch (const std::exception &e) {
     throw std::runtime_error(

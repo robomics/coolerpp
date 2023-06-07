@@ -106,15 +106,13 @@ class File {
 
   // Constructors are private. Cooler files are opened using factory methods
   explicit File(std::string_view uri, unsigned mode = HighFive::File::ReadOnly,
-                std::size_t small_cache_size = DEFAULT_HDF5_SMALL_CACHE_SIZE,
-                std::size_t large_cache_size = DEFAULT_HDF5_LARGE_CACHE_SIZE,
+                std::size_t cache_size_bytes = DEFAULT_HDF5_CACHE_SIZE,
                 double w0 = DEFAULT_HDF5_CACHE_W0, bool validate = true);
 
   template <typename PixelT>
   explicit File(std::string_view uri, ChromosomeSet chroms, PixelT pixel,
                 StandardAttributes attributes,
-                std::size_t small_cache_size = DEFAULT_HDF5_SMALL_CACHE_SIZE,
-                std::size_t large_cache_size = DEFAULT_HDF5_LARGE_CACHE_SIZE,
+                std::size_t cache_size_bytes = DEFAULT_HDF5_CACHE_SIZE,
                 double w0 = DEFAULT_HDF5_CACHE_W0);
 
  public:
@@ -123,15 +121,21 @@ class File {
   File(File &&other) noexcept(noexcept_move_ctor()) = default;  // NOLINT
 
   // Simple constructor. Open file in read-only mode. Automatically detects pixel count type
-  [[nodiscard]] static File open_read_only(std::string_view uri, bool validate = true);
-  [[nodiscard]] static File open_read_only_random_access(std::string_view uri,
-                                                         bool validate = true);
-  [[nodiscard]] static File open_read_only_read_once(std::string_view uri, bool validate = true);
+  [[nodiscard]] static File open_read_only(std::string_view uri,
+                                           std::size_t cache_size_bytes = DEFAULT_HDF5_CACHE_SIZE,
+                                           bool validate = true);
+  [[nodiscard]] static File open_read_only_random_access(
+      std::string_view uri, std::size_t cache_size_bytes = DEFAULT_HDF5_CACHE_SIZE,
+      bool validate = true);
+  [[nodiscard]] static File open_read_only_read_once(
+      std::string_view uri, std::size_t cache_size_bytes = DEFAULT_HDF5_CACHE_SIZE,
+      bool validate = true);
   template <typename PixelT = DefaultPixelT>
   [[nodiscard]] static File create_new_cooler(
       std::string_view uri, const ChromosomeSet &chroms, std::uint32_t bin_size,
       bool overwrite_if_exists = false,
-      StandardAttributes attributes = StandardAttributes::init<PixelT>(0));
+      StandardAttributes attributes = StandardAttributes::init<PixelT>(0),
+      std::size_t cache_size_bytes = DEFAULT_HDF5_CACHE_SIZE * 4);
 
   ~File() noexcept;
 
@@ -245,8 +249,8 @@ class File {
   [[nodiscard]] static auto open_root_group(const HighFive::File &f, std::string_view uri)
       -> RootGroup;
   [[nodiscard]] static auto open_groups(const RootGroup &root_grp) -> GroupMap;
-  [[nodiscard]] static auto open_datasets(const RootGroup &root_grp, std::size_t small_cache_size,
-                                          std::size_t large_cache_size, double w0) -> DatasetMap;
+  [[nodiscard]] static auto open_datasets(const RootGroup &root_grp, std::size_t cache_size_bytes,
+                                          double w0) -> DatasetMap;
   [[nodiscard]] static auto read_standard_attributes(const RootGroup &root_grp,
                                                      bool initialize_missing = false)
       -> StandardAttributes;
@@ -257,8 +261,7 @@ class File {
   [[nodiscard]] static auto create_groups(RootGroup &root_grp) -> GroupMap;
   template <typename PixelT>
   [[nodiscard]] static auto create_datasets(RootGroup &root_grp, const ChromosomeSet &chroms,
-                                            std::size_t small_cache_size,
-                                            std::size_t large_cache_size, double w0) -> DatasetMap;
+                                            std::size_t cache_size_bytes, double w0) -> DatasetMap;
   static void write_standard_attributes(RootGroup &root_grp, const StandardAttributes &attributes,
                                         bool skip_sentinel_attr = true);
 

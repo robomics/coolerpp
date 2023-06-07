@@ -50,8 +50,8 @@ template <typename I>
 
 }  // namespace internal
 
-inline HighFive::DataSetCreateProps Dataset::generate_default_dset_create_props(
-    std::uint_fast8_t compression_lvl, const std::size_t chunk_size) {
+inline HighFive::DataSetCreateProps Dataset::init_create_props(std::uint_fast8_t compression_lvl,
+                                                               std::size_t chunk_size) {
   assert(chunk_size != 0);
   HighFive::DataSetCreateProps props{};
   props.add(HighFive::Shuffle());
@@ -60,8 +60,8 @@ inline HighFive::DataSetCreateProps Dataset::generate_default_dset_create_props(
   return props;
 }
 
-inline HighFive::DataSetAccessProps Dataset::generate_default_dset_access_props(
-    const std::size_t chunk_size, const std::size_t cache_size, double w0) {
+inline HighFive::DataSetAccessProps Dataset::init_access_props(std::size_t chunk_size,
+                                                               std::size_t cache_size, double w0) {
   // https://docs.hdfgroup.org/hdf5/v1_12/group___d_a_p_l.html#ga104d00442c31714ee073dee518f661f
   assert(chunk_size != 0);
   assert(cache_size != 0);
@@ -72,6 +72,15 @@ inline HighFive::DataSetAccessProps Dataset::generate_default_dset_access_props(
   HighFive::DataSetAccessProps props{};
   props.add(HighFive::Caching(num_slots, cache_size, w0));
   return props;
+}
+
+inline HighFive::DataSetCreateProps Dataset::default_create_props() {
+  return Dataset::init_create_props(DEFAULT_COMPRESSION_LEVEL, DEFAULT_HDF5_CHUNK_SIZE);
+}
+
+inline HighFive::DataSetAccessProps Dataset::default_access_props() {
+  return Dataset::init_access_props(DEFAULT_HDF5_CHUNK_SIZE, DEFAULT_HDF5_DATASET_CACHE_SIZE,
+                                    DEFAULT_HDF5_CACHE_W0);
 }
 
 inline Dataset::Dataset(RootGroup root_group, HighFive::DataSet dset)

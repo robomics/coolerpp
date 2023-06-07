@@ -280,13 +280,11 @@ constexpr auto fmt::formatter<coolerpp::Pixel<N>>::parse(format_parse_context &c
     -> decltype(ctx.begin()) {
   const auto *it = ctx.begin();
   const auto *end = ctx.end();
-  const auto fmt_string =
-      std::string_view{&(*ctx.begin()), static_cast<std::size_t>(ctx.end() - ctx.begin())};
 
-  if (fmt_string.find("bg2") == 0) {
+  if (coolerpp::starts_with(ctx, "bg2")) {
     this->presentation = Presentation::bg2;
     it += std::string_view{"bg2"}.size();  // NOLINT
-  } else if (fmt_string.find("raw") == 0) {
+  } else if (coolerpp::starts_with(ctx, "raw")) {
     this->presentation = Presentation::raw;
     it += std::string_view{"raw"}.size();  // NOLINT
   }

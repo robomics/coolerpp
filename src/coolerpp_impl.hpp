@@ -72,13 +72,13 @@ inline void init_mcool(std::string_view file_path, bool force_overwrite) {
 //
 // }
 
-inline File::File(std::string_view uri, unsigned mode, std::size_t small_cache_size,
-                  std::size_t large_cache_size, double w0, bool validate)
+inline File::File(std::string_view uri, unsigned mode, std::size_t cache_size_bytes, double w0,
+                  bool validate)
     : _mode(mode),
       _fp(std::make_unique<HighFive::File>(open_file(uri, _mode, validate))),
       _root_group(open_root_group(*_fp, uri)),
       _groups(open_groups(_root_group)),
-      _datasets(open_datasets(_root_group, small_cache_size, large_cache_size, w0)),
+      _datasets(open_datasets(_root_group, cache_size_bytes, w0)),
       _attrs(read_standard_attributes(_root_group)),
       _pixel_variant(detect_pixel_type(_root_group)),
       _bins(std::make_shared<BinTable>(
@@ -96,14 +96,12 @@ inline File::File(std::string_view uri, unsigned mode, std::size_t small_cache_s
 
 template <typename PixelT>
 inline File::File(std::string_view uri, ChromosomeSet chroms, [[maybe_unused]] PixelT pixel,
-                  StandardAttributes attributes, std::size_t small_cache_size,
-                  std::size_t large_cache_size, double w0)
+                  StandardAttributes attributes, std::size_t cache_size_bytes, double w0)
     : _mode(HighFive::File::ReadWrite),
       _fp(std::make_unique<HighFive::File>(open_file(uri, _mode, false))),
       _root_group(open_or_create_root_group(*_fp, uri)),
       _groups(create_groups(_root_group)),
-      _datasets(
-          create_datasets<PixelT>(_root_group, chroms, small_cache_size, large_cache_size, w0)),
+      _datasets(create_datasets<PixelT>(_root_group, chroms, cache_size_bytes, w0)),
       _attrs(std::move(attributes)),
       _pixel_variant(PixelT(0)),
       _bins(std::make_shared<const BinTable>(std::move(chroms), this->bin_size())),
@@ -118,24 +116,25 @@ inline File::File(std::string_view uri, ChromosomeSet chroms, [[maybe_unused]] P
   this->write_sentinel_attr();
 }
 
-inline File File::open_read_only(std::string_view uri, bool validate) {
-  return File::open_read_only_random_access(uri, validate);
+inline File File::open_read_only(std::string_view uri, std::size_t cache_size_bytes,
+                                 bool validate) {
+  return File::open_read_only_random_access(uri, cache_size_bytes, validate);
 }
 
-inline File File::open_read_only_random_access(std::string_view uri, bool validate) {
-  return File(uri, HighFive::File::ReadOnly, DEFAULT_HDF5_SMALL_CACHE_SIZE,
-              DEFAULT_HDF5_LARGE_CACHE_SIZE, DEFAULT_HDF5_CACHE_W0, validate);
+inline File File::open_read_only_random_access(std::string_view uri, std::size_t cache_size_bytes,
+                                               bool validate) {
+  return File(uri, HighFive::File::ReadOnly, cache_size_bytes, DEFAULT_HDF5_CACHE_W0, validate);
 }
 
-inline File File::open_read_only_read_once(std::string_view uri, bool validate) {
-  return File(uri, HighFive::File::ReadOnly, DEFAULT_HDF5_SMALL_CACHE_SIZE,
-              DEFAULT_HDF5_SMALL_CACHE_SIZE, 1.0, validate);
+inline File File::open_read_only_read_once(std::string_view uri, std::size_t cache_size_bytes,
+                                           bool validate) {
+  return File(uri, HighFive::File::ReadOnly, cache_size_bytes, 1.0, validate);
 }
 
 template <typename PixelT>
 inline File File::create_new_cooler(std::string_view uri, const ChromosomeSet &chroms,
                                     std::uint32_t bin_size, bool overwrite_if_exists,
-                                    StandardAttributes attributes) {
+                                    StandardAttributes attributes, std::size_t cache_size_bytes) {
   static_assert(std::is_arithmetic_v<PixelT>);
   if (bin_size == 0) {
     throw std::logic_error("bin_size cannot be zero.");
@@ -181,7 +180,7 @@ inline File File::create_new_cooler(std::string_view uri, const ChromosomeSet &c
     }
     // At this point the parent file is guaranteed to exist, so we can always open it in ReadWrite
     // mode
-    return File(uri, chroms, PixelT(0), attributes);
+    return File(uri, chroms, PixelT(0), attributes, cache_size_bytes);
 
   } catch (const std::exception &e) {
     throw std::runtime_error(

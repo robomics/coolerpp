@@ -28,9 +28,9 @@ void merge(Str first_file, Str last_file, std::string_view dest_uri,
 namespace internal {
 
 /// This class is basically a wrapper around a priority queue of objects of type Node
-/// Node consist of a pixel and an index. The index represent from which iterator (i.e. file) the pixel was read.
-/// This allows us to know from which iterator we should read the next pixel (i.e. the same iterator from which
-/// the top pixel originated)
+/// Node consist of a pixel and an index. The index represent from which iterator (i.e. file) the
+/// pixel was read. This allows us to know from which iterator we should read the next pixel (i.e.
+/// the same iterator from which the top pixel originated)
 template <typename N>
 class PixelMerger {
   struct Node {
@@ -65,7 +65,6 @@ class PixelMerger {
   void merge_in_memory(File& clr, bool quiet = true);
 };
 }  // namespace internal
-
 }  // namespace coolerpp::utils
 
 #include "../../utils_equal_impl.hpp"
