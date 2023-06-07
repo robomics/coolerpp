@@ -19,7 +19,7 @@ enum class MergeStrategy { IN_MEMORY, PQUEUE };
 /// Iterable of coolerpp::File or strings
 template <typename Str>
 void merge(Str first_file, Str last_file, std::string_view dest_uri,
-           bool overwrite_if_exists = false, MergeStrategy strat = MergeStrategy::PQUEUE);
+           bool overwrite_if_exists = false, std::size_t chunk_size = 500'000, bool quiet = true);
 
 [[nodiscard]] bool equal(std::string_view uri1, std::string_view uri2,
                          bool ignore_attributes = true);
@@ -55,14 +55,11 @@ class PixelMerger {
   explicit PixelMerger(const std::vector<File>& input_coolers);
   template <typename FileIt>
   PixelMerger(FileIt first_file, FileIt last_file);
-  void merge(File& clr, MergeStrategy strat, std::size_t queue_capacity = 2'000'000,
-             bool quiet = true);
+  void merge(File& clr, std::size_t queue_capacity, bool quiet = true);
 
  private:
   void replace_top_node(std::size_t i);
   [[nodiscard]] Pixel<N> next();
-  void merge_pqueue(File& clr, std::size_t queue_capacity = 2'000'000, bool quiet = true);
-  void merge_in_memory(File& clr, bool quiet = true);
 };
 }  // namespace internal
 }  // namespace coolerpp::utils

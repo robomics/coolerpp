@@ -23,30 +23,9 @@ TEST_CASE("utils: merge", "[merge][utils][short]") {
 
   const std::array<std::string, 2> sources{src.string(), src.string()};
 
-  SECTION("merge (in memory)") {
-    utils::merge(sources.begin(), sources.end(), dest.string(), true,
-                 utils::MergeStrategy::IN_MEMORY);
 
-    const auto clr1 = File::open_read_only_read_once(src.string());
-    const auto clr2 = File::open_read_only_read_once(dest.string());
-
-    auto first1 = clr1.begin<std::int32_t>();
-    auto last1 = clr1.end<std::int32_t>();
-
-    auto first2 = clr2.begin<std::int32_t>();
-    auto last2 = clr2.end<std::int32_t>();
-
-    REQUIRE(std::distance(first1, last1) == std::distance(first2, last2));
-    while (first1 != last1) {
-      CHECK(first1->coords == first2->coords);
-      CHECK(2 * first1->count == first2->count);
-      ++first1;
-      ++first2;
-    }
-  }
-
-  SECTION("merge (pqueue)") {
-    utils::merge(sources.begin(), sources.end(), dest.string(), true, utils::MergeStrategy::PQUEUE);
+  SECTION("merge") {
+    utils::merge(sources.begin(), sources.end(), dest.string(), true);
 
     const auto clr1 = File::open_read_only_read_once(src.string());
     const auto clr2 = File::open_read_only_read_once(dest.string());
