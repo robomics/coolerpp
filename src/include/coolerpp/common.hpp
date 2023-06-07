@@ -9,6 +9,7 @@
 #include <string_view>
 #include <type_traits>
 #include <utility>
+
 #include "coolerpp/internal/version.hpp"
 
 namespace coolerpp {
@@ -19,13 +20,6 @@ inline const std::string_view COOLERPP_VERSION_STRING{coolerpp::config::version:
 inline constexpr std::string_view COOL_MAGIC{"HDF5::Cooler"};
 inline constexpr std::string_view MCOOL_MAGIC{"HDF5::MCOOL"};
 inline constexpr std::string_view SCOOL_MAGIC{"HDF5::SCOOL"};
-
-inline constexpr std::uint_fast8_t DEFAULT_COMPRESSION_LEVEL = 6;
-inline constexpr std::size_t DEFAULT_HDF5_CHUNK_SIZE = 64ULL << 10U;  // 64KB
-inline constexpr double DEFAULT_HDF5_CACHE_W0 = 0.75;
-inline constexpr std::size_t DEFAULT_HDF5_SMALL_CACHE_SIZE = 1ULL << 20U;               // 1MB
-inline constexpr std::size_t DEFAULT_HDF5_LARGE_CACHE_SIZE = 4ULL << 20U;               // 4MB
-inline constexpr std::size_t DEFAULT_HDF5_DATASET_ITERATOR_BUFFER_SIZE = 32ULL << 10U;  // 32K
 
 // clang-format off
 inline constexpr std::array<std::string_view, 4> MANDATORY_GROUP_NAMES{
@@ -48,6 +42,17 @@ inline constexpr std::array<std::string_view, 10> MANDATORY_DATASET_NAMES{
     "indexes/chrom_offset"
 };
 // clang-format on
+
+inline constexpr std::uint_fast8_t DEFAULT_COMPRESSION_LEVEL = 6;
+inline constexpr std::size_t DEFAULT_HDF5_CHUNK_SIZE = 64ULL << 10U;  // 64KB
+inline constexpr double DEFAULT_HDF5_CACHE_W0 = 0.75;
+inline constexpr std::size_t DEFAULT_HDF5_DATASET_CACHE_SIZE = 1ULL << 20U;        // 1MB
+inline constexpr std::size_t DEFAULT_HDF5_PIXEL_DATASET_CACHE_SIZE = 4ULL << 20U;  // 4MB
+inline constexpr std::size_t DEFAULT_HDF5_CACHE_SIZE =                             // 19MB
+    (3 * DEFAULT_HDF5_PIXEL_DATASET_CACHE_SIZE) +
+    ((MANDATORY_DATASET_NAMES.size() - 3) * DEFAULT_HDF5_DATASET_CACHE_SIZE);
+
+inline constexpr std::size_t DEFAULT_HDF5_DATASET_ITERATOR_BUFFER_SIZE = 32ULL << 10U;  // 32K
 
 namespace internal {
 inline constexpr std::string_view SENTINEL_ATTR_NAME{"format-version"};
@@ -74,7 +79,7 @@ inline constexpr std::uint8_t SENTINEL_ATTR_VALUE{255};
 
 [[nodiscard]] constexpr bool noexcept_move_ctor() noexcept {
 #if defined(__GNUC__) && !defined(__clang__)
-  return __GNUC__ > 9;
+  return __GNUC__ > 7;
 #else
   return true;
 #endif
@@ -185,17 +190,39 @@ constexpr bool is_unary_operation_on_iterator<
     std::void_t<std::disjunction<is_iterable<It>, std::is_pointer<It>>,
                 is_unary_operation<Operation, decltype(*std::declval<It>())>>> = true;
 
-/// Checks whether a fmt format string starts with the given prefix
-template <typename FormatParseContext>
-[[nodiscard]] constexpr bool starts_with(const FormatParseContext &ctx, const char *prefix) {
-  auto first = ctx.begin();
-  auto last = ctx.end();
-  while (first != last && *prefix != '\0') {
-    if (*prefix++ != *first++) {  // NOLINT
+/// Checks whether a string starts with the given prefix
+[[nodiscard]] constexpr bool starts_with(std::string_view s, std::string_view prefix) {
+  if (s.size() < prefix.size()) {
+    return false;
+  }
+  for (std::size_t i = 0; i < prefix.size(); ++i) {
+    if (s[i] != prefix[i]) {
       return false;
     }
   }
-  return *prefix == '\0';
+  return true;
+}
+
+/// Checks whether a string ends with the given prefix
+[[nodiscard]] constexpr bool ends_with(std::string_view s, std::string_view suffix) {
+  if (s.size() < suffix.size()) {
+    return false;
+  }
+  for (std::size_t i = 1; i <= suffix.size(); ++i) {
+    const auto i1 = s.size() - i;
+    const auto i2 = suffix.size() - i;
+    if (s[i1] != suffix[i2]) {
+      return false;
+    }
+  }
+  return true;
+}
+
+/// Checks whether a fmt format string starts with the given prefix
+template <typename FormatParseContext>
+[[nodiscard]] constexpr bool starts_with(const FormatParseContext &ctx, std::string_view prefix) {
+  std::string_view format_str{&(*ctx.begin()), static_cast<std::size_t>(ctx.end() - ctx.begin())};
+  return starts_with(format_str, prefix);
 }
 
 }  // namespace coolerpp

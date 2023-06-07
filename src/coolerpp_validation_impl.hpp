@@ -18,7 +18,7 @@
 #include <utility>
 #include <variant>
 
-#include "coolerpp/utils.hpp"
+#include "coolerpp/validation.hpp"
 
 namespace coolerpp {
 

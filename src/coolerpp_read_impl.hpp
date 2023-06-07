@@ -194,8 +194,8 @@ inline std::shared_ptr<const Weights> File::read_weights(std::string_view name,
       name, std::make_shared<const Weights>(
                 *this->_bins,
                 Dataset{this->_root_group, dset_path,
-                        Dataset::generate_default_dset_access_props(
-                            DEFAULT_HDF5_CHUNK_SIZE, DEFAULT_HDF5_LARGE_CACHE_SIZE, 1.0)},
+                        Dataset::init_access_props(DEFAULT_HDF5_CHUNK_SIZE,
+                                                   DEFAULT_HDF5_DATASET_CACHE_SIZE, 1.0)},
                 type));
   return node.first->second;
 }
@@ -231,23 +231,28 @@ inline auto File::open_groups(const RootGroup &root_grp) -> GroupMap {
   return groups;
 }
 
-inline auto File::open_datasets(const RootGroup &root_grp, std::size_t small_cache_size,
-                                std::size_t large_cache_size, double w0) -> DatasetMap {
+inline auto File::open_datasets(const RootGroup &root_grp, std::size_t cache_size_bytes, double w0)
+    -> DatasetMap {
   DatasetMap datasets(MANDATORY_DATASET_NAMES.size());
 
-  const auto read_once_aprop =
-      Dataset::generate_default_dset_access_props(DEFAULT_HDF5_CHUNK_SIZE, small_cache_size, 1.0);
+  const std::size_t num_pixel_datasets = 3;
+  const std::size_t num_read_once_dataset = MANDATORY_DATASET_NAMES.size() - num_pixel_datasets;
+
+  const std::size_t read_once_cache_size = DEFAULT_HDF5_DATASET_CACHE_SIZE;
+  const std::size_t pixel_dataset_cache_size =
+      (cache_size_bytes - (read_once_cache_size * num_read_once_dataset)) / num_pixel_datasets;
+
   const auto default_aprop =
-      Dataset::generate_default_dset_access_props(DEFAULT_HDF5_CHUNK_SIZE, large_cache_size, w0);
+      Dataset::init_access_props(DEFAULT_HDF5_CHUNK_SIZE, read_once_cache_size, 1.0);
+  const auto pixels_aprop = Dataset::init_access_props(
+      DEFAULT_HDF5_CHUNK_SIZE, (std::max(read_once_cache_size, pixel_dataset_cache_size)), w0);
 
   [[maybe_unused]] HighFive::SilenceHDF5 silencer{};  // NOLINT
   auto open_dataset = [&](const auto dataset_uri) {
-    if (dataset_uri.find("pixels") == 0) {
-      return std::make_pair(std::string{dataset_uri},
-                            Dataset{root_grp, dataset_uri, default_aprop});
-    }
-    return std::make_pair(std::string{dataset_uri},
-                          Dataset{root_grp, dataset_uri, read_once_aprop});
+    return std::make_pair(
+        std::string{dataset_uri},
+        Dataset{root_grp, dataset_uri,
+                starts_with(dataset_uri, "pixels") ? pixels_aprop : default_aprop});
   };
 
   std::transform(MANDATORY_DATASET_NAMES.begin(), MANDATORY_DATASET_NAMES.end(),

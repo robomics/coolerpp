@@ -145,9 +145,20 @@ inline auto File::create_groups(RootGroup &root_grp) -> GroupMap {
 
 template <typename PixelT>
 inline auto File::create_datasets(RootGroup &root_grp, const ChromosomeSet &chroms,
-                                  std::size_t small_cache_size, std::size_t large_cache_size,
-                                  double w0) -> DatasetMap {
+                                  std::size_t cache_size_bytes, double w0) -> DatasetMap {
   DatasetMap datasets(MANDATORY_DATASET_NAMES.size() + 1);
+
+  const std::size_t num_pixel_datasets = 3;
+  const std::size_t num_read_once_dataset = MANDATORY_DATASET_NAMES.size() - num_pixel_datasets;
+
+  const std::size_t read_once_cache_size = DEFAULT_HDF5_DATASET_CACHE_SIZE;
+  const std::size_t pixel_dataset_cache_size =
+      (cache_size_bytes - (read_once_cache_size * num_read_once_dataset)) / num_pixel_datasets;
+
+  const auto default_aprop =
+      Dataset::init_access_props(DEFAULT_HDF5_CHUNK_SIZE, read_once_cache_size, 1.0);
+  const auto pixels_aprop = Dataset::init_access_props(
+      DEFAULT_HDF5_CHUNK_SIZE, (std::max(read_once_cache_size, pixel_dataset_cache_size)), w0);
 
   auto create_dataset = [&](const auto &path, const auto &type, auto aprop) {
     using T = remove_cvref_t<decltype(type)>;
@@ -160,24 +171,19 @@ inline auto File::create_datasets(RootGroup &root_grp, const ChromosomeSet &chro
     }
   };
 
-  const auto read_once_aprop =
-      Dataset::generate_default_dset_access_props(DEFAULT_HDF5_CHUNK_SIZE, small_cache_size, 1.0);
-  const auto default_aprop =
-      Dataset::generate_default_dset_access_props(DEFAULT_HDF5_CHUNK_SIZE, large_cache_size, w0);
+  create_dataset("chroms/name", std::string{}, default_aprop);
+  create_dataset("chroms/length", std::int32_t{}, default_aprop);
 
-  create_dataset("chroms/name", std::string{}, read_once_aprop);
-  create_dataset("chroms/length", std::int32_t{}, read_once_aprop);
+  create_dataset("bins/chrom", std::int32_t{}, default_aprop);
+  create_dataset("bins/start", std::int32_t{}, default_aprop);
+  create_dataset("bins/end", std::int32_t{}, default_aprop);
 
-  create_dataset("bins/chrom", std::int32_t{}, read_once_aprop);
-  create_dataset("bins/start", std::int32_t{}, read_once_aprop);
-  create_dataset("bins/end", std::int32_t{}, read_once_aprop);
+  create_dataset("pixels/bin1_id", std::int64_t{}, pixels_aprop);
+  create_dataset("pixels/bin2_id", std::int64_t{}, pixels_aprop);
+  create_dataset("pixels/count", PixelT{}, pixels_aprop);
 
-  create_dataset("pixels/bin1_id", std::int64_t{}, default_aprop);
-  create_dataset("pixels/bin2_id", std::int64_t{}, default_aprop);
-  create_dataset("pixels/count", PixelT{}, default_aprop);
-
-  create_dataset("indexes/bin1_offset", std::int64_t{}, read_once_aprop);
-  create_dataset("indexes/chrom_offset", std::int64_t{}, read_once_aprop);
+  create_dataset("indexes/bin1_offset", std::int64_t{}, default_aprop);
+  create_dataset("indexes/chrom_offset", std::int64_t{}, default_aprop);
 
   assert(datasets.size() == MANDATORY_DATASET_NAMES.size());
 

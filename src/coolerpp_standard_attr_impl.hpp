@@ -43,4 +43,29 @@ inline StandardAttributes StandardAttributes::init_empty() noexcept {
   return attrs;
 }
 
+inline bool StandardAttributes::operator==(
+    const coolerpp::StandardAttributes& other) const noexcept {
+  // clang-format off
+  return bin_size == other.bin_size &&
+         bin_type == other.bin_type &&
+         format == other.format &&
+         format_version == other.format_version &&
+         storage_mode == other.storage_mode &&
+         creation_date == other.creation_date &&
+         generated_by == other.generated_by &&
+         assembly == other.assembly &&
+         metadata == other.metadata &&
+         format_url == other.format_url &&
+         nbins == other.nbins &&
+         nchroms == other.nchroms &&
+         nnz == other.nnz &&
+         sum == other.sum &&
+         cis == other.cis;
+  // clang-format on
+}
+
+inline bool StandardAttributes::operator!=(
+    const coolerpp::StandardAttributes& other) const noexcept {
+  return !(*this == other);
+}
 }  // namespace coolerpp
