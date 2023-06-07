@@ -22,6 +22,7 @@ target_sources(
           ${CMAKE_CURRENT_SOURCE_DIR}/units/index_test.cpp
           ${CMAKE_CURRENT_SOURCE_DIR}/units/pixel_test.cpp
           ${CMAKE_CURRENT_SOURCE_DIR}/units/pixel_selector_test.cpp
+          ${CMAKE_CURRENT_SOURCE_DIR}/units/utils_equal_test.cpp
           ${CMAKE_CURRENT_SOURCE_DIR}/units/variant_buff_test.cpp)
 
 target_include_directories(coolerpp_test_main PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/units/include/)

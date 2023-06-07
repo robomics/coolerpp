@@ -66,6 +66,8 @@ struct StandardAttributes {
             typename = std::enable_if_t<std::is_arithmetic_v<PixelT>>>
   [[nodiscard]] static StandardAttributes init(std::uint32_t bin_size_);
   [[nodiscard]] static StandardAttributes init_empty() noexcept;
+  [[nodiscard]] bool operator==(const StandardAttributes& other) const noexcept;
+  [[nodiscard]] bool operator!=(const StandardAttributes& other) const noexcept;
 
  private:
   // Use the init factory methods to construct a StandardAttribute object
