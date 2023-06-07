@@ -6,7 +6,6 @@
 
 #include <algorithm>
 #include <queue>
-#include <set>
 #include <string_view>
 #include <vector>
 
@@ -59,18 +58,9 @@ inline PixelMerger<N>::PixelMerger(FileIt first_file, FileIt last_file) {
 }
 
 template <typename N>
-inline void PixelMerger<N>::merge(File& clr, MergeStrategy strat, std::size_t queue_capacity,
-                                  bool quiet) {
-  if (strat == MergeStrategy::IN_MEMORY) {
-    return this->merge_in_memory(clr, quiet);
-  }
-  return this->merge_pqueue(clr, queue_capacity, quiet);
-}
-
-template <typename N>
-inline void PixelMerger<N>::merge_pqueue(File& clr, std::size_t queue_capacity, bool quiet) {
+inline void PixelMerger<N>::merge(File& clr, std::size_t queue_capacity, bool quiet) {
   this->_buffer.clear();
-  this->_buffer.reserve(std::max(queue_capacity, this->_buffer.capacity()));
+  this->_buffer.reserve((std::max)(queue_capacity, this->_buffer.capacity()));
 
   std::size_t pixels_processed{};
   while (true) {
@@ -82,7 +72,7 @@ inline void PixelMerger<N>::merge_pqueue(File& clr, std::size_t queue_capacity, 
     if (this->_buffer.size() == queue_capacity) {
       clr.append_pixels(this->_buffer.begin(), this->_buffer.end());
       pixels_processed += this->_buffer.size();
-      if (!quiet && pixels_processed % std::max(queue_capacity, std::size_t(1'000'000)) == 0) {
+      if (!quiet && pixels_processed % (std::max)(queue_capacity, std::size_t(1'000'000)) == 0) {
         fmt::print(stderr, FMT_STRING("Procesed {}M pixels...\n"), pixels_processed / 1'000'000);
       }
       this->_buffer.clear();
@@ -92,42 +82,6 @@ inline void PixelMerger<N>::merge_pqueue(File& clr, std::size_t queue_capacity, 
   if (!this->_buffer.empty()) {
     clr.append_pixels(this->_buffer.begin(), this->_buffer.end());
   }
-}
-
-template <typename N>
-inline void PixelMerger<N>::merge_in_memory(File& clr, bool quiet) {
-  auto compare_pixel_coords = [](const Pixel<N>& p1, const Pixel<N>& p2) {
-    return p1.coords < p2.coords;
-  };
-
-  using ComparePixelCoordsT = decltype(compare_pixel_coords);
-  std::set<Pixel<N>, ComparePixelCoordsT> pixel_tank{compare_pixel_coords};
-
-  std::size_t pixels_processed = 0;
-  auto emplace_or_merge_pixel = [&](Pixel<N> p) {
-    auto match = pixel_tank.find(p);
-    if (match != pixel_tank.end()) {
-      p.count += match->count;
-      pixel_tank.erase(match);
-    }
-    pixel_tank.emplace(std::move(p));
-
-    if (!quiet && ++pixels_processed % 1'000'000 == 0) {
-      fmt::print(stderr, FMT_STRING("Procesed {}M pixels...\n"), pixels_processed / 1'000'000);
-    }
-  };
-
-  while (!this->_pqueue.empty()) {
-    emplace_or_merge_pixel(this->_pqueue.top().pixel);
-    this->_pqueue.pop();
-  }
-
-  for (std::size_t i = 0; i < this->_heads.size(); ++i) {
-    std::for_each(this->_heads[i], this->_tails[i], emplace_or_merge_pixel);
-  }
-  clr.append_pixels(std::make_move_iterator(pixel_tank.begin()),
-                    std::make_move_iterator(pixel_tank.end()));
-  clr.flush();
 }
 
 template <typename N>
@@ -200,8 +154,9 @@ inline Pixel<N> PixelMerger<N>::next() {
 
 template <typename Str>
 inline void merge(Str first_file, Str last_file, std::string_view dest_uri,
-                  bool overwrite_if_exists, MergeStrategy strat) {
+                  bool overwrite_if_exists, std::size_t chunk_size, bool quiet) {
   static_assert(std::is_constructible_v<std::string, decltype(*first_file)>);
+  assert(chunk_size != 0);
 
   std::vector<File> clrs{};
   std::transform(first_file, last_file, std::back_inserter(clrs),
@@ -221,9 +176,9 @@ inline void merge(Str first_file, Str last_file, std::string_view dest_uri,
           : File::create_new_cooler<std::int32_t>(dest_uri, chroms, bin_size, overwrite_if_exists);
   try {
     if (float_pixels) {
-      internal::PixelMerger<double>(clrs).merge(dest, strat);
+      internal::PixelMerger<double>(clrs).merge(dest, chunk_size, quiet);
     } else {
-      internal::PixelMerger<std::int32_t>(clrs).merge(dest, strat);
+      internal::PixelMerger<std::int32_t>(clrs).merge(dest, chunk_size, quiet);
     }
   } catch (const std::exception& e) {
     throw std::runtime_error(
