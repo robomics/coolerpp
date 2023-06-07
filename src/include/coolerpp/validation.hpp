@@ -70,11 +70,6 @@ struct ValidationStatusScool : public internal::ValidationStatusBase {
 [[nodiscard]] ValidationStatusScool is_scool_file(std::string_view uri, bool validate_cells = true);
 [[nodiscard]] ValidationStatusScool is_scool_file(const HighFive::File& fp,
                                                   bool validate_cells = true);
-
-[[nodiscard]] std::vector<std::uint32_t> list_resolutions(std::string_view uri);
-[[nodiscard]] std::vector<std::uint32_t> list_resolutions(const HighFive::File& fp,
-                                                          std::string_view root_path = "/");
-
 }  // namespace coolerpp::utils
 
 namespace fmt {
@@ -103,4 +98,4 @@ struct formatter<coolerpp::utils::ValidationStatusScool> {
 };
 }  // namespace fmt
 
-#include "../../utils_impl.hpp"
+#include "../../validation_impl.hpp"

@@ -27,7 +27,7 @@
 #include "coolerpp/internal/type_pretty_printer.hpp"
 #include "coolerpp/internal/variant_buff.hpp"
 #include "coolerpp/uri.hpp"
-#include "coolerpp/utils.hpp"
+#include "coolerpp/validation.hpp"
 
 namespace coolerpp {
 
