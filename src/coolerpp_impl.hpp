@@ -137,7 +137,9 @@ inline File File::create_new_cooler(std::string_view uri, const ChromosomeSet &c
                                     std::uint32_t bin_size, bool overwrite_if_exists,
                                     StandardAttributes attributes) {
   static_assert(std::is_arithmetic_v<PixelT>);
-  assert(bin_size != 0);
+  if (bin_size == 0) {
+    throw std::logic_error("bin_size cannot be zero.");
+  }
   attributes.bin_size = bin_size;
   try {
     const auto [file_path, root_path] = parse_cooler_uri(uri);
