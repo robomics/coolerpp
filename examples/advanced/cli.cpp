@@ -337,10 +337,10 @@ void Cli::make_merge_subcommand() {
       "Force overwrite output cooler.")
       ->capture_default_str();
 
-  sc.add_flag(
-      "--floating-point,!--integral",
-      c.floating_point,
-      "Store pixels as floating-point numbers.")
+  sc.add_option(
+      "--chunk-size",
+      c.chunk_size,
+      "Number of pixels to store in memory before writing to disk.")
       ->capture_default_str();
 
   // clang-format on

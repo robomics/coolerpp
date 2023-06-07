@@ -42,8 +42,8 @@ struct LoadConfig {
 struct MergeConfig {
   std::vector<std::string> input_uris{};
   std::string output_uri{};
+  std::size_t chunk_size{1'000'000};
 
-  bool floating_point{false};
   bool force{false};
 };
 
