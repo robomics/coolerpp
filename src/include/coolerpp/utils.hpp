@@ -3,103 +3,66 @@
 // SPDX-License-Identifier: MIT
 
 #pragma once
-// clang-format off
-#include "coolerpp/internal/suppress_warnings.hpp"
-// clang-format on
-#include <fmt/format.h>
 
 #include <cstdint>
-DISABLE_WARNING_PUSH
-DISABLE_WARNING_NULL_DEREF
-#include <highfive/H5File.hpp>
-DISABLE_WARNING_POP
-#include <highfive/H5Group.hpp>
+#include <queue>
 #include <string_view>
 #include <utility>
+#include <vector>
+
+#include "coolerpp/coolerpp.hpp"
 
 namespace coolerpp::utils {
 
+enum class MergeStrategy { IN_MEMORY, PQUEUE };
+
+/// Iterable of coolerpp::File or strings
+template <typename Str>
+void merge(Str first_file, Str last_file, std::string_view dest_uri,
+           bool overwrite_if_exists = false, std::size_t chunk_size = 500'000, bool quiet = true);
+
+[[nodiscard]] bool equal(std::string_view uri1, std::string_view uri2,
+                         bool ignore_attributes = true);
+[[nodiscard]] bool equal(const File& clr1, const File& clr2, bool ignore_attributes = true);
+
 namespace internal {
-struct ValidationStatusBase {
-  bool is_hdf5{false};
-  bool file_was_properly_closed{false};
 
-  bool missing_or_invalid_format_attr{true};
-  bool missing_or_invalid_bin_type_attr{true};
+/// This class is basically a wrapper around a priority queue of objects of type Node
+/// Node consist of a pixel and an index. The index represent from which iterator (i.e. file) the
+/// pixel was read. This allows us to know from which iterator we should read the next pixel (i.e.
+/// the same iterator from which the top pixel originated)
+template <typename N>
+class PixelMerger {
+  struct Node {
+    Pixel<N> pixel{};
+    std::size_t i{};
 
-  std::string uri{};
-  std::vector<std::string> missing_groups{};
+    bool operator<(const Node& other) const noexcept;
+    bool operator>(const Node& other) const noexcept;
+    bool operator==(const Node& other) const noexcept;
+    bool operator!=(const Node& other) const noexcept;
+  };
+
+  std::vector<Pixel<N>> _buffer{};
+  std::priority_queue<Node, std::vector<Node>, std::greater<>> _pqueue{};
+  using PixelIt = decltype(std::declval<File>().begin<N>());
+
+  std::vector<PixelIt> _heads{};
+  std::vector<PixelIt> _tails{};
+
+ public:
+  PixelMerger() = delete;
+  explicit PixelMerger(const std::vector<File>& input_coolers);
+  template <typename FileIt>
+  PixelMerger(FileIt first_file, FileIt last_file);
+  void merge(File& clr, std::size_t queue_capacity, bool quiet = true);
+
+ private:
+  void replace_top_node(std::size_t i);
+  [[nodiscard]] Pixel<N> next();
 };
 }  // namespace internal
-
-struct ValidationStatusCooler : public internal::ValidationStatusBase {
-  bool is_cooler{false};
-
-  constexpr explicit operator bool() const noexcept;
-};
-
-struct ValidationStatusMultiresCooler : public internal::ValidationStatusBase {
-  bool is_multires_file{false};
-
-  std::vector<ValidationStatusCooler> invalid_resolutions{};
-
-  constexpr explicit operator bool() const noexcept;
-};
-
-struct ValidationStatusScool : public internal::ValidationStatusBase {
-  bool is_scool_file{false};
-
-  bool unexpected_number_of_cells{true};
-  std::vector<ValidationStatusCooler> invalid_cells{};
-
-  constexpr explicit operator bool() const noexcept;
-};
-
-[[nodiscard]] ValidationStatusCooler is_cooler(std::string_view uri);
-[[nodiscard]] ValidationStatusCooler is_cooler(const HighFive::File& fp,
-                                               std::string_view root_path = "/");
-[[nodiscard]] ValidationStatusCooler is_cooler(const HighFive::Group& root_group);
-
-[[nodiscard]] ValidationStatusMultiresCooler is_multires_file(std::string_view uri,
-                                                              bool validate_resolutions = true,
-                                                              std::int64_t min_version = 1);
-[[nodiscard]] ValidationStatusMultiresCooler is_multires_file(const HighFive::File& fp,
-                                                              bool validate_resolutions = true,
-                                                              std::int64_t min_version = 1);
-
-[[nodiscard]] ValidationStatusScool is_scool_file(std::string_view uri, bool validate_cells = true);
-[[nodiscard]] ValidationStatusScool is_scool_file(const HighFive::File& fp,
-                                                  bool validate_cells = true);
-
-[[nodiscard]] std::vector<std::uint32_t> list_resolutions(std::string_view uri,
-                                                          bool sorted = false);
-
 }  // namespace coolerpp::utils
 
-namespace fmt {
-template <>
-struct formatter<coolerpp::utils::ValidationStatusCooler> {
-  constexpr auto parse(format_parse_context& ctx) const -> format_parse_context::iterator;
-
-  inline auto format(const coolerpp::utils::ValidationStatusCooler& s, format_context& ctx) const
-      -> format_context::iterator;
-};
-
-template <>
-struct formatter<coolerpp::utils::ValidationStatusMultiresCooler> {
-  constexpr auto parse(format_parse_context& ctx) const -> format_parse_context::iterator;
-
-  inline auto format(const coolerpp::utils::ValidationStatusMultiresCooler& s,
-                     format_context& ctx) const -> format_context::iterator;
-};
-
-template <>
-struct formatter<coolerpp::utils::ValidationStatusScool> {
-  constexpr auto parse(format_parse_context& ctx) const -> format_parse_context::iterator;
-
-  inline auto format(const coolerpp::utils::ValidationStatusScool& s, format_context& ctx) const
-      -> format_context::iterator;
-};
-}  // namespace fmt
-
-#include "../../utils_impl.hpp"
+#include "../../utils_equal_impl.hpp"
+#include "../../utils_merge_impl.hpp"
