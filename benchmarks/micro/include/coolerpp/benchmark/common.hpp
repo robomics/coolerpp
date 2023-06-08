@@ -63,7 +63,7 @@ template <typename I>
     const ChromosomeSet& chroms, std::size_t size) {
   std::vector<std::uint32_t> chrom_sizes(chroms.size());
   std::transform(chroms.begin(), chroms.end(), chrom_sizes.begin(),
-                 [](const Chromosome& c) { return c.size; });
+                 [](const Chromosome& c) { return c.size(); });
 
   auto rand_eng = get_prng(chrom_sizes.begin(), chrom_sizes.end());
 

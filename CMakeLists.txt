@@ -117,7 +117,7 @@ target_compile_definitions(coolerpp_project_options INTERFACE FMT_ENFORCE_COMPIL
 
 option(COOLERPP_ENABLE_TESTING "Build unit tests" ON)
 option(COOLERPP_BUILD_EXAMPLES "Build examples" ON)
-option(COOLERPP_BUILD_BENCHMARKS "Build benchmarks" OFF)
+option(COOLERPP_BUILD_BENCHMARKS "Build benchmarks" ON)
 
 add_subdirectory(src)
 

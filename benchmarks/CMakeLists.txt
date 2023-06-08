@@ -12,7 +12,10 @@ add_executable(coolerpp_benchmark)
 
 target_sources(
   coolerpp_benchmark
-  PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/micro/iteration_bench.cpp)
+  PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/micro/bin_table_bench.cpp
+          ${CMAKE_CURRENT_SOURCE_DIR}/micro/chromosome_bench.cpp
+          ${CMAKE_CURRENT_SOURCE_DIR}/micro/iteration_bench.cpp
+          ${CMAKE_CURRENT_SOURCE_DIR}/micro/pixel_bench.cpp)
 
 target_include_directories(coolerpp_benchmark PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/micro/include/)
 
