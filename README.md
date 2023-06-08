@@ -13,6 +13,4 @@ SPDX-License-Identifier: MIT
 [![Clang-tidy](https://github.com/robomics/coolerpp/actions/workflows/run-clang-tidy.yml/badge.svg)](https://github.com/robomics/coolerpp/actions/workflows/run-clang-tidy.yml)
 [![codecov](https://codecov.io/gh/robomics/coolerpp/branch/main/graph/badge.svg?token=P7N2ND9CIY)](https://codecov.io/gh/robomics/coolerpp)
 
-This library is currently work-in-progress, completely lacks documentation and its API is subject to change.
-
-Use at your own risk :).
+Code from this repo is now part of [paulsengroup/hictk](https://github.com/paulsengroup/hictk).
